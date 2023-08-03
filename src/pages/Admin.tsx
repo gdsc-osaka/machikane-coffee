@@ -1,7 +1,12 @@
 import React from "react";
+import { TextField } from '@material-ui/core';
 
 const Admin = () => {
-    return <div>This is admin page.</div>;
+    return (
+      <div>
+
+      </div>
+    );
   };
   
   export default Admin;
