@@ -3,7 +3,6 @@ import {Product} from "./types";
 import {AsyncState} from "../stateType";
 import {db} from "../../firebase/firebase";
 import {productConverter} from "../../firebase/converters";
-import {fetchShop} from "../shop/shopSlice";
 
 export const fetchProducts = createAsyncThunk("products/fetchProducts",
     async (shopId: string) => {
