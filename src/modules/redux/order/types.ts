@@ -6,8 +6,10 @@ export type ProductAmount = {
 };
 
 export type Order = {
+    id: string;
     product_amount: ProductAmount;
     created_at: Timestamp;
     complete_at: Timestamp;
     received: boolean;
+    is_student: boolean;
 };
