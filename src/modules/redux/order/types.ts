@@ -8,6 +8,7 @@ export type ProductAmount = {
 
 export type Order = {
     id: string;
+    index: number;
     product_amount: ProductAmount;
     created_at: Timestamp;
     complete_at: Timestamp;
@@ -21,6 +22,7 @@ export function assertOrder(data: any): asserts data is Order {
         !(
             // FIXME: product_amount の条件を追加
             typeof d?.id === "string" &&
+            typeof d?.index === "number" &&
             d?.created_at instanceof Timestamp &&
             d?.complete_at instanceof Timestamp &&
             typeof d?.received === "boolean" &&
