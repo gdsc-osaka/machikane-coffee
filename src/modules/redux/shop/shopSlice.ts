@@ -4,31 +4,18 @@ import {Shop, ShopStatus} from "./types";
 import {db} from "../../firebase/firebase";
 import {orderConverter, shopConverter} from "../../firebase/converters";
 import firebase from "firebase/compat";
+import {RootState} from "../store";
 import Timestamp = firebase.firestore.Timestamp;
 import FieldValue = firebase.firestore.FieldValue;
-import {RootState} from "../store";
 
-export const fetchShop = createAsyncThunk("shop/fetchShop",
-    async (shopId: string, {rejectWithValue}) => {
-    const shopRef = db.collection('shops').doc(shopId);
-    const snapshot = await shopRef.withConverter(shopConverter).get();
-
-    if (snapshot.exists) {
-        const data = snapshot.data();
-
-        if (data == undefined) {
-            // ドキュメントの型不一致などで data が undefined のとき, エラーを返す.
-            throw rejectWithValue(`Data of ${shopId} is undefined!`);
-        }
-
-        return data;
-    } else {
-        // shopId のドキュメントが存在しない場合, エラーを返す.
-        throw rejectWithValue(`Document ${shopId} doesn't exist in shops collection of firestore!`);
-    }
+export const fetchShops = createAsyncThunk("shops/fetchShops",
+    async () => {
+    const shopsRef = db.collection('shops');
+    const snapshot = await shopsRef.withConverter(shopConverter).get();
+    return snapshot.docs.map(doc => doc.data());
 });
 
-export const addShop = createAsyncThunk("shop/addShop",
+export const addShop = createAsyncThunk("shops/addShop",
     async ({shopId, displayName}: {shopId: string, displayName: string}) => {
         const shopData: Shop = {
             display_name: displayName,
@@ -40,7 +27,7 @@ export const addShop = createAsyncThunk("shop/addShop",
         return  await shopRef.withConverter(shopConverter).set(shopData);
     })
 
-export const updateShopName = createAsyncThunk("shop/updateShop",
+export const updateShopName = createAsyncThunk("shops/updateShop",
     async ({shopId, displayName}: {shopId: string, displayName: string}) => {
         const data = {
             // FIXME: フィールド名が独立していない (Shop型が変更されたらバグる)
@@ -54,7 +41,7 @@ export const updateShopName = createAsyncThunk("shop/updateShop",
 type changeShopStatusArgs = {shopId: string, status: ShopStatus};
 
 export const changeShopStatus = createAsyncThunk<void, changeShopStatusArgs, {state: RootState}>
-("shop/changeShopStatus",
+("shops/changeShopStatus",
     async ({shopId, status}: changeShopStatusArgs, {getState}) => {
         const shopRef = db.collection('shops')
             .doc(shopId).withConverter(shopConverter);
@@ -67,10 +54,10 @@ export const changeShopStatus = createAsyncThunk<void, changeShopStatusArgs, {st
         });
     } else if (status == "active") {
         // 注文再開時はオーダーの完了時刻を書き換える
-        let shop = getState().shop.data;
+        let shop = selectShop(getState(), shopId);
 
         // State に shop データがない場合, フェッチする
-        if (shop == null) {
+        if (shop == undefined) {
             const snapshot = await shopRef.get();
             const shopData = snapshot.data();
             if (shopData != undefined) shop = shopData;
@@ -107,24 +94,24 @@ export const changeShopStatus = createAsyncThunk<void, changeShopStatusArgs, {st
 
 
 const shopSlice = createSlice({
-    name: "shop",
+    name: "shops",
     initialState: {
-        data: null,
+        data: [],
         status: "idle",
         error: null,
-    } as AsyncState<Shop | null>,
+    } as AsyncState<Shop[]>,
     reducers: {},
     extraReducers: builder => {
         builder
-            .addCase(fetchShop.pending, (state, action) => {
+            .addCase(fetchShops.pending, (state, action) => {
                 state.status = 'loading'
             })
-            .addCase(fetchShop.fulfilled, (state, action) => {
+            .addCase(fetchShops.fulfilled, (state, action) => {
                 state.status = 'succeeded'
                 // Add any fetched posts to the array
                 state.data = action.payload;
             })
-            .addCase(fetchShop.rejected, (state, action) => {
+            .addCase(fetchShops.rejected, (state, action) => {
                 state.status = 'failed'
                 const msg = action.error.message;
                 state.error = msg == undefined ? null : msg;
@@ -173,3 +160,10 @@ const shopSlice = createSlice({
 
 const shopReducer = shopSlice.reducer;
 export default shopReducer;
+
+/**
+ * shopId と一致する Shop エンティティを返す
+ * @param state RootState
+ * @param shopId Shop の ID
+ */
+export const selectShop = (state: RootState, shopId: string) => state.shop.data.find(e => e.id == shopId);
