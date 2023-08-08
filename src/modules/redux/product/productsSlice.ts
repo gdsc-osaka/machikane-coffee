@@ -12,7 +12,9 @@ export const fetchProducts = createAsyncThunk("products/fetchProducts",
             .withConverter(productConverter)
             .get();
 
-        return snapshot.docs.map(doc => doc.exists ? doc.data() : null).filter((item): item is NonNullable<typeof item> => item != null);;
+        return snapshot.docs
+            .map(doc => doc.exists ? doc.data() : null)
+            .filter((item): item is NonNullable<typeof item> => item != null);
     });
 
 const productsSlice = createSlice({
