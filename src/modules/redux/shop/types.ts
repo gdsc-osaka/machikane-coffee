@@ -3,6 +3,10 @@ import Timestamp = firebase.firestore.Timestamp;
 
 export type ShopStatus = "active" | "pause_ordering"
 
+/**
+ * 店情報
+ * @property last_active_time 最後に営業中だった時間
+ */
 export type Shop = {
     id: string;
     status: ShopStatus;

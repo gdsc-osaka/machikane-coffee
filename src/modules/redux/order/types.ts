@@ -2,10 +2,18 @@ import firebase from "firebase/compat";
 import Timestamp = firebase.firestore.Timestamp;
 import {Shop} from "../shop/types";
 
+/**
+ * 商品IDと個数のマップ
+ */
 export type ProductAmount = {
     [K in string]: number
 };
 
+/**
+ * 注文情報
+ * @property complete_at 商品が完成する時間
+ * @property is_student 客が生徒がどうか
+ */
 export type Order = {
     id: string;
     index: number;
