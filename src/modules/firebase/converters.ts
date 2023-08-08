@@ -2,7 +2,7 @@ import firebase from "firebase/compat";
 import FirestoreDataConverter = firebase.firestore.FirestoreDataConverter;
 import {assertProduct, Product} from "../redux/product/types";
 import {assertShop, Shop} from "../redux/shop/types";
-import {assertOrder, Order} from "../redux/order/types";
+import {assertOrder, CargoOrder, Order} from "../redux/order/types";
 
 export const productConverter: FirestoreDataConverter<Product> = {
     fromFirestore(snapshot: firebase.firestore.QueryDocumentSnapshot, options: firebase.firestore.SnapshotOptions): Product {
@@ -40,8 +40,8 @@ export const orderConverter: FirestoreDataConverter<Order> = {
         return data;
 
     },
-    toFirestore(model: Order | Partial<Order>, options?: firebase.firestore.SetOptions): firebase.firestore.DocumentData {
+    toFirestore(model: CargoOrder | Partial<CargoOrder>, options?: firebase.firestore.SetOptions): firebase.firestore.DocumentData {
         // データから id を除去
-        return model as Omit<Order, "id">;
+        return model;
     }
 }
