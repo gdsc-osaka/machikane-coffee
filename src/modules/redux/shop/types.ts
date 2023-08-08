@@ -14,6 +14,11 @@ export type Shop = {
     display_name: string;
 };
 
+/**
+ * データの追加時に不必要なフィールドを除いた Shop
+ */
+export type RawShop = Omit<Shop, "id" | "status" | "last_active_time">
+
 export function assertShop(data: any): asserts data is Shop {
     const d = data as Partial<Shop>; // 補完のためキャスト
     if (

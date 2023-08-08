@@ -24,6 +24,11 @@ export type Order = {
     is_student: boolean;
 };
 
+/**
+ * データの追加時に不必要なフィールドを除いた Order
+ */
+export type RawOrder = Omit<Order, "id" | "index" | "created_at" | "complete_at">;
+
 export function assertOrder(data: any): asserts data is Order {
     const d = data as Partial<Order>; // 補完のためキャスト
     if (
