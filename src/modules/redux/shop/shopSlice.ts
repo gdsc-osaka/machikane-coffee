@@ -1,6 +1,6 @@
 import {createAsyncThunk, createSlice} from "@reduxjs/toolkit";
 import {AsyncState} from "../stateType";
-import {Shop, ShopStatus} from "./types";
+import {RawShop, Shop, ShopStatus} from "./types";
 import {db} from "../../firebase/firebase";
 import {orderConverter, shopConverter} from "../../firebase/converters";
 import firebase from "firebase/compat";
@@ -16,9 +16,9 @@ export const fetchShops = createAsyncThunk("shops/fetchShops",
 });
 
 export const addShop = createAsyncThunk("shops/addShop",
-    async ({shopId, displayName}: {shopId: string, displayName: string}) => {
+    async ({shopId, rawShop}: {shopId: string, rawShop: RawShop}) => {
         const shopData: Shop = {
-            display_name: displayName,
+            ...rawShop,
             id: shopId,
             last_active_time: Timestamp.now(),
             status: "active"
