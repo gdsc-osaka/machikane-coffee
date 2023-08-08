@@ -40,7 +40,7 @@ export const addShop = createAsyncThunk("shop/addShop",
         return  await shopRef.withConverter(shopConverter).set(shopData);
     })
 
-export const updateShop = createAsyncThunk("shop/updateShop",
+export const updateShopName = createAsyncThunk("shop/updateShop",
     async ({shopId, displayName}: {shopId: string, displayName: string}) => {
         const data = {
             // FIXME: フィールド名が独立していない (Shop型が変更されたらバグる)
@@ -144,13 +144,13 @@ const shopSlice = createSlice({
             })
 
         builder
-            .addCase(updateShop.pending, (state, action) => {
+            .addCase(updateShopName.pending, (state, action) => {
                 state.status = 'loading'
             })
-            .addCase(updateShop.fulfilled, (state, action) => {
+            .addCase(updateShopName.fulfilled, (state, action) => {
                 state.status = 'succeeded'
             })
-            .addCase(updateShop.rejected, (state, action) => {
+            .addCase(updateShopName.rejected, (state, action) => {
                 state.status = 'failed'
                 const msg = action.error.message;
                 state.error = msg == undefined ? null : msg;
