@@ -3,6 +3,7 @@ import {Product} from "./types";
 import {AsyncState} from "../stateType";
 import {db} from "../../firebase/firebase";
 import {productConverter} from "../../firebase/converters";
+import {RootState} from "../store";
 
 export const fetchProducts = createAsyncThunk("products/fetchProducts",
     async (shopId: string) => {
@@ -12,9 +13,7 @@ export const fetchProducts = createAsyncThunk("products/fetchProducts",
             .withConverter(productConverter)
             .get();
 
-        return snapshot.docs
-            .map(doc => doc.exists ? doc.data() : null)
-            .filter((item): item is NonNullable<typeof item> => item != null);
+        return snapshot.docs.map(doc => doc.data());
     });
 
 const productsSlice = createSlice({
@@ -45,3 +44,5 @@ const productsSlice = createSlice({
 
 const productReducer = productsSlice.reducer;
 export default productReducer;
+
+export const selectProductById = (state: RootState, productId: string) => state.product.data.find(e => e.id == productId) ?? null
