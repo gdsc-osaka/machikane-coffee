@@ -54,7 +54,7 @@ export const changeShopStatus = createAsyncThunk<void, changeShopStatusArgs, {st
         });
     } else if (status == "active") {
         // 注文再開時はオーダーの完了時刻を書き換える
-        let shop = selectShop(getState(), shopId);
+        let shop = selectShopById(getState(), shopId);
 
         // State に shop データがない場合, フェッチする
         if (shop == undefined) {
@@ -166,4 +166,4 @@ export default shopReducer;
  * @param state RootState
  * @param shopId Shop の ID
  */
-export const selectShop = (state: RootState, shopId: string) => state.shop.data.find(e => e.id == shopId);
+export const selectShopById = (state: RootState, shopId: string) => state.shop.data.find(e => e.id == shopId);
