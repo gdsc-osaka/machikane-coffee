@@ -119,7 +119,7 @@ export const changeShopStatus = createAsyncThunk<Shop | undefined, {shopId: stri
     })
 
 
-const shopSlice = createSlice({
+const shopsSlice = createSlice({
     name: "shops",
     initialState: {
         data: [],
@@ -167,7 +167,7 @@ const shopSlice = createSlice({
     }
 });
 
-const shopReducer = shopSlice.reducer;
+const shopReducer = shopsSlice.reducer;
 export default shopReducer;
 
 /**
