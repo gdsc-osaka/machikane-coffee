@@ -95,6 +95,8 @@ export const changeShopStatus = createAsyncThunk<Shop | undefined, {shopId: stri
             const _query = query(collection(db, `shops/${shopId}/orders`).withConverter(orderConverter), where('complete_at', '<=', lastActiveTime), where('received', '==', true));
             const ordersSnapshot = await getDocs(_query);
 
+            const newShop = selectShopById(getState(), shopId);
+
             try {
                 await runTransaction( db, async (transaction) => {
                     for (const doc of ordersSnapshot.docs) {
@@ -110,13 +112,12 @@ export const changeShopStatus = createAsyncThunk<Shop | undefined, {shopId: stri
                         status: status
                     })
                 })
-                const newShop = selectShopById(getState(), shopId);
                 if (newShop != undefined) {
                     newShop.status = status;
                 }
                 return newShop;
             } catch {
-                return undefined;
+                return newShop;
             }
         }
     })
@@ -181,3 +182,4 @@ export default shopReducer;
 export const selectShopById = (state: RootState, shopId: string) => state.shop.data.find(e => e.id == shopId);
 export const selectAllShops = (state: RootState) => state.shop.data;
 export const selectShopStatus = (state: RootState) => state.shop.status;
+export const selectShopError = (state: RootState) => state.shop.error;
