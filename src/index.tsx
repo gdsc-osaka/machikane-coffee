@@ -31,7 +31,7 @@ root.render(
                       <Route path="/admin" Component={Admin} />
                       <Route path="/user" Component={User} />
                       <Route path="/timer" Component={Timer} />
-                      <Route path="/test" Component={TestPage} />
+                      <Route path="/test/:shopId" Component={TestPage} />
                   </Routes>
               </div>
           </BrowserRouter>

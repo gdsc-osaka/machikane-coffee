@@ -40,7 +40,7 @@ export type Order = {
 /**
  * データの追加時、ユーザーが設定しなければいけないフィールドのみにした Order
  */
-export type RawOrder = Omit<Order, "id" | "index" | "created_at" | "complete_at" | "received">;
+export type RawOrder = Omit<Order, "id" | "index" | "created_at" | "complete_at" | "received" | "completed" | "order_statuses">;
 
 /**
  * データを Firestore に送信するとき, 一部フィールドを FieldValue に変更するための型

@@ -25,9 +25,8 @@ import {QueryConstraint} from "@firebase/firestore";
 
 const ordersQuery = (shopId: string, ...queryConstraints: QueryConstraint[]) => {
     const today = Timestamp.fromDate(getToday());
-    return  query(collection(db, `shops/${shopId}/collection`).withConverter(orderConverter),
-        orderBy("created_at", "desc"),
-        where("created_at", ">=", today), ...queryConstraints);
+    return  query(collection(db, `shops/${shopId}/orders`).withConverter(orderConverter),
+        where("created_at", ">=", today), orderBy("created_at", "desc"), ...queryConstraints);
 }
 
 export const fetchOrders = createAsyncThunk("orders/fetchOrders",
@@ -72,13 +71,16 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
         let waitingSec = 0;
         // 提供状況
         const orderStatuses: OrderStatus[] = [];
+        console.log(rawOrder);
 
-        for (const productId in Object.keys(rawOrder.product_amount)) {
+        for (const productId of Object.keys(rawOrder.product_amount)) {
             const amount = rawOrder.product_amount[productId];
             const product = selectProductById(getState(), productId);
 
+            console.log(productId);
             // Product が登録されているまたはフェッチされているとき
             if (product != null) {
+                console.log(product.span);
                 waitingSec += product.span * amount;
             }
 
@@ -91,6 +93,7 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
                 });
             }
         }
+
         const completeAt = new Date().addSeconds(waitingSec).toTimestamp();
 
         const order: CargoOrder = {
@@ -128,7 +131,7 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
 /**
  * 注文を更新する. UIで操作された部分のみ更新すれば, その更新に依存するそれ以外の部分も自動で書き換えられる (completed 等)
  */
-const updateOrder = createAsyncThunk('orders/updateOrder',
+export const updateOrder = createAsyncThunk('orders/updateOrder',
     async ({shopId, newOrder}: {shopId: string, newOrder: Order}) => {
         // const shopRef = db.collection("shops").doc(shopId);
         // const orderRef = shopRef.collection('orders').doc(newOrder.id);
@@ -216,3 +219,6 @@ const ordersSlice = createSlice({
 const orderReducer = ordersSlice.reducer;
 export default orderReducer;
 export const {orderAdded, orderUpdated, orderRemoved} = ordersSlice.actions;
+export const selectAllOrders = (state: RootState) => state.order.data;
+export const selectOrderStatus = (state: RootState) => state.order.status;
+export const selectOrderById = (state: RootState, id: string) => state.order.data.find(e => e.id == id);

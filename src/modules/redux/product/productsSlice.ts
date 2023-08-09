@@ -92,3 +92,4 @@ export default productReducer;
 
 export const selectProductById = (state: RootState, productId: string) => state.product.data.find(e => e.id == productId) ?? null
 export const selectAllProduct = (state: RootState) => state.product.data;
+export const selectProductStatus = (state: RootState) => state.product.status;
