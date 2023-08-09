@@ -3,15 +3,25 @@ import {AsyncState} from "../stateType";
 import {RawShop, Shop, ShopStatus} from "./types";
 import {db} from "../../firebase/firebase";
 import {orderConverter, shopConverter} from "../../firebase/converters";
-import firebase from "firebase/compat";
 import {RootState} from "../store";
-import Timestamp = firebase.firestore.Timestamp;
-import FieldValue = firebase.firestore.FieldValue;
+import {
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    query, runTransaction,
+    serverTimestamp,
+    setDoc,
+    Timestamp,
+    updateDoc, where
+} from "firebase/firestore";
+
+const shopsRef = collection(db, "shops").withConverter(shopConverter);
+const shopRef = (shopId: string) => doc(db, `shops/${shopId}`).withConverter(shopConverter);
 
 export const fetchShops = createAsyncThunk("shops/fetchShops",
     async () => {
-    const shopsRef = db.collection('shops');
-    const snapshot = await shopsRef.withConverter(shopConverter).get();
+    const snapshot = await getDocs(shopsRef);
     return snapshot.docs.map(doc => doc.data());
 });
 
@@ -23,17 +33,14 @@ export const addShop = createAsyncThunk("shops/addShop",
             last_active_time: Timestamp.now(),
             status: "active"
         };
-        const shopRef = db.collection('shops').doc(shopId);
-        await shopRef.withConverter(shopConverter).set(shopData);
+        await setDoc(shopRef(shopId), shopData);
         return shopData;
     })
 
 export const updateShop = createAsyncThunk<Shop | undefined, {shopId: string, rawShop: RawShop}, {state: RootState}>("shops/updateShop",
     async ({shopId, rawShop}, {getState, rejectWithValue}) => {
-        const shopRef = db.collection('shops').doc(shopId);
-
         try {
-            await shopRef.withConverter(shopConverter).update(rawShop);
+            await updateDoc(shopRef(shopId), rawShop);
             const oldShop = selectShopById(getState(), shopId);
 
             if (oldShop != undefined) {
@@ -56,18 +63,17 @@ export const updateShop = createAsyncThunk<Shop | undefined, {shopId: string, ra
 export const changeShopStatus = createAsyncThunk<Shop | undefined, {shopId: string, status: ShopStatus}, {state: RootState}>
 ("shops/changeShopStatus",
     async ({shopId, status}, {getState}) => {
-        const shopRef = db.collection('shops')
-            .doc(shopId).withConverter(shopConverter);
+        const _shopRef = shopRef(shopId);
 
         if (status == "pause_ordering") {
             // 注文停止時はショップのデータを書き換える
-            await shopRef.update({
+            await updateDoc(_shopRef, {
                 status: status,
-                last_active_time: FieldValue.serverTimestamp(),
+                last_active_time: serverTimestamp(),
             });
 
             // TODO: FieldValue の更新があるので get しているが, 多少の誤差は許容して get を呼ばないようにする?
-            const snapshot = await shopRef.withConverter(shopConverter).get();
+            const snapshot = await getDoc(_shopRef);
             return snapshot.data();
 
         } else if (status == "active") {
@@ -76,7 +82,7 @@ export const changeShopStatus = createAsyncThunk<Shop | undefined, {shopId: stri
 
             // State に shop データがない場合, フェッチする
             if (shop == undefined) {
-                const snapshot = await shopRef.get();
+                const snapshot = await getDoc(_shopRef);
                 const shopData = snapshot.data();
                 if (shopData != undefined) shop = shopData;
             }
@@ -86,14 +92,11 @@ export const changeShopStatus = createAsyncThunk<Shop | undefined, {shopId: stri
             const delayedTime = Date.now() - lastActiveTime.toDate().getTime();
 
             // 注文を取得
-            const ordersSnapshot = await shopRef.collection("orders")
-                .withConverter(orderConverter)
-                .where('complete_at', '<=', lastActiveTime)
-                .where('received', '==', true)
-                .get();
+            const _query = query(collection(db, `shops/${shopId}/orders`).withConverter(orderConverter), where('complete_at', '<=', lastActiveTime), where('received', '==', true));
+            const ordersSnapshot = await getDocs(_query);
 
             try {
-                await db.runTransaction( async (transaction) => {
+                await runTransaction( db, async (transaction) => {
                     for (const doc of ordersSnapshot.docs) {
                         // 遅延時間分を可算
                         const order = doc.data();
@@ -103,7 +106,7 @@ export const changeShopStatus = createAsyncThunk<Shop | undefined, {shopId: stri
                         })
                     }
                     // 店のステータスをactiveに変更
-                    transaction.update(shopRef, {
+                    transaction.update(_shopRef, {
                         status: status
                     })
                 })
@@ -176,3 +179,5 @@ export default shopReducer;
  * @param shopId Shop の ID
  */
 export const selectShopById = (state: RootState, shopId: string) => state.shop.data.find(e => e.id == shopId);
+export const selectAllShops = (state: RootState) => state.shop.data;
+export const selectShopStatus = (state: RootState) => state.shop.status;

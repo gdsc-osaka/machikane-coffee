@@ -1,4 +1,4 @@
-import firebase from "firebase/compat";
+import firebase from "firebase/compat/app";
 import Timestamp = firebase.firestore.Timestamp;
 
 export type ShopStatus = "active" | "pause_ordering"

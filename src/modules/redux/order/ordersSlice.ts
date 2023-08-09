@@ -3,23 +3,37 @@ import {AsyncState} from "../stateType";
 import {CargoOrder, Order, OrderStatus, RawOrder} from "./types";
 import {db} from "../../firebase/firebase";
 import {orderConverter} from "../../firebase/converters";
-import firebase from "firebase/compat";
 import {selectProductById} from "../product/productsSlice";
 import {RootState} from "../store";
-import Timestamp = firebase.firestore.Timestamp;
-import FieldValue = firebase.firestore.FieldValue;
+import {
+    collection,
+    doc,
+    getDocs,
+    query,
+    orderBy,
+    where,
+    onSnapshot,
+    limit,
+    addDoc,
+    getDoc,
+    updateDoc,
+    Timestamp,
+    serverTimestamp
+} from "firebase/firestore";
 import {getToday} from "../../util/dateUtils";
+import {QueryConstraint} from "@firebase/firestore";
+
+const ordersQuery = (shopId: string, ...queryConstraints: QueryConstraint[]) => {
+    const today = Timestamp.fromDate(getToday());
+    return  query(collection(db, `shops/${shopId}/collection`).withConverter(orderConverter),
+        orderBy("created_at", "desc"),
+        where("created_at", ">=", today), ...queryConstraints);
+}
 
 export const fetchOrders = createAsyncThunk("orders/fetchOrders",
     async (shopId: string) => {
-        const shopRef = db.collection("shops").doc(shopId);
-        const today = Timestamp.fromDate(getToday());
-        const snapshot = await shopRef
-            .collection("orders")
-            .orderBy('created_at', 'desc')
-            .where('created_at', '>=', today)
-            .withConverter(orderConverter)
-            .get();
+        const _query = ordersQuery(shopId);
+        const snapshot = await getDocs(_query);
 
         return snapshot.docs.map(doc => doc.data());
     });
@@ -29,13 +43,8 @@ export const fetchOrders = createAsyncThunk("orders/fetchOrders",
  */
 export const streamOrders = createAsyncThunk('orders/streamOrders',
     (shopId: string, {dispatch}) => {
-        const shopRef = db.collection("shops").doc(shopId);
-        const today = Timestamp.fromDate(getToday());
-        const unsubscribe = shopRef.collection('orders')
-            .orderBy('created_at', 'desc')
-            .where('created_at', '>=', today)
-            .withConverter(orderConverter)
-            .onSnapshot((snapshot) => {
+        const _query = ordersQuery(shopId);
+        const unsubscribe = onSnapshot(_query,(snapshot) => {
                 snapshot.docChanges().forEach((change) => {
 
                    if (change.type == "added") {
@@ -57,13 +66,7 @@ export const streamOrders = createAsyncThunk('orders/streamOrders',
 })
 
 export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, rawOrder: RawOrder}, {state: RootState}>("orders/addOrder",
-    async ({shopId, rawOrder}, {getState, dispatch}) => {
-        const shopRef = db.collection("shops").doc(shopId);
-        const ordersRef = shopRef.collection("orders");
-
-        // トランザクションのフィルターで使う
-        const today = Timestamp.fromDate(getToday());
-
+    async ({shopId, rawOrder}, {getState, rejectWithValue}): Promise<Order | undefined> => {
         // TODO: 直列と考えて待ち時間を計算しているので、並列にも対応させる
         // 注文の待ち時間 (秒)
         let waitingSec = 0;
@@ -94,21 +97,16 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
             is_student: rawOrder.is_student,
             product_amount: rawOrder.product_amount,
             index: 1,
-            created_at: FieldValue.serverTimestamp(),
+            created_at: serverTimestamp(),
             complete_at: completeAt,
             received: false,
             completed: false,
             order_statuses: orderStatuses
         }
 
-        // 連番を処理するためにトランザクション使用
-        return db.runTransaction(async (transaction) => {
-            const lastOrderSnapshot = await ordersRef
-                .orderBy('created_at', 'desc')
-                .where('created_at', '>=', today)
-                .limit(1)
-                .withConverter(orderConverter)
-                .get();
+        try {
+            // TODO: Transaction を使う
+            const lastOrderSnapshot = await getDocs(ordersQuery(shopId, limit(1)));
 
             // 今日この注文以前に注文があった場合、最新の注文の index + 1 を今回の注文の番号にする
             if (!lastOrderSnapshot.empty) {
@@ -117,11 +115,14 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
             }
 
             // ランダムIDで追加
-            const addedDoc = await ordersRef.add(order);
+            const addedDoc = await addDoc(collection(db, `shops/${shopId}/orders`).withConverter(orderConverter), order);
             // ドキュメントを取得してStoreに追加
-            const addedOrderSnapshot = await addedDoc.withConverter(orderConverter).get();
+            const addedOrderSnapshot = await getDoc(doc(db, addedDoc.path).withConverter(orderConverter));
             return addedOrderSnapshot.data();
-        });
+        } catch (e) {
+            rejectWithValue(e);
+            return undefined;
+        }
     });
 
 /**
@@ -129,8 +130,8 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
  */
 const updateOrder = createAsyncThunk('orders/updateOrder',
     async ({shopId, newOrder}: {shopId: string, newOrder: Order}) => {
-        const shopRef = db.collection("shops").doc(shopId);
-        const orderRef = shopRef.collection('orders').doc(newOrder.id);
+        // const shopRef = db.collection("shops").doc(shopId);
+        // const orderRef = shopRef.collection('orders').doc(newOrder.id);
 
         // OrderStatus: 親オーダーが true なら 子オーダー全て true, 子オーダー全て true なら親オーダーも true
         if (newOrder.completed) {
@@ -147,7 +148,8 @@ const updateOrder = createAsyncThunk('orders/updateOrder',
             newOrder.received = true;
         }
 
-        await orderRef.withConverter(orderConverter).update(newOrder);
+        const docRef = doc(db, `shops/${shopId}/orders/${newOrder.id}`);
+        await updateDoc(docRef.withConverter(orderConverter), newOrder);
         return newOrder;
     });
 

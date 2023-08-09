@@ -1,6 +1,4 @@
-import firebase from "firebase/compat";
-import Timestamp = firebase.firestore.Timestamp;
-import FieldValue = firebase.firestore.FieldValue;
+import {FieldValue, Timestamp } from "firebase/firestore";
 import {Weaken} from "../../util/typeUtils";
 
 /**

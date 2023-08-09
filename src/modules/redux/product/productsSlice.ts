@@ -4,44 +4,47 @@ import {AsyncState} from "../stateType";
 import {db} from "../../firebase/firebase";
 import {productConverter} from "../../firebase/converters";
 import {RootState} from "../store";
+import {collection, doc, getDocs, runTransaction, setDoc, updateDoc} from "firebase/firestore";
+
+const productsRef = (shopId: string) => collection(db, `shops/${shopId}/products`).withConverter(productConverter);
+const productRef = (shopId: string, productId: string) => doc(db, `shops/${shopId}/products/${productId}`).withConverter(productConverter)
 
 export const fetchProducts = createAsyncThunk("products/fetchProducts",
     async (shopId: string) => {
-        const shopRef = db.collection("shops").doc(shopId);
         // TODO: エラーハンドリング
-        const snapshot = await shopRef
-            .collection("products")
-            .withConverter(productConverter)
-            .get();
+        const snapshot = await getDocs(productsRef(shopId))
 
         return snapshot.docs.map(doc => doc.data());
     });
 
 export const addProduct = createAsyncThunk('products/addProduct',
-    async ({shopId, product}: {shopId: string, product: Product}) => {
-        const shopRef = db.collection("shops").doc(shopId);
-        // TODO: エラーハンドリング
-        await shopRef.collection('products').doc(product.id).withConverter(productConverter).set(product);
+    async ({shopId, product}: {shopId: string, product: Product}, {rejectWithValue}) => {
+        try {
+            await setDoc(productRef(shopId, product.id), product);
+        } catch (e) {
+            rejectWithValue(e)
+        }
 
         return product;
 });
 
 export const updateProduct = createAsyncThunk('products/updateProduct',
     async ({shopId, product}: {shopId: string, product: Product}, {rejectWithValue}) => {
-        const shopRef = db.collection('shops').doc(shopId);
-        const prodRef = shopRef.collection('products').doc(product.id);
+        try {
+            return runTransaction(db,async (transaction) => {
+                const prodSnapshot = await transaction.get(productRef(shopId, product.id));
 
-        return db.runTransaction(async (transaction) => {
-            const prodSnapshot = await transaction.get(prodRef);
+                if (prodSnapshot.exists()) {
+                    await transaction.update(productRef(shopId, product.id), product);
+                    return product;
 
-            if (prodSnapshot.exists) {
-                await prodRef.withConverter(productConverter).update(product);
-                return product;
-
-            } else {
-                rejectWithValue(`Product ${product.id} doesn't exists!`);
-            }
-        });
+                } else {
+                    rejectWithValue(`Product ${product.id} doesn't exists!`);
+                }
+            });
+        } catch (e) {
+            rejectWithValue(e);
+        }
     })
 
 const productsSlice = createSlice({
