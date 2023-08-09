@@ -1,5 +1,4 @@
-import firebase from "firebase/compat/app";
-import Timestamp = firebase.firestore.Timestamp;
+import {Timestamp} from "firebase/firestore";
 
 export type ShopStatus = "active" | "pause_ordering"
 
@@ -25,8 +24,7 @@ export function assertShop(data: any): asserts data is Shop {
         !(
             typeof d?.id === "string" &&
             typeof d?.status === "string" &&
-            typeof d?.display_name === "string" &&
-            d?.last_active_time instanceof Timestamp
+            typeof d?.display_name === "string"
         )
     ) {
         throw new Error("data is not Shop type");
