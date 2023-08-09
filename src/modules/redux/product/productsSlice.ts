@@ -8,12 +8,20 @@ import {RootState} from "../store";
 export const fetchProducts = createAsyncThunk("products/fetchProducts",
     async (shopId: string) => {
         const shopRef = db.collection("shops").doc(shopId);
+        // TODO: エラーハンドリング
         const snapshot = await shopRef
             .collection("products")
             .withConverter(productConverter)
             .get();
 
         return snapshot.docs.map(doc => doc.data());
+    });
+
+export const addProduct = createAsyncThunk('products/addProduct',
+    async ({shopId, product}: {shopId: string, product: Product}) => {
+        const shopRef = db.collection("shops").doc(shopId);
+        // TODO: エラーハンドリング
+        return shopRef.collection('products').doc(product.id).withConverter(productConverter).set(product);
     });
 
 const productsSlice = createSlice({
@@ -26,7 +34,7 @@ const productsSlice = createSlice({
     reducers: {},
     extraReducers: builder => {
         builder
-            .addCase(fetchProducts.pending, (state, action) => {
+            .addCase(fetchProducts.pending, (state) => {
                 state.status = 'loading'
             })
             .addCase(fetchProducts.fulfilled, (state, action) => {
@@ -35,6 +43,18 @@ const productsSlice = createSlice({
                 state.data = action.payload;
             })
             .addCase(fetchProducts.rejected, (state, action) => {
+                state.status = 'failed'
+                const msg = action.error.message;
+                state.error = msg == undefined ? null : msg;
+            })
+
+        builder
+            .addCase(addProduct.pending, (state) => {
+                state.status = 'loading'
+            })
+            .addCase(addProduct.fulfilled, (state) => {
+                state.status = 'succeeded'            })
+            .addCase(addProduct.rejected, (state, action) => {
                 state.status = 'failed'
                 const msg = action.error.message;
                 state.error = msg == undefined ? null : msg;
