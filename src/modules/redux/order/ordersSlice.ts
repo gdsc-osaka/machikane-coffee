@@ -8,17 +8,53 @@ import {selectProductById} from "../product/productsSlice";
 import {RootState} from "../store";
 import Timestamp = firebase.firestore.Timestamp;
 import FieldValue = firebase.firestore.FieldValue;
+import {getToday} from "../../util/dateUtils";
 
 export const fetchOrders = createAsyncThunk("orders/fetchOrders",
     async (shopId: string) => {
         const shopRef = db.collection("shops").doc(shopId);
+        const today = Timestamp.fromDate(getToday());
         const snapshot = await shopRef
             .collection("orders")
+            .orderBy('created_at', 'desc')
+            .where('created_at', '>=', today)
             .withConverter(orderConverter)
             .get();
 
         return snapshot.docs.map(doc => doc.data());
     });
+
+/**
+ * Order をリアルタイム更新する. ユーザー側で使用されることを想定
+ */
+export const streamOrders = createAsyncThunk('orders/streamOrders',
+    (shopId: string, {dispatch}) => {
+        const shopRef = db.collection("shops").doc(shopId);
+        const today = Timestamp.fromDate(getToday());
+        const unsubscribe = shopRef.collection('orders')
+            .orderBy('created_at', 'desc')
+            .where('created_at', '>=', today)
+            .withConverter(orderConverter)
+            .onSnapshot((snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+
+                   if (change.type == "added") {
+                       const order = change.doc.data();
+                       dispatch(orderAdded(order));
+                   }
+                   if (change.type == "modified") {
+                       const order = change.doc.data();
+                       dispatch(orderUpdated(order));
+                   }
+                   if (change.type == "removed") {
+                       const id = change.doc.id;
+                       dispatch(orderRemoved(id));
+                   }
+                });
+            });
+
+        return unsubscribe;
+})
 
 export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, rawOrder: RawOrder}, {state: RootState}>("orders/addOrder",
     async ({shopId, rawOrder}, {getState, dispatch}) => {
@@ -26,9 +62,7 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
         const ordersRef = shopRef.collection("orders");
 
         // トランザクションのフィルターで使う
-        const todayDate = new Date();
-        todayDate.setHours(0, 0, 0, 0); // 0時0分に合わせる
-        const today = Timestamp.fromDate(todayDate);
+        const today = Timestamp.fromDate(getToday());
 
         // TODO: 直列と考えて待ち時間を計算しているので、並列にも対応させる
         // 注文の待ち時間 (秒)
@@ -123,12 +157,30 @@ const ordersSlice = createSlice({
         data: [],
         status: 'idle',
         error: null,
-    } as AsyncState<Order[]>,
+        // リアルタイムリッスンの Stream を unsubscribe する
+        unsubscribe: null,
+    } as AsyncState<Order[]> & {unsubscribe: (() => void) | null},
     reducers: {
+        orderAdded(state, action: PayloadAction<Order>) {
+            state.data.push(action.payload);
+        },
+        orderUpdated(state, action: PayloadAction<Order>) {
+            const order = action.payload;
+            state.data.update(e => e.id == order.id, order);
+        },
+        /**
+         * 指定した ID の Order を消去する
+         * @param state
+         * @param action 消去する Order の ID
+         */
+        orderRemoved(state, action: PayloadAction<string>) {
+            const id = action.payload;
+            state.data.remove(e => e.id == id);
+        }
     },
     extraReducers: builder => {
         builder
-            .addCase(fetchOrders.pending, (state, action) => {
+            .addCase(fetchOrders.pending, (state) => {
                 state.status = 'loading'
             })
             .addCase(fetchOrders.fulfilled, (state, action) => {
@@ -140,6 +192,10 @@ const ordersSlice = createSlice({
                 const msg = action.error.message;
                 state.error = msg == undefined ? null : msg;
             })
+
+        builder.addCase(streamOrders.fulfilled, (state, action) => {
+            state.unsubscribe = action.payload;
+        });
 
         builder.addCase(addOrder.fulfilled, (state, action) => {
             const order = action.payload;
@@ -157,3 +213,4 @@ const ordersSlice = createSlice({
 
 const orderReducer = ordersSlice.reducer;
 export default orderReducer;
+export const {orderAdded, orderUpdated, orderRemoved} = ordersSlice.actions;

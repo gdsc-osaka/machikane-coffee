@@ -8,6 +8,7 @@ declare global {
          * @param newElement 書き換える値
          */
         update(predicate: (value: T, index: number, obj: T[]) => unknown, newElement: T): Array<T>;
+        remove(predicate: (value: T, index: number, obj: T[]) => unknown): Array<T>;
     }
 }
 
@@ -22,6 +23,12 @@ if (!Array.prototype.update) {
 
         return this;
     }
+}
+
+Array.prototype.remove = function<T>(predicate: (value: T, index: number, obj: T[]) => unknown): Array<T> {
+    const index = this.findIndex(predicate);
+    this.splice(index, 1);
+    return this;
 }
 
 export {};
