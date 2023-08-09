@@ -4,9 +4,9 @@ import {CargoOrder, Order, RawOrder} from "./types";
 import {db} from "../../firebase/firebase";
 import {orderConverter} from "../../firebase/converters";
 import firebase from "firebase/compat";
-import Timestamp = firebase.firestore.Timestamp;
 import {selectProductById} from "../product/productsSlice";
 import {RootState} from "../store";
+import Timestamp = firebase.firestore.Timestamp;
 import FieldValue = firebase.firestore.FieldValue;
 
 export const fetchOrders = createAsyncThunk("orders/fetchOrders",
@@ -20,7 +20,7 @@ export const fetchOrders = createAsyncThunk("orders/fetchOrders",
         return snapshot.docs.map(doc => doc.data());
     });
 
-export const addOrder = createAsyncThunk<void, {shopId: string, rawOrder: RawOrder}, {state: RootState}>("orders/addOrder",
+export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, rawOrder: RawOrder}, {state: RootState}>("orders/addOrder",
     async ({shopId, rawOrder}, {getState, dispatch}) => {
         const shopRef = db.collection("shops").doc(shopId);
         const ordersRef = shopRef.collection("orders");
@@ -73,12 +73,7 @@ export const addOrder = createAsyncThunk<void, {shopId: string, rawOrder: RawOrd
             const addedDoc = await ordersRef.add(order);
             // ドキュメントを取得してStoreに追加
             const addedOrderSnapshot = await addedDoc.withConverter(orderConverter).get();
-            const addedOrder = addedOrderSnapshot.data();
-
-            // State に追加
-            if (addedOrder != undefined) {
-                dispatch(orderAdded(addedOrder));
-            }
+            return addedOrderSnapshot.data();
         });
     });
 
@@ -90,9 +85,6 @@ const ordersSlice = createSlice({
         error: null,
     } as AsyncState<Order[]>,
     reducers: {
-        orderAdded(state, action: PayloadAction<Order>) {
-            state.data.push(action.payload);
-        }
     },
     extraReducers: builder => {
         builder
@@ -110,20 +102,14 @@ const ordersSlice = createSlice({
             })
 
         builder
-            .addCase(addOrder.pending, (state, action) => {
-                state.status = 'loading'
-            })
             .addCase(addOrder.fulfilled, (state, action) => {
-                state.status = 'succeeded'
-            })
-            .addCase(addOrder.rejected, (state, action) => {
-                state.status = 'failed'
-                const msg = action.error.message;
-                state.error = msg == undefined ? null : msg;
+                const order = action.payload;
+                if (order != undefined) {
+                    state.data.push(order);
+                }
             })
     },
 });
 
 const orderReducer = ordersSlice.reducer;
 export default orderReducer;
-export const {orderAdded} = ordersSlice.actions;

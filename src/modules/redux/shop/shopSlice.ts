@@ -24,72 +24,98 @@ export const addShop = createAsyncThunk("shops/addShop",
             status: "active"
         };
         const shopRef = db.collection('shops').doc(shopId);
-        return  await shopRef.withConverter(shopConverter).set(shopData);
+        await shopRef.withConverter(shopConverter).set(shopData);
+        return shopData;
     })
 
-export const updateShopName = createAsyncThunk("shops/updateShop",
-    async ({shopId, displayName}: {shopId: string, displayName: string}) => {
-        const data = {
-            // FIXME: フィールド名が独立していない (Shop型が変更されたらバグる)
-            display_name: displayName
-        };
-
+export const updateShop = createAsyncThunk<Shop | undefined, {shopId: string, rawShop: RawShop}, {state: RootState}>("shops/updateShop",
+    async ({shopId, rawShop}, {getState, rejectWithValue}) => {
         const shopRef = db.collection('shops').doc(shopId);
-        return await shopRef.withConverter(shopConverter).update(data);
+
+        try {
+            await shopRef.withConverter(shopConverter).update(rawShop);
+            const oldShop = selectShopById(getState(), shopId);
+
+            if (oldShop != undefined) {
+                const newShop: Shop = {
+                    ...oldShop,
+                    ...rawShop
+                }
+                return newShop;
+            } else {
+                rejectWithValue(`Shop ${shopId} doesn't exist in state!`)
+                return undefined;
+            }
+
+        } catch {
+            rejectWithValue(`Shop ${shopId} doesn't exist in database!`)
+            return undefined;
+        }
     })
 
-type changeShopStatusArgs = {shopId: string, status: ShopStatus};
-
-export const changeShopStatus = createAsyncThunk<void, changeShopStatusArgs, {state: RootState}>
+export const changeShopStatus = createAsyncThunk<Shop | undefined, {shopId: string, status: ShopStatus}, {state: RootState}>
 ("shops/changeShopStatus",
-    async ({shopId, status}: changeShopStatusArgs, {getState}) => {
+    async ({shopId, status}, {getState}) => {
         const shopRef = db.collection('shops')
             .doc(shopId).withConverter(shopConverter);
 
-    if (status == "pause_ordering") {
-        // 注文停止時はショップのデータを書き換える
-        return await shopRef.update({
-            status: status,
-            last_active_time: FieldValue.serverTimestamp(),
-        });
-    } else if (status == "active") {
-        // 注文再開時はオーダーの完了時刻を書き換える
-        let shop = selectShopById(getState(), shopId);
+        if (status == "pause_ordering") {
+            // 注文停止時はショップのデータを書き換える
+            await shopRef.update({
+                status: status,
+                last_active_time: FieldValue.serverTimestamp(),
+            });
 
-        // State に shop データがない場合, フェッチする
-        if (shop == undefined) {
-            const snapshot = await shopRef.get();
-            const shopData = snapshot.data();
-            if (shopData != undefined) shop = shopData;
-        }
+            // TODO: FieldValue の更新があるので get しているが, 多少の誤差は許容して get を呼ばないようにする?
+            const snapshot = await shopRef.withConverter(shopConverter).get();
+            return snapshot.data();
 
-        const lastActiveTime = shop!.last_active_time;
-        // 最後に営業してた時刻からどれだけ経過したか
-        const delayedTime = Date.now() - lastActiveTime.toDate().getTime();
+        } else if (status == "active") {
+            // 注文再開時はオーダーの完了時刻を書き換える
+            let shop = selectShopById(getState(), shopId);
 
-        // 注文を取得
-        const ordersSnapshot = await shopRef.collection("orders")
-            .withConverter(orderConverter)
-            .where('complete_at', '<=', lastActiveTime)
-            .where('received', '==', true)
-            .get();
-
-
-        return db.runTransaction( async (transaction) => {
-            for (const doc of ordersSnapshot.docs) {
-                // 遅延時間分を可算
-                const order = doc.data();
-                const newCompleteAt = new Date(order.complete_at.toDate().getTime() + delayedTime);
-                transaction.update(doc.ref, {
-                  complete_at: Timestamp.fromDate(newCompleteAt)
-                })
+            // State に shop データがない場合, フェッチする
+            if (shop == undefined) {
+                const snapshot = await shopRef.get();
+                const shopData = snapshot.data();
+                if (shopData != undefined) shop = shopData;
             }
-            // 店のステータスをactiveに変更
-            transaction.update(shopRef, {
-                status: status
-            })
-        })
-    }
+
+            const lastActiveTime = shop!.last_active_time;
+            // 最後に営業してた時刻からどれだけ経過したか
+            const delayedTime = Date.now() - lastActiveTime.toDate().getTime();
+
+            // 注文を取得
+            const ordersSnapshot = await shopRef.collection("orders")
+                .withConverter(orderConverter)
+                .where('complete_at', '<=', lastActiveTime)
+                .where('received', '==', true)
+                .get();
+
+            try {
+                await db.runTransaction( async (transaction) => {
+                    for (const doc of ordersSnapshot.docs) {
+                        // 遅延時間分を可算
+                        const order = doc.data();
+                        const newCompleteAt = new Date(order.complete_at.toDate().getTime() + delayedTime);
+                        transaction.update(doc.ref, {
+                            complete_at: Timestamp.fromDate(newCompleteAt)
+                        })
+                    }
+                    // 店のステータスをactiveに変更
+                    transaction.update(shopRef, {
+                        status: status
+                    })
+                })
+                const newShop = selectShopById(getState(), shopId);
+                if (newShop != undefined) {
+                    newShop.status = status;
+                }
+                return newShop;
+            } catch {
+                return undefined;
+            }
+        }
     })
 
 
@@ -118,42 +144,25 @@ const shopSlice = createSlice({
             })
 
         builder
-            .addCase(addShop.pending, (state, action) => {
-                state.status = 'loading'
-            })
             .addCase(addShop.fulfilled, (state, action) => {
-                state.status = 'succeeded'
-            })
-            .addCase(addShop.rejected, (state, action) => {
-                state.status = 'failed'
-                const msg = action.error.message;
-                state.error = msg == undefined ? null : msg;
+                state.data.push(action.payload);
             })
 
         builder
-            .addCase(updateShopName.pending, (state, action) => {
-                state.status = 'loading'
-            })
-            .addCase(updateShopName.fulfilled, (state, action) => {
-                state.status = 'succeeded'
-            })
-            .addCase(updateShopName.rejected, (state, action) => {
-                state.status = 'failed'
-                const msg = action.error.message;
-                state.error = msg == undefined ? null : msg;
+            .addCase(updateShop.fulfilled, (state, action) => {
+                const updatedShop = action.payload;
+
+                if (updatedShop != undefined) {
+                    state.data.update(e => e.id == updatedShop.id, updatedShop);
+                }
             })
 
         builder
-            .addCase(changeShopStatus.pending, (state, action) => {
-                state.status = 'loading'
-            })
             .addCase(changeShopStatus.fulfilled, (state, action) => {
-                state.status = 'succeeded'
-            })
-            .addCase(changeShopStatus.rejected, (state, action) => {
-                state.status = 'failed'
-                const msg = action.error.message;
-                state.error = msg == undefined ? null : msg;
+                const shop = action.payload;
+                if (shop != undefined) {
+                    state.data.update(e => e.id == shop.id, shop);
+                }
             })
     }
 });

@@ -21,8 +21,28 @@ export const addProduct = createAsyncThunk('products/addProduct',
     async ({shopId, product}: {shopId: string, product: Product}) => {
         const shopRef = db.collection("shops").doc(shopId);
         // TODO: エラーハンドリング
-        return shopRef.collection('products').doc(product.id).withConverter(productConverter).set(product);
-    });
+        await shopRef.collection('products').doc(product.id).withConverter(productConverter).set(product);
+
+        return product;
+});
+
+export const updateProduct = createAsyncThunk('products/updateProduct',
+    async ({shopId, product}: {shopId: string, product: Product}, {rejectWithValue}) => {
+        const shopRef = db.collection('shops').doc(shopId);
+        const prodRef = shopRef.collection('products').doc(product.id);
+
+        return db.runTransaction(async (transaction) => {
+            const prodSnapshot = await transaction.get(prodRef);
+
+            if (prodSnapshot.exists) {
+                await prodRef.withConverter(productConverter).update(product);
+                return product;
+
+            } else {
+                rejectWithValue(`Product ${product.id} doesn't exists!`);
+            }
+        });
+    })
 
 const productsSlice = createSlice({
     name: "products",
@@ -39,7 +59,6 @@ const productsSlice = createSlice({
             })
             .addCase(fetchProducts.fulfilled, (state, action) => {
                 state.status = 'succeeded'
-                // Add any fetched posts to the array
                 state.data = action.payload;
             })
             .addCase(fetchProducts.rejected, (state, action) => {
@@ -49,15 +68,18 @@ const productsSlice = createSlice({
             })
 
         builder
-            .addCase(addProduct.pending, (state) => {
-                state.status = 'loading'
+            .addCase(addProduct.fulfilled, (state, action) => {
+                state.data.push(action.payload);
             })
-            .addCase(addProduct.fulfilled, (state) => {
-                state.status = 'succeeded'            })
-            .addCase(addProduct.rejected, (state, action) => {
-                state.status = 'failed'
-                const msg = action.error.message;
-                state.error = msg == undefined ? null : msg;
+
+        builder
+            .addCase(updateProduct.fulfilled, (state, action) => {
+                const updatedProd = action.payload;
+
+                // state.data の要素を更新
+                if (updatedProd != undefined) {
+                    state.data.update(e => e.id == updatedProd.id, updatedProd);
+                }
             })
     },
 });
