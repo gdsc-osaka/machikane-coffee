@@ -90,6 +90,33 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
         });
     });
 
+/**
+ * 注文を更新する. UIで操作された部分のみ更新すれば, その更新に依存するそれ以外の部分も自動で書き換えられる (completed 等)
+ */
+const updateOrder = createAsyncThunk('orders/updateOrder',
+    async ({shopId, newOrder}: {shopId: string, newOrder: Order}) => {
+        const shopRef = db.collection("shops").doc(shopId);
+        const orderRef = shopRef.collection('orders').doc(newOrder.id);
+
+        // OrderStatus: 親オーダーが true なら 子オーダー全て true, 子オーダー全て true なら親オーダーも true
+        if (newOrder.completed) {
+            newOrder.order_statuses.forEach(e => e.completed = true);
+        } else if (newOrder.order_statuses.findIndex(e => !e.completed) == -1) {
+            // order_statuses が全て completed のとき
+            newOrder.completed = true;
+        }
+
+        if (newOrder.received) {
+            newOrder.order_statuses.forEach(e => e.received = true);
+        } else if (newOrder.order_statuses.findIndex(e => !e.received) == -1) {
+            // order_statuses が全て received のとき
+            newOrder.received = true;
+        }
+
+        await orderRef.withConverter(orderConverter).update(newOrder);
+        return newOrder;
+    });
+
 const ordersSlice = createSlice({
     name: "orders",
     initialState: {
@@ -114,13 +141,17 @@ const ordersSlice = createSlice({
                 state.error = msg == undefined ? null : msg;
             })
 
-        builder
-            .addCase(addOrder.fulfilled, (state, action) => {
-                const order = action.payload;
-                if (order != undefined) {
-                    state.data.push(order);
-                }
-            })
+        builder.addCase(addOrder.fulfilled, (state, action) => {
+            const order = action.payload;
+            if (order != undefined) {
+                state.data.push(order);
+            }
+        })
+
+        builder.addCase(updateOrder.fulfilled, (state, action) => {
+           const newOrder = action.payload;
+           state.data.update(e => e.id == newOrder.id, newOrder);
+        });
     },
 });
 

@@ -48,7 +48,7 @@ export type RawOrder = Omit<Order, "id" | "index" | "created_at" | "complete_at"
  * データを Firestore に送信するとき, 一部フィールドを FieldValue に変更するための型
  */
 export type CargoOrder = Weaken<Omit<Order, 'id'>, 'created_at'> & {
-    created_at: FieldValue
+    created_at: FieldValue | Timestamp
 }
 
 
