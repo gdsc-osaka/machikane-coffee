@@ -1,4 +1,4 @@
-import {createAsyncThunk, createSlice} from "@reduxjs/toolkit";
+import {createAsyncThunk, createSlice, PayloadAction} from "@reduxjs/toolkit";
 import {AsyncState} from "../stateType";
 import {CargoOrder, Order, RawOrder} from "./types";
 import {db} from "../../firebase/firebase";
@@ -21,7 +21,7 @@ export const fetchOrders = createAsyncThunk("orders/fetchOrders",
     });
 
 export const addOrder = createAsyncThunk<void, {shopId: string, rawOrder: RawOrder}, {state: RootState}>("orders/addOrder",
-    async ({shopId, rawOrder}, {getState}) => {
+    async ({shopId, rawOrder}, {getState, dispatch}) => {
         const shopRef = db.collection("shops").doc(shopId);
         const ordersRef = shopRef.collection("orders");
 
@@ -69,8 +69,16 @@ export const addOrder = createAsyncThunk<void, {shopId: string, rawOrder: RawOrd
                 order.index = lastOrder.index + 1;
             }
 
-            // ランダムID
-            await ordersRef.doc().set(order);
+            // ランダムIDで追加
+            const addedDoc = await ordersRef.add(order);
+            // ドキュメントを取得してStoreに追加
+            const addedOrderSnapshot = await addedDoc.withConverter(orderConverter).get();
+            const addedOrder = addedOrderSnapshot.data();
+
+            // State に追加
+            if (addedOrder != undefined) {
+                dispatch(orderAdded(addedOrder));
+            }
         });
     });
 
@@ -81,7 +89,11 @@ const ordersSlice = createSlice({
         status: 'idle',
         error: null,
     } as AsyncState<Order[]>,
-    reducers: {},
+    reducers: {
+        orderAdded(state, action: PayloadAction<Order>) {
+            state.data.push(action.payload);
+        }
+    },
     extraReducers: builder => {
         builder
             .addCase(fetchOrders.pending, (state, action) => {
@@ -114,3 +126,4 @@ const ordersSlice = createSlice({
 
 const orderReducer = ordersSlice.reducer;
 export default orderReducer;
+export const {orderAdded} = ordersSlice.actions;
