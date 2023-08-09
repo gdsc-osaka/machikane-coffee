@@ -1,6 +1,6 @@
 import {createAsyncThunk, createSlice, PayloadAction} from "@reduxjs/toolkit";
 import {AsyncState} from "../stateType";
-import {CargoOrder, Order, RawOrder} from "./types";
+import {CargoOrder, Order, OrderStatus, RawOrder} from "./types";
 import {db} from "../../firebase/firebase";
 import {orderConverter} from "../../firebase/converters";
 import firebase from "firebase/compat";
@@ -33,6 +33,8 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
         // TODO: 直列と考えて待ち時間を計算しているので、並列にも対応させる
         // 注文の待ち時間 (秒)
         let waitingSec = 0;
+        // 提供状況
+        const orderStatuses: OrderStatus[] = [];
 
         for (const productId in Object.keys(rawOrder.product_amount)) {
             const amount = rawOrder.product_amount[productId];
@@ -41,6 +43,15 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
             // Product が登録されているまたはフェッチされているとき
             if (product != null) {
                 waitingSec += product.span * amount;
+            }
+
+            // 商品とその数のぶんだけ orderStatuses を追加
+            for (let i = 0; i < amount; i++) {
+                orderStatuses.push({
+                   product_id: productId,
+                   received: false,
+                   completed: false,
+                });
             }
         }
         const completeAt = new Date().addSeconds(waitingSec).toTimestamp();
@@ -51,7 +62,9 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
             index: 1,
             created_at: FieldValue.serverTimestamp(),
             complete_at: completeAt,
-            received: false
+            received: false,
+            completed: false,
+            order_statuses: orderStatuses
         }
 
         // 連番を処理するためにトランザクション使用

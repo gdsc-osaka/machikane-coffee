@@ -11,8 +11,19 @@ export type ProductAmount = {
 };
 
 /**
+ * 商品IDと提供の状況 (受け取り済み、完成済み)
+ */
+export type OrderStatus = {
+    product_id: string;
+    received: boolean;
+    completed: boolean;
+}
+
+/**
  * 注文情報
+ * @property order_statuses それぞれの商品の提供状況のリスト
  * @property complete_at 商品が完成する時間
+ * @property completed 商品が完成したかどうか
  * @property is_student 客が生徒がどうか
  */
 export type Order = {
@@ -21,6 +32,8 @@ export type Order = {
     created_at: Timestamp;
     complete_at: Timestamp;
     received: boolean;
+    completed: boolean;
+    order_statuses: OrderStatus[];
     // データ追加時は以下のみ
     product_amount: ProductAmount;
     is_student: boolean;
