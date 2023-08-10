@@ -5,7 +5,8 @@
   "dependencies": {
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
-    "@mui/material": "^5.14.3",
+    "@mui/material": "^5.14.4",
+    "@reduxjs/toolkit": "^1.9.5",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
@@ -14,10 +15,13 @@
     "@types/react": "^18.2.17",
     "@types/react-dom": "^18.2.7",
     "@types/react-router-dom": "^5.3.3",
+    "firebase": "^10.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-redux": "^8.1.2",
     "react-router-dom": "^6.14.2",
     "react-scripts": "5.0.1",
+    "redux-firestore-hooks": "^0.4.1",
     "typescript": "^4.9.5",
     "web-vitals": "^2.1.4"
   },
@@ -44,5 +48,13 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.22.10",
+    "@babel/preset-react": "^7.22.5",
+    "babel-jest": "^29.6.2",
+    "jest": "^27.5.1",
+    "react-json-formatter": "^0.4.0",
+    "react-test-renderer": "^18.2.0"
   }
 }
