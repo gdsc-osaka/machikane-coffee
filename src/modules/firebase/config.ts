@@ -1,11 +1,11 @@
 const firebaseConfig = {
-    apiKey: "AIzaSyDFDzVy8Zn7hy2i4VQw-iLm5Ngmlg0EX50",
-    authDomain: "machikane-coffee-test.firebaseapp.com",
-    projectId: "machikane-coffee-test",
-    storageBucket: "machikane-coffee-test.appspot.com",
-    messagingSenderId: "430872649749",
-    appId: "1:430872649749:web:e023aba3b6e45fd3aaae1c",
-    measurementId: "G-R0E1DT9JT7"
+    apiKey: "AIzaSyCFgXdiuj5NvgS9AVVuc9GMHiW8XnkWujY",
+    authDomain: "machikane-coffee.firebaseapp.com",
+    projectId: "machikane-coffee",
+    storageBucket: "machikane-coffee.appspot.com",
+    messagingSenderId: "838446105130",
+    appId: "1:838446105130:web:681b58b1ce980aaa83b953",
+    measurementId: "G-DP4B9FYBBR",
 };
 
 export default firebaseConfig;

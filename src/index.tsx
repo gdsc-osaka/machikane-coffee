@@ -28,10 +28,10 @@ root.render(
           <BrowserRouter>
               <div>
                   <Routes>
-                      <Route path="/admin" Component={Admin} />
-                      <Route path="/user" Component={User} />
-                      <Route path="/timer" Component={Timer} />
-                      <Route path="/test/:shopId" Component={TestPage} />
+                      <Route path="/:shopId/admin" Component={Admin} />
+                      <Route path="/:shopId/user" Component={User} />
+                      <Route path="/:shopId/timer" Component={Timer} />
+                      <Route path="/:shopId/test" Component={TestPage} />
                   </Routes>
               </div>
           </BrowserRouter>

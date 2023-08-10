@@ -8,6 +8,7 @@ export type Product = {
     id: string;
     display_name: string;
     span: number;
+    price: number;
 };
 
 export function assertProduct(data: any): asserts data is Product {

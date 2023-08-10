@@ -161,6 +161,7 @@ const TestProduct = () => {
     const [productId, setProductId] = useState('');
     const [name, setName] = useState('');
     const [span, setSpan] = useState('');
+    const [price, setPrice] = useState('0');
 
     const dispatch = useAppDispatch();
 
@@ -174,11 +175,11 @@ const TestProduct = () => {
     }, [dispatch, productStatus]);
 
     const onAddProductClicked = async () => {
-        await dispatch(addProduct({shopId: shopId, product: {id: productId, span: Number(span), display_name: name}}));
+        await dispatch(addProduct({shopId: shopId, product: {id: productId, span: Number(span), display_name: name, price: Number(price)}}));
     }
 
     const onUpdateProductClicked = async () => {
-        await dispatch(updateProduct({shopId: shopId, product: {id: productId, span: Number(span), display_name: name}}));
+        await dispatch(updateProduct({shopId: shopId, product: {id: productId, span: Number(span), display_name: name, price: Number(price)}}));
     }
 
     return <Paper>
@@ -207,6 +208,9 @@ const TestProduct = () => {
                     <TextField id="outlined-basic" label="完成にかかる時間" value={span} onChange={e => setSpan(e.target.value)}/>
                 </ListItem>
                 <ListItem>
+                    <TextField id="outlined-basic" label="値段" value={price} onChange={e => setPrice(e.target.value)}/>
+                </ListItem>
+                <ListItem>
                     <Button onClick={onAddProductClicked}>追加</Button>
                 </ListItem>
             </List>
@@ -223,6 +227,9 @@ const TestProduct = () => {
                 </ListItem>
                 <ListItem>
                     <TextField id="outlined-basic" label="完成にかかる時間(秒)" value={span} onChange={e => setSpan(e.target.value)}/>
+                </ListItem>
+                <ListItem>
+                    <TextField id="outlined-basic" label="値段" value={price} onChange={e => setPrice(e.target.value)}/>
                 </ListItem>
                 <ListItem>
                     <Button onClick={onUpdateProductClicked}>更新</Button>
