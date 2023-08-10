@@ -1,6 +1,6 @@
 import {createAsyncThunk, createSlice, PayloadAction} from "@reduxjs/toolkit";
 import {AsyncState} from "../stateType";
-import {CargoOrder, Order, OrderStatus, RawOrder} from "./types";
+import {CargoOrder, Order, OrderStatus, OrderStatuses, RawOrder} from "./types";
 import {db} from "../../firebase/firebase";
 import {orderConverter} from "../../firebase/converters";
 import {selectProductById} from "../product/productsSlice";
@@ -22,6 +22,7 @@ import {
 } from "firebase/firestore";
 import {getToday} from "../../util/dateUtils";
 import {QueryConstraint} from "@firebase/firestore";
+import {xor} from "../../util/boolUtils";
 
 const ordersQuery = (shopId: string, ...queryConstraints: QueryConstraint[]) => {
     const today = Timestamp.fromDate(getToday());
@@ -70,7 +71,7 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
         // 注文の待ち時間 (秒)
         let waitingSec = 0;
         // 提供状況
-        const orderStatuses: OrderStatus[] = [];
+        const orderStatuses: OrderStatuses = {};
         console.log(rawOrder);
 
         for (const productId of Object.keys(rawOrder.product_amount)) {
@@ -86,11 +87,11 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
 
             // 商品とその数のぶんだけ orderStatuses を追加
             for (let i = 0; i < amount; i++) {
-                orderStatuses.push({
+                orderStatuses[`${productId}_${i}`] = {
                    product_id: productId,
                    received: false,
                    completed: false,
-                });
+                };
             }
         }
 
@@ -129,26 +130,37 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
     });
 
 /**
+ * 親オーダーのステータスに依存して子オーダーのステータスを変更する. 逆もする.
+ * (親オーダー: order.received, 子オーダー: order.order_statuses.XXX.received)
+ */
+const switchOrderStatus = (newOrder: Order, oldOrder: Order, key: "received" | "completed") => {
+    const statusKeys = Object.keys(newOrder.order_statuses);
+
+    if (xor(newOrder[key], oldOrder[key])) {
+        // order[key] が変化したとき
+        for (const statusKey of statusKeys) {
+            newOrder.order_statuses = {...newOrder.order_statuses,
+                [statusKey]: {...newOrder.order_statuses[statusKey], [key]: newOrder[key]}}
+        }
+    } else if (statusKeys.findIndex(k => !newOrder.order_statuses[k][key]) == -1) {
+        // order_statuses の [key] が全て true のとき
+        newOrder[key] = true;
+    } else {
+        // order[key] が変化してないかつ order_statuses の [key] にfalseがある
+        newOrder[key] = false;
+    }
+}
+
+/**
  * 注文を更新する. UIで操作された部分のみ更新すれば, その更新に依存するそれ以外の部分も自動で書き換えられる (completed 等)
  */
-export const updateOrder = createAsyncThunk('orders/updateOrder',
-    async ({shopId, newOrder}: {shopId: string, newOrder: Order}) => {
-        // const shopRef = db.collection("shops").doc(shopId);
-        // const orderRef = shopRef.collection('orders').doc(newOrder.id);
+export const updateOrder = createAsyncThunk<Order, {shopId: string, newOrder: Order}, {state: RootState}>('orders/updateOrder',
+    async ({shopId, newOrder}, {getState}) => {
+        const oldOrder = selectOrderById(getState(), newOrder.id);
 
-        // OrderStatus: 親オーダーが true なら 子オーダー全て true, 子オーダー全て true なら親オーダーも true
-        if (newOrder.completed) {
-            newOrder.order_statuses.forEach(e => e.completed = true);
-        } else if (newOrder.order_statuses.findIndex(e => !e.completed) == -1) {
-            // order_statuses が全て completed のとき
-            newOrder.completed = true;
-        }
-
-        if (newOrder.received) {
-            newOrder.order_statuses.forEach(e => e.received = true);
-        } else if (newOrder.order_statuses.findIndex(e => !e.received) == -1) {
-            // order_statuses が全て received のとき
-            newOrder.received = true;
+        if (oldOrder) {
+            switchOrderStatus(newOrder, oldOrder, "received");
+            switchOrderStatus(newOrder, oldOrder, "completed");
         }
 
         const docRef = doc(db, `shops/${shopId}/orders/${newOrder.id}`);

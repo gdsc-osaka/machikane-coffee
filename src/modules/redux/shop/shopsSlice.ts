@@ -15,6 +15,7 @@ import {
     Timestamp,
     updateDoc, where
 } from "firebase/firestore";
+import {getToday} from "../../util/dateUtils";
 
 const shopsRef = collection(db, "shops").withConverter(shopConverter);
 const shopRef = (shopId: string) => doc(db, `shops/${shopId}`).withConverter(shopConverter);
@@ -78,47 +79,55 @@ export const changeShopStatus = createAsyncThunk<Shop | undefined, {shopId: stri
 
         } else if (status == "active") {
             // 注文再開時はオーダーの完了時刻を書き換える
-            let shop = selectShopById(getState(), shopId);
 
-            // State に shop データがない場合, フェッチする
-            if (shop == undefined) {
-                const snapshot = await getDoc(_shopRef);
-                const shopData = snapshot.data();
-                if (shopData != undefined) shop = shopData;
-            }
-
+            // last_active_time を取得
+            const snapshot = await getDoc(_shopRef);
+            const shop = snapshot.data();
             const lastActiveTime = shop!.last_active_time;
             // 最後に営業してた時刻からどれだけ経過したか
             const delayedTime = Date.now() - lastActiveTime.toDate().getTime();
 
             // 注文を取得
-            const _query = query(collection(db, `shops/${shopId}/orders`).withConverter(orderConverter), where('complete_at', '<=', lastActiveTime), where('received', '==', true));
-            const ordersSnapshot = await getDocs(_query);
-
-            const newShop = selectShopById(getState(), shopId);
+            const _query = query(
+                collection(db, `shops/${shopId}/orders`).withConverter(orderConverter),
+                where('created_at', '>=', Timestamp.fromDate(getToday())),
+                where('completed', '==', false));
 
             try {
-                await runTransaction( db, async (transaction) => {
-                    for (const doc of ordersSnapshot.docs) {
-                        // 遅延時間分を可算
-                        const order = doc.data();
-                        const newCompleteAt = new Date(order.complete_at.toDate().getTime() + delayedTime);
-                        transaction.update(doc.ref, {
-                            complete_at: Timestamp.fromDate(newCompleteAt)
+                const ordersSnapshot = await getDocs(_query);
+                console.log(ordersSnapshot.docs.map(e => e.data()));
+
+                const newShop = selectShopById(getState(), shopId);
+
+                try {
+                    await runTransaction( db, async (transaction) => {
+
+                        console.log("transaction");
+                        for (const doc of ordersSnapshot.docs) {
+                            // 遅延時間分を可算
+                            const order = doc.data();
+                            const newCompleteAt = new Date(order.complete_at.toDate().getTime() + delayedTime);
+                            console.log(newCompleteAt);
+                            transaction.update(doc.ref, {
+                                complete_at: Timestamp.fromDate(newCompleteAt)
+                            })
+                        }
+                        // 店のステータスをactiveに変更
+                        transaction.update(_shopRef, {
+                            status: status
                         })
-                    }
-                    // 店のステータスをactiveに変更
-                    transaction.update(_shopRef, {
-                        status: status
                     })
-                })
-                if (newShop != undefined) {
-                    newShop.status = status;
+                    if (newShop != undefined) {
+                        newShop.status = status;
+                    }
+                    return newShop;
+                } catch {
+                    return newShop;
                 }
-                return newShop;
-            } catch {
-                return newShop;
+            } catch (e) {
+                console.log(e);
             }
+
         }
     })
 

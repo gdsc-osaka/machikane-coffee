@@ -18,6 +18,13 @@ export type OrderStatus = {
 }
 
 /**
+ * OrderStatus のマップ. キーは任意の文字列
+ */
+export type OrderStatuses = {
+    [K in string]: OrderStatus
+}
+
+/**
  * 注文情報
  * @property order_statuses それぞれの商品の提供状況のリスト
  * @property complete_at 商品が完成する時間
@@ -31,7 +38,7 @@ export type Order = {
     complete_at: Timestamp;
     received: boolean;
     completed: boolean;
-    order_statuses: OrderStatus[];
+    order_statuses: OrderStatuses;
     // データ追加時は以下のみ
     product_amount: ProductAmount;
     is_student: boolean;
