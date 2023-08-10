@@ -1,3 +1,9 @@
+// region Extension Methods
+/// <reference path="modules/extensions/global.d.ts" />
+import './modules/extensions/array.extensions';
+import './modules/extensions/date.extentions';
+// endregion
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
@@ -8,23 +14,29 @@ import User from './pages/User';
 import Timer from './pages/Timer';
 import Header from './components/Header/Header';
 import Footer from './components/Footer/Footer';
+import {Provider} from "react-redux";
+import store from "./modules/redux/store";
+import {TestPage} from "./pages/Test";
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
 root.render(
   <React.StrictMode>
-    <Header/>
-    <BrowserRouter>
-    <div>
-      <Routes>
-        <Route path="/admin" Component={Admin} />
-        <Route path="/user" Component={User} />
-        <Route path="/timer" Component={Timer} />
-      </Routes>
-    </div>
-    </BrowserRouter>
-    <Footer/>
+      <Provider store={store}>
+          <Header/>
+          <BrowserRouter>
+              <div>
+                  <Routes>
+                      <Route path="/:shopId/admin" Component={Admin} />
+                      <Route path="/:shopId/user" Component={User} />
+                      <Route path="/:shopId/timer" Component={Timer} />
+                      <Route path="/:shopId/test" Component={TestPage} />
+                  </Routes>
+              </div>
+          </BrowserRouter>
+          <Footer/>
+      </Provider>
   </React.StrictMode>
 );
 
