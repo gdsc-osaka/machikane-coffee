@@ -1,24 +1,24 @@
 import {createAsyncThunk, createSlice, PayloadAction} from "@reduxjs/toolkit";
 import {AsyncState} from "../stateType";
-import {CargoOrder, Order, OrderStatus, OrderStatuses, RawOrder} from "./types";
+import {CargoOrder, Order, OrderStatuses, RawOrder} from "./types";
 import {db} from "../../firebase/firebase";
 import {orderConverter} from "../../firebase/converters";
 import {selectProductById} from "../product/productsSlice";
 import {RootState} from "../store";
 import {
+    addDoc,
     collection,
     doc,
-    getDocs,
-    query,
-    orderBy,
-    where,
-    onSnapshot,
-    limit,
-    addDoc,
     getDoc,
-    updateDoc,
+    getDocs,
+    limit,
+    onSnapshot,
+    orderBy,
+    query,
+    serverTimestamp,
     Timestamp,
-    serverTimestamp
+    updateDoc,
+    where
 } from "firebase/firestore";
 import {getToday} from "../../util/dateUtils";
 import {QueryConstraint} from "@firebase/firestore";
@@ -95,14 +95,12 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
             }
         }
 
-        const completeAt = new Date().addSeconds(waitingSec).toTimestamp();
-
         const order: CargoOrder = {
             is_student: rawOrder.is_student,
             product_amount: rawOrder.product_amount,
             index: 1,
             created_at: serverTimestamp(),
-            complete_at: completeAt,
+            complete_at: new Date().addSeconds(waitingSec).toTimestamp(),
             received: false,
             completed: false,
             order_statuses: orderStatuses,
@@ -113,9 +111,14 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
             // TODO: Transaction を使う
             const lastOrderSnapshot = await getDocs(ordersQuery(shopId, limit(1)));
 
-            // 今日この注文以前に注文があった場合、最新の注文の index + 1 を今回の注文の番号にする
+            // 今日この注文以前に注文があった場合、最新の注文の index + 1 を今回の注文の番号にする & 待ち時間を変更する
             if (!lastOrderSnapshot.empty) {
                 const lastOrder = lastOrderSnapshot.docs[0].data();
+
+                // 現在時刻よりも lastOrder の complete_at が遅かったら
+                if (lastOrder.complete_at.toDate().getTime() - new Date().getTime() > 0) {
+                    order.complete_at = lastOrder.complete_at.toDate().addSeconds(waitingSec).toTimestamp();
+                }
                 order.index = lastOrder.index + 1;
             }
 

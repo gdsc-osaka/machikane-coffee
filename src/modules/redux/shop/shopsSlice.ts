@@ -9,6 +9,7 @@ import {
     doc,
     getDoc,
     getDocs,
+    increment,
     query, runTransaction,
     serverTimestamp,
     setDoc,
@@ -85,7 +86,7 @@ export const changeShopStatus = createAsyncThunk<Shop | undefined, {shopId: stri
             const shop = snapshot.data();
             const lastActiveTime = shop!.last_active_time;
             // 最後に営業してた時刻からどれだけ経過したか
-            const delayedTime = Date.now() - lastActiveTime.toDate().getTime();
+            const delaySeconds = new Date().getSeconds() - lastActiveTime.toDate().getSeconds();
 
             // 注文を取得
             const _query = query(
@@ -102,14 +103,10 @@ export const changeShopStatus = createAsyncThunk<Shop | undefined, {shopId: stri
                 try {
                     await runTransaction( db, async (transaction) => {
 
-                        console.log("transaction");
                         for (const doc of ordersSnapshot.docs) {
                             // 遅延時間分を可算
-                            const order = doc.data();
-                            const newCompleteAt = new Date(order.complete_at.toDate().getTime() + delayedTime);
-                            console.log(newCompleteAt);
                             transaction.update(doc.ref, {
-                                complete_at: Timestamp.fromDate(newCompleteAt)
+                                delay_seconds: increment(delaySeconds)
                             })
                         }
                         // 店のステータスをactiveに変更

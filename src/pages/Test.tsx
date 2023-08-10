@@ -27,12 +27,12 @@ import {
     updateProduct
 } from "../modules/redux/product/productsSlice";
 import {useParams} from "react-router-dom";
-import {Order, ProductAmount, RawOrder} from "../modules/redux/order/types";
+import {Order, ProductAmount} from "../modules/redux/order/types";
 import {
     addOrder,
     fetchOrders,
     selectAllOrders, selectOrderById,
-    selectOrderStatus, streamOrders,
+    selectOrderStatus,
     updateOrder
 } from "../modules/redux/order/ordersSlice";
 import JsonFormatter from "react-json-formatter";
@@ -107,10 +107,10 @@ const TestShop = () => {
             </Typography>
             <List>
                 <ListItem>
-                    <TextField id="outlined-basic" label="ID" value={id} onChange={e => setId(e.target.value)}/>
+                    <TextField id="shop-id" label="ID" value={id} onChange={e => setId(e.target.value)}/>
                 </ListItem>
                 <ListItem>
-                    <TextField id="outlined-basic" label="店名" value={name} onChange={e => setName(e.target.value)}/>
+                    <TextField id="shop-name" label="店名" value={name} onChange={e => setName(e.target.value)}/>
                 </ListItem>
                 <ListItem>
                     <Button onClick={onAddShopClicked}>追加</Button>
@@ -122,10 +122,10 @@ const TestShop = () => {
             </Typography>
             <List>
                 <ListItem>
-                    <TextField id="outlined-basic" label="ID" value={id} onChange={e => setId(e.target.value)}/>
+                    <TextField id="shop-id" label="ID" value={id} onChange={e => setId(e.target.value)}/>
                 </ListItem>
                 <ListItem>
-                    <TextField id="outlined-basic" label="新しい店名" value={name} onChange={e => setName(e.target.value)}/>
+                    <TextField id="shop-name" label="新しい店名" value={name} onChange={e => setName(e.target.value)}/>
                 </ListItem>
                 <ListItem>
                     <Button onClick={onUpdateShopClicked}>更新</Button>
@@ -137,7 +137,7 @@ const TestShop = () => {
             </Typography>
             <List>
                 <ListItem>
-                    <TextField id="outlined-basic" label="ID" value={id} onChange={e => setId(e.target.value)}/>
+                    <TextField id="shop-id" label="ID" value={id} onChange={e => setId(e.target.value)}/>
                 </ListItem>
                 <ListItem>
                     <FormControl>
@@ -199,16 +199,16 @@ const TestProduct = () => {
             </Typography>
             <List>
                 <ListItem>
-                    <TextField id="outlined-basic" label="商品ID" value={productId} onChange={e => setProductId(e.target.value)}/>
+                    <TextField id="product-id" label="商品ID" value={productId} onChange={e => setProductId(e.target.value)}/>
                 </ListItem>
                 <ListItem>
-                    <TextField id="outlined-basic" label="名前" value={name} onChange={e => setName(e.target.value)}/>
+                    <TextField id="product-name" label="名前" value={name} onChange={e => setName(e.target.value)}/>
                 </ListItem>
                 <ListItem>
-                    <TextField id="outlined-basic" label="完成にかかる時間" value={span} onChange={e => setSpan(e.target.value)}/>
+                    <TextField id="span" label="完成にかかる時間" value={span} onChange={e => setSpan(e.target.value)}/>
                 </ListItem>
                 <ListItem>
-                    <TextField id="outlined-basic" label="値段" value={price} onChange={e => setPrice(e.target.value)}/>
+                    <TextField id="price" label="値段" value={price} onChange={e => setPrice(e.target.value)}/>
                 </ListItem>
                 <ListItem>
                     <Button onClick={onAddProductClicked}>追加</Button>
@@ -220,16 +220,16 @@ const TestProduct = () => {
             </Typography>
             <List>
                 <ListItem>
-                    <TextField id="outlined-basic" label="商品ID" value={productId} onChange={e => setProductId(e.target.value)}/>
+                    <TextField id="product-id" label="商品ID" value={productId} onChange={e => setProductId(e.target.value)}/>
                 </ListItem>
                 <ListItem>
-                    <TextField id="outlined-basic" label="名前" value={name} onChange={e => setName(e.target.value)}/>
+                    <TextField id="product-name" label="名前" value={name} onChange={e => setName(e.target.value)}/>
                 </ListItem>
                 <ListItem>
-                    <TextField id="outlined-basic" label="完成にかかる時間(秒)" value={span} onChange={e => setSpan(e.target.value)}/>
+                    <TextField id="span" label="完成にかかる時間(秒)" value={span} onChange={e => setSpan(e.target.value)}/>
                 </ListItem>
                 <ListItem>
-                    <TextField id="outlined-basic" label="値段" value={price} onChange={e => setPrice(e.target.value)}/>
+                    <TextField id="price" label="値段" value={price} onChange={e => setPrice(e.target.value)}/>
                 </ListItem>
                 <ListItem>
                     <Button onClick={onUpdateProductClicked}>更新</Button>
@@ -297,8 +297,8 @@ const TestOrder = () => {
                 学生かどうか
                 <Checkbox value={isStudent} onChange={e => setIsStudent(e.target.checked)}/>
                 <div>
-                    <TextField id="outlined-basic" label="商品ID" value={productId} onChange={e => setProductId(e.target.value)}/>
-                    <TextField id="outlined-basic" label="数量" value={amount} onChange={e => setAmount(e.target.value)}/>
+                    <TextField id="product-id" label="商品ID" value={productId} onChange={e => setProductId(e.target.value)}/>
+                    <TextField id="amount" label="数量" value={amount} onChange={e => setAmount(e.target.value)}/>
                     <Button onClick={onAddProdAmount}>追加</Button>
                 </div>
                 {Object.keys(productAmount).map(key => `${key}: ${productAmount[key]}, `)}
