@@ -36,6 +36,7 @@ export type Order = {
     index: number;
     created_at: Timestamp;
     complete_at: Timestamp;
+    delay_seconds: number;
     received: boolean;
     completed: boolean;
     order_statuses: OrderStatuses;
@@ -47,7 +48,7 @@ export type Order = {
 /**
  * データの追加時、ユーザーが設定しなければいけないフィールドのみにした Order
  */
-export type RawOrder = Omit<Order, "id" | "index" | "created_at" | "complete_at" | "received" | "completed" | "order_statuses">;
+export type RawOrder = Omit<Order, "id" | "index" | "created_at" | "complete_at" | "received" | "completed" | "order_statuses" | "delay_seconds">;
 
 /**
  * データを Firestore に送信するとき, 一部フィールドを FieldValue に変更するための型

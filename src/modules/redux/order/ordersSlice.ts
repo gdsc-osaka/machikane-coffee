@@ -105,7 +105,8 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
             complete_at: completeAt,
             received: false,
             completed: false,
-            order_statuses: orderStatuses
+            order_statuses: orderStatuses,
+            delay_seconds: 0,
         }
 
         try {
