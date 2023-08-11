@@ -189,3 +189,7 @@ export const selectShopById = (state: RootState, shopId: string) => state.shop.d
 export const selectAllShops = (state: RootState) => state.shop.data;
 export const selectShopStatus = (state: RootState) => state.shop.status;
 export const selectShopError = (state: RootState) => state.shop.error;
+/**
+ * 店が pause_ordering のとき, 何秒遅延しているかを返します. shopId に一致する Shop がない場合, 0 を返します.
+ * */
+export const selectShopDelaySeconds = (state: RootState, shopId: string) => new Date().getSeconds() - (selectShopById(state, shopId)?.last_active_time.toDate().getSeconds() ?? new Date().getSeconds());

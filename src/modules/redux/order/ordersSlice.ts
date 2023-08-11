@@ -238,3 +238,17 @@ export const {orderAdded, orderUpdated, orderRemoved} = ordersSlice.actions;
 export const selectAllOrders = (state: RootState) => state.order.data;
 export const selectOrderStatus = (state: RootState) => state.order.status;
 export const selectOrderById = (state: RootState, id: string) => state.order.data.find(e => e.id == id);
+/**
+ * 商品の遅延時間を含め、最大の完成する時刻を返します
+ * 注文がない場合, 現在時刻を返します
+ */
+export const selectMaxCompleteAt = (state: RootState): Date => {
+    const orders = selectAllOrders(state);
+    if (orders.length == 0) {
+        return new Date();
+    }
+    const getTrueCompleteAt = (a: Order) => a.complete_at.toDate().addSeconds(a.delay_seconds);
+    // 完成時間を昇順でソート
+    orders.sort((a, b) => getTrueCompleteAt(a).getTime() - getTrueCompleteAt(b).getTime());
+    return getTrueCompleteAt(orders[0]);
+}
