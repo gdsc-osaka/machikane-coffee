@@ -1,47 +1,73 @@
 import {createAsyncThunk, createSlice} from "@reduxjs/toolkit";
-import {Product} from "./types";
+import {CargoProduct, Product, RawProduct} from "./types";
 import {AsyncState} from "../stateType";
-import {db} from "../../firebase/firebase";
+import {db, storage} from "../../firebase/firebase";
 import {productConverter} from "../../firebase/converters";
 import {RootState} from "../store";
-import {collection, doc, getDocs, runTransaction, setDoc, updateDoc} from "firebase/firestore";
+import {collection, doc, getDoc, getDocs, runTransaction, setDoc, updateDoc} from "firebase/firestore";
+import {getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 const productsRef = (shopId: string) => collection(db, `shops/${shopId}/products`).withConverter(productConverter);
 const productRef = (shopId: string, productId: string) => doc(db, `shops/${shopId}/products/${productId}`).withConverter(productConverter)
+const getThumbnailPath = (shopId: string, productId: string) => `${shopId}/${productId}/thumbnail`;
 
 export const fetchProducts = createAsyncThunk("products/fetchProducts",
     async (shopId: string) => {
         // TODO: エラーハンドリング
         const snapshot = await getDocs(productsRef(shopId))
+        const products = snapshot.docs.map(doc => doc.data());
 
-        return snapshot.docs.map(doc => doc.data());
-    });
+        for (const product of products) {
+            const thumbnailPath = product.thumbnail_path;
+            const url = await getDownloadURL(ref(storage, thumbnailPath));
+            product.thumbnail_url = url;
+        }
+
+        return products;
+});
 
 export const addProduct = createAsyncThunk('products/addProduct',
-    async ({shopId, product}: {shopId: string, product: Product}, {rejectWithValue}) => {
+    async ({shopId, rawProduct, thumbnailFile}: {shopId: string, rawProduct: RawProduct, thumbnailFile: File}, {rejectWithValue}) => {
         try {
-            await setDoc(productRef(shopId, product.id), product);
+            const thumbnailPath = getThumbnailPath(shopId, rawProduct.id);
+            const product: CargoProduct = {...rawProduct, thumbnail_path: thumbnailPath};
+            await setDoc(productRef(shopId, rawProduct.id), product);
+
+            const thumbnailRef = ref(storage, thumbnailPath);
+
+            try {
+                // サムネは後からアップロード
+                await uploadBytes(thumbnailRef, thumbnailFile);
+
+                return product;
+
+            } catch (e) {
+                rejectWithValue(e);
+            }
+
         } catch (e) {
             rejectWithValue(e)
         }
-
-        return product;
 });
 
-export const updateProduct = createAsyncThunk('products/updateProduct',
-    async ({shopId, product}: {shopId: string, product: Product}, {rejectWithValue}) => {
+export const updateProduct = createAsyncThunk<Product | undefined, {shopId: string, rawProduct: RawProduct, thumbnailFile: File | undefined}, {state: RootState}>('products/updateProduct',
+    async ({shopId, rawProduct, thumbnailFile}, {getState, rejectWithValue}): Promise<Product | undefined> => {
         try {
-            return runTransaction(db,async (transaction) => {
-                const prodSnapshot = await transaction.get(productRef(shopId, product.id));
+            const oldProduct = selectProductById(getState(), rawProduct.id);
 
-                if (prodSnapshot.exists()) {
-                    await transaction.update(productRef(shopId, product.id), product);
-                    return product;
-
-                } else {
-                    rejectWithValue(`Product ${product.id} doesn't exists!`);
+            if (oldProduct != null) {
+                const newProduct: Product = {...oldProduct, ...rawProduct};
+                const docRef = productRef(shopId, rawProduct.id);
+                if (thumbnailFile != undefined) {
+                    // サムネアップロード
+                    const thumbnailPath = getThumbnailPath(shopId, rawProduct.id);
+                    const thumbnailRef = ref(storage, thumbnailPath);
+                    await uploadBytes(thumbnailRef, thumbnailFile);
                 }
-            });
+                await updateDoc(docRef, newProduct);
+                return newProduct;
+            }
+
         } catch (e) {
             rejectWithValue(e);
         }
@@ -72,7 +98,11 @@ const productsSlice = createSlice({
 
         builder
             .addCase(addProduct.fulfilled, (state, action) => {
-                state.data.push(action.payload);
+                const product = action.payload;
+
+                if (product != undefined) {
+                    state.data.push();
+                }
             })
 
         builder

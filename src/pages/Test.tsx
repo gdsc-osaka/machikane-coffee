@@ -162,6 +162,8 @@ const TestProduct = () => {
     const [name, setName] = useState('');
     const [span, setSpan] = useState('');
     const [price, setPrice] = useState('0');
+    const [shorterName, setShorterName] = useState('');
+    const [thumbnailFile, setThumbnailFile] = useState<File | undefined>();
 
     const dispatch = useAppDispatch();
 
@@ -175,11 +177,28 @@ const TestProduct = () => {
     }, [dispatch, productStatus]);
 
     const onAddProductClicked = async () => {
-        await dispatch(addProduct({shopId: shopId, product: {id: productId, span: Number(span), display_name: name, price: Number(price)}}));
+        if (thumbnailFile) {
+            await dispatch(addProduct({
+                shopId: shopId,
+                rawProduct: {id: productId, span: Number(span), display_name: name, price: Number(price), shorter_name: shorterName},
+                thumbnailFile: thumbnailFile
+            }));
+        }
     }
 
     const onUpdateProductClicked = async () => {
-        await dispatch(updateProduct({shopId: shopId, product: {id: productId, span: Number(span), display_name: name, price: Number(price)}}));
+        await dispatch(updateProduct({
+            shopId: shopId,
+            rawProduct: {id: productId, span: Number(span), display_name: name, price: Number(price), shorter_name: shorterName},
+            thumbnailFile: thumbnailFile
+        }));
+    }
+
+    const onChangeThumbnail = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files
+        if (files && files[0]) {
+            setThumbnailFile(files[0])
+        }
     }
 
     return <Paper>
@@ -211,6 +230,12 @@ const TestProduct = () => {
                     <TextField id="price" label="値段" value={price} onChange={e => setPrice(e.target.value)}/>
                 </ListItem>
                 <ListItem>
+                    <TextField id="shorter-name" label="略記" value={shorterName} onChange={e => setShorterName(e.target.value)}/>
+                </ListItem>
+                <ListItem>
+                    <input name="thumbnail" type="file" accept="image/*" onChange={onChangeThumbnail}/>
+                </ListItem>
+                <ListItem>
                     <Button onClick={onAddProductClicked}>追加</Button>
                 </ListItem>
             </List>
@@ -230,6 +255,9 @@ const TestProduct = () => {
                 </ListItem>
                 <ListItem>
                     <TextField id="price" label="値段" value={price} onChange={e => setPrice(e.target.value)}/>
+                </ListItem>
+                <ListItem>
+                    <input name="thumbnail" type="file" accept="image/*" onChange={onChangeThumbnail}/>
                 </ListItem>
                 <ListItem>
                     <Button onClick={onUpdateProductClicked}>更新</Button>
