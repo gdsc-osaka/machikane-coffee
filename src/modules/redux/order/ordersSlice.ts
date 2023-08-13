@@ -183,7 +183,7 @@ const ordersSlice = createSlice({
     } as AsyncState<Order[]> & {unsubscribe: (() => void) | null},
     reducers: {
         orderAdded(state, action: PayloadAction<Order>) {
-            state.data.push(action.payload);
+            state.data.unshift(action.payload);
         },
         orderUpdated(state, action: PayloadAction<Order>) {
             const order = action.payload;
@@ -206,7 +206,7 @@ const ordersSlice = createSlice({
             })
             .addCase(fetchOrders.fulfilled, (state, action) => {
                 state.status = 'succeeded'
-                state.data = action.payload;
+                state.data = action.payload.sort((a, b) => a.created_at.toDate().getTime() - b.created_at.toDate().getTime());
             })
             .addCase(fetchOrders.rejected, (state, action) => {
                 state.status = 'failed'
@@ -221,7 +221,7 @@ const ordersSlice = createSlice({
         builder.addCase(addOrder.fulfilled, (state, action) => {
             const order = action.payload;
             if (order != undefined) {
-                state.data.push(order);
+                state.data.unshift(order);
             }
         })
 
@@ -238,6 +238,8 @@ export const {orderAdded, orderUpdated, orderRemoved} = ordersSlice.actions;
 export const selectAllOrders = (state: RootState) => state.order.data;
 export const selectOrderStatus = (state: RootState) => state.order.status;
 export const selectOrderById = (state: RootState, id: string) => state.order.data.find(e => e.id == id);
+export const selectReceivedOrder = (state: RootState) => state.order.data.filter(e => e.received);
+export const selectUnreceivedOrder = (state: RootState) => state.order.data.filter(e => !e.received);
 /**
  * 商品の遅延時間を含め、最大の完成する時刻を返します
  * 注文がない場合, 現在時刻を返します
