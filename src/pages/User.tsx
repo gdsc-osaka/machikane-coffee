@@ -10,6 +10,8 @@ import { useEffect } from "react";
 import {
   selectOrderStatus,
 } from "../modules/redux/order/ordersSlice";
+import { Timestamp } from "firebase/firestore";
+import OrderRow from "../components/User/OrderRow";
 
 const User = () => {
 
@@ -39,7 +41,10 @@ const User = () => {
     const dispatch = useAppDispatch();
 
     const orders = useSelector(selectAllOrders);
-    const orderStatus = useSelector(selectOrderStatus)
+    const orderStatus = useSelector(selectOrderStatus);
+
+    
+    
 
     useEffect(() => {
         if (orderStatus == "idle" || orderStatus == "failed") {
@@ -62,14 +67,7 @@ const User = () => {
         <TableBody>
           {orders.map((order) => {
             return (
-              <TableRow>
-                <TableCell>
-                  {order.index}
-                </TableCell>
-                <TableCell>
-                  {order.delay_seconds}分
-                </TableCell>
-              </TableRow>
+              <OrderRow order={order} />
             );
           })}
         </TableBody>
