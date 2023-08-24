@@ -70,7 +70,7 @@ const SubTotal = (props: SubTotalProps) => {
 
 const Container = styled.div`
   display: flex;
-  width: 17rem;
+  width: 19rem;
   padding: 1rem;
   flex-direction: column;
   align-items: flex-start;
@@ -87,11 +87,11 @@ const Row = styled.div`
 const SubRow = styled.div`
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0rem;
 `
 
 const RightAlign = styled.div`
-  min-width: 3rem;
+  min-width: 4rem;
   display: flex;
   justify-content: end;
 `

@@ -7,12 +7,20 @@ import {useParams} from "react-router-dom";
 import {ProductAmount} from "../modules/redux/order/types";
 import OrderForm from "../components/Order/OrderForm";
 import {CircularProgress} from "@mui/material";
-import {addOrder} from "../modules/redux/order/ordersSlice";
+import {
+    addOrder, fetchOrders,
+    selectOrderStatus,
+    selectReceivedOrder,
+    selectUnreceivedOrder
+} from "../modules/redux/order/ordersSlice";
+import OrderList from "../components/Order/OrderList";
 
 const AdminPage = () => {
     const dispatch = useAppDispatch();
     const products = useSelector(selectAllProduct);
     const productStatus = useSelector(selectProductStatus);
+    const unreceivedOrders = useSelector(selectUnreceivedOrder);
+    const orderStatus = useSelector(selectOrderStatus);
     const params = useParams();
     const shopId = params.shopId ?? '';
 
@@ -27,20 +35,35 @@ const AdminPage = () => {
         }
     }, [dispatch, productStatus]);
 
+    useEffect(() => {
+        if (orderStatus == "idle" || orderStatus == "failed") {
+            dispatch(fetchOrders(shopId));
+        }
+    }, [dispatch, orderStatus]);
+
     const onOrderAddClicked = async () => {
-        await dispatch(addOrder({shopId: shopId, rawOrder: {is_student: false, product_amount: productAmount}}));
+        const trueProductAmount = Object.assign({}, productAmount);
+        // ゼロの要素は排除する
+        for (const id in trueProductAmount) {
+            if (trueProductAmount[id] == 0) {
+                delete trueProductAmount[id];
+            }
+        }
+
+        await dispatch(addOrder({shopId: shopId, rawOrder: {is_student: false, product_amount: trueProductAmount}}));
     }
 
     return(
         productStatus == "succeeded" ?
-            <RootDiv>
+            <RowLayout>
                 <OrderForm products={products} onChangeAmount={onChangeAmount} productAmount={productAmount} onOrderAddClicked={onOrderAddClicked}/>
-            </RootDiv>
+                <OrderList orders={unreceivedOrders} onOrderUpdated={(id, order) => {}} products={products}/>
+            </RowLayout>
             : <CircularProgress />
     )
 }
 
-const RootDiv = styled.div`
+const RowLayout = styled.div`
   display: flex;
   width: auto;
   height: auto;

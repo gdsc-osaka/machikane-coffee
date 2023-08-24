@@ -18,8 +18,8 @@ const OrderForm = (props: OrderFormProps) => {
     // ProductCounter から商品を追加していない
     const isNoAmount = Object.keys(productAmount).findIndex(id => productAmount[id] > 0) == -1
 
-    return <RootDiv>
-        <Typography variant={"h5"} sx={{fontWeight: "bold"}}>
+    return <Column>
+        <Typography variant={"h4"} sx={{fontWeight: "bold"}}>
             注文登録
         </Typography>
         <ContentContainer>
@@ -35,14 +35,14 @@ const OrderForm = (props: OrderFormProps) => {
                 </Button>
             </SubTotalContainer>
         </ContentContainer>
-    </RootDiv>
+    </Column>
 }
 
-const RootDiv = styled.div`
+const Column = styled.div`
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 1rem;
+  gap: 1.5rem;
 `
 
 const ContentContainer = styled.div`
@@ -61,8 +61,9 @@ const CounterContainer = styled.div`
 const SubTotalContainer = styled.div`
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   align-items: flex-end;
-  gap: 1rem;
+  min-height: 16rem;
 `
 
 export default OrderForm;

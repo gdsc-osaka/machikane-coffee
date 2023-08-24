@@ -8,7 +8,7 @@ import {TestPage} from "./pages/Test";
 import Footer from "./components/Footer/Footer";
 import {Provider} from "react-redux";
 import React from "react";
-import {createTheme, ThemeProvider} from "@mui/material";
+import {createTheme, CssBaseline, ThemeProvider} from "@mui/material";
 import {themeOptions} from "./themeOptions";
 
 const App = () => {
@@ -17,16 +17,15 @@ const App = () => {
     return (
         <Provider store={store}>
             <ThemeProvider theme={theme}>
+                <CssBaseline/>
                 <Header/>
                 <BrowserRouter>
-                    <div>
-                        <Routes>
-                            <Route path="/:shopId/admin" Component={AdminPage} />
-                            <Route path="/:shopId/user" Component={User} />
-                            <Route path="/:shopId/timer" Component={Timer} />
-                            <Route path="/:shopId/test" Component={TestPage} />
-                        </Routes>
-                    </div>
+                    <Routes>
+                        <Route path="/:shopId/admin" Component={AdminPage} />
+                        <Route path="/:shopId/user" Component={User} />
+                        <Route path="/:shopId/timer" Component={Timer} />
+                        <Route path="/:shopId/test" Component={TestPage} />
+                    </Routes>
                 </BrowserRouter>
                 <Footer/>
             </ThemeProvider>
