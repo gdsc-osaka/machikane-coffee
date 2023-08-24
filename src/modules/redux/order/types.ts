@@ -10,10 +10,22 @@ export type ProductAmount = {
 
 /**
  * 商品IDと提供の状況 (受け取り済み、完成済み)
+ * @property product_id 商品ID
+ * @property status 初期状態(idle), 作成中(working), 完成済み(completed) のいずれか
+ * @property barista_id 担当中のbaristaのid
  */
 export type OrderStatus = {
     product_id: string;
+    status: "idle" | "working" | "completed";
+    barista_id: number;
+
+    /**
+     * @deprecated status に統合
+     */
     received: boolean;
+    /**
+     * @deprecated status に統合
+     */
     completed: boolean;
 }
 
@@ -37,12 +49,20 @@ export type Order = {
     created_at: Timestamp;
     complete_at: Timestamp;
     delay_seconds: number;
-    received: boolean;
-    completed: boolean;
+    status: "idle" | "completed" | "received";
     order_statuses: OrderStatuses;
     // データ追加時は以下のみ
     product_amount: ProductAmount;
     is_student: boolean;
+
+    /**
+     * @deprecated status に統合
+     */
+    received: boolean;
+    /**
+     * @deprecated status に統合
+     */
+    completed: boolean;
 };
 
 /**
@@ -66,9 +86,7 @@ export function assertOrder(data: any): asserts data is Order {
             typeof d?.id === "string" &&
             typeof d?.index === "number" &&
             d?.created_at instanceof Timestamp &&
-            d?.complete_at instanceof Timestamp &&
-            typeof d?.received === "boolean" &&
-            typeof d?.is_student === "boolean"
+            d?.complete_at instanceof Timestamp
         )
     ) {
         throw new Error("data is not Order type");
