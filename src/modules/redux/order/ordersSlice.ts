@@ -88,14 +88,17 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
             // 商品とその数のぶんだけ orderStatuses を追加
             for (let i = 0; i < amount; i++) {
                 orderStatuses[`${productId}_${i}`] = {
-                   product_id: productId,
+                    barista_id: 0,
+                    status: "idle",
+                    product_id: productId,
                    received: false,
-                   completed: false,
+                   completed: false
                 };
             }
         }
 
         const order: CargoOrder = {
+            status: "idle",
             is_student: rawOrder.is_student,
             product_amount: rawOrder.product_amount,
             index: 1,
@@ -104,7 +107,7 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
             received: false,
             completed: false,
             order_statuses: orderStatuses,
-            delay_seconds: 0,
+            delay_seconds: 0
         }
 
         try {
