@@ -54,7 +54,7 @@ const User = () => {
 
     return (
       <Table>
-        <TableHead>
+        {/* <TableHead>
           <TableRow>
             <TableCell>
               番号
@@ -63,7 +63,7 @@ const User = () => {
               待ち時間
             </TableCell>
           </TableRow>
-        </TableHead>
+        </TableHead> */}
         <TableBody>
           {orders.map((order) => {
             return (
