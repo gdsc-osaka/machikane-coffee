@@ -10,7 +10,7 @@ const OrderRow: VFC<Props> = (props) => {
     const order = props.order;
     const completeAt = order.complete_at.seconds as unknown as number;
     const currentTime = new Date().getTime() / 1000;
-    const waitTime = (completeAt - currentTime + order.delay_seconds) / 60;
+    const waitTime = Math.floor((completeAt - currentTime + order.delay_seconds) / 60);
     let message;
     if(waitTime <= 0){
         message = 'できあがりました'
