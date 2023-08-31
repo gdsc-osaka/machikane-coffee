@@ -17,6 +17,7 @@ import Footer from './components/Footer/Footer';
 import {Provider} from "react-redux";
 import store from "./modules/redux/store";
 import {TestPage} from "./pages/Test";
+import LogIn from './pages/LogIn';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -28,10 +29,11 @@ root.render(
           <BrowserRouter>
               <div>
                   <Routes>
-                      <Route path="/:shopId/admin" Component={Admin} />
-                      <Route path="/:shopId/user" Component={User} />
-                      <Route path="/:shopId/timer" Component={Timer} />
-                      <Route path="/:shopId/test" Component={TestPage} />
+                        <Route path="/:shopId/" Component={LogIn} />
+                        <Route path="/:shopId/admin" Component={Admin}/>
+                        <Route path="/:shopId/user" Component={User} />
+                        <Route path="/:shopId/timer" Component={Timer} />
+                        <Route path="/:shopId/test" Component={TestPage} />
                   </Routes>
               </div>
           </BrowserRouter>
