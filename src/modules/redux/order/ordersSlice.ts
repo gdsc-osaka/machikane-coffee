@@ -39,7 +39,7 @@ export const fetchOrders = createAsyncThunk("orders/fetchOrders",
     });
 
 /**
- * Order をリアルタイム更新する. ユーザー側で使用されることを想定
+ * order をリアルタイム更新する. ユーザー側で使用されることを想定
  */
 export const streamOrders = createAsyncThunk('orders/streamOrders',
     (shopId: string, {dispatch}) => {
@@ -88,14 +88,17 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
             // 商品とその数のぶんだけ orderStatuses を追加
             for (let i = 0; i < amount; i++) {
                 orderStatuses[`${productId}_${i}`] = {
-                   product_id: productId,
+                    barista_id: 0,
+                    status: "idle",
+                    product_id: productId,
                    received: false,
-                   completed: false,
+                   completed: false
                 };
             }
         }
 
         const order: CargoOrder = {
+            status: "idle",
             is_student: rawOrder.is_student,
             product_amount: rawOrder.product_amount,
             index: 1,
@@ -104,7 +107,7 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
             received: false,
             completed: false,
             order_statuses: orderStatuses,
-            delay_seconds: 0,
+            delay_seconds: 0
         }
 
         try {
@@ -134,38 +137,23 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
     });
 
 /**
- * 親オーダーのステータスに依存して子オーダーのステータスを変更する. 逆もする.
- * (親オーダー: order.received, 子オーダー: order.order_statuses.XXX.received)
+ * order_statuses の status が全て completed のとき, ルートの status も completed に設定する
  */
-const switchOrderStatus = (newOrder: Order, oldOrder: Order, key: "received" | "completed") => {
+const switchOrderStatus = (newOrder: Order) => {
     const statusKeys = Object.keys(newOrder.order_statuses);
 
-    if (xor(newOrder[key], oldOrder[key])) {
-        // order[key] が変化したとき
-        for (const statusKey of statusKeys) {
-            newOrder.order_statuses = {...newOrder.order_statuses,
-                [statusKey]: {...newOrder.order_statuses[statusKey], [key]: newOrder[key]}}
-        }
-    } else if (statusKeys.findIndex(k => !newOrder.order_statuses[k][key]) == -1) {
-        // order_statuses の [key] が全て true のとき
-        newOrder[key] = true;
-    } else {
-        // order[key] が変化してないかつ order_statuses の [key] にfalseがある
-        newOrder[key] = false;
+    if (statusKeys.findIndex(k => newOrder.order_statuses[k].status != "completed") == -1) {
+        // order_statuses の status が全て completed のとき
+        newOrder.status = "completed";
     }
 }
 
 /**
  * 注文を更新する. UIで操作された部分のみ更新すれば, その更新に依存するそれ以外の部分も自動で書き換えられる (completed 等)
  */
-export const updateOrder = createAsyncThunk<Order, {shopId: string, newOrder: Order}, {state: RootState}>('orders/updateOrder',
-    async ({shopId, newOrder}, {getState}) => {
-        const oldOrder = selectOrderById(getState(), newOrder.id);
-
-        if (oldOrder) {
-            switchOrderStatus(newOrder, oldOrder, "received");
-            switchOrderStatus(newOrder, oldOrder, "completed");
-        }
+export const updateOrder = createAsyncThunk<Order, {shopId: string, newOrder: Order}, {}>('orders/updateOrder',
+    async ({shopId, newOrder}) => {
+        switchOrderStatus(newOrder);
 
         const docRef = doc(db, `shops/${shopId}/orders/${newOrder.id}`);
         await updateDoc(docRef.withConverter(orderConverter), newOrder);
@@ -183,16 +171,16 @@ const ordersSlice = createSlice({
     } as AsyncState<Order[]> & {unsubscribe: (() => void) | null},
     reducers: {
         orderAdded(state, action: PayloadAction<Order>) {
-            state.data.push(action.payload);
+            state.data.unshift(action.payload);
         },
         orderUpdated(state, action: PayloadAction<Order>) {
             const order = action.payload;
             state.data.update(e => e.id == order.id, order);
         },
         /**
-         * 指定した ID の Order を消去する
+         * 指定した ID の order を消去する
          * @param state
-         * @param action 消去する Order の ID
+         * @param action 消去する order の ID
          */
         orderRemoved(state, action: PayloadAction<string>) {
             const id = action.payload;
@@ -206,7 +194,7 @@ const ordersSlice = createSlice({
             })
             .addCase(fetchOrders.fulfilled, (state, action) => {
                 state.status = 'succeeded'
-                state.data = action.payload;
+                state.data = action.payload.sort((a, b) => a.created_at.toDate().getTime() - b.created_at.toDate().getTime());
             })
             .addCase(fetchOrders.rejected, (state, action) => {
                 state.status = 'failed'
@@ -221,7 +209,7 @@ const ordersSlice = createSlice({
         builder.addCase(addOrder.fulfilled, (state, action) => {
             const order = action.payload;
             if (order != undefined) {
-                state.data.push(order);
+                state.data.unshift(order);
             }
         })
 
@@ -238,6 +226,8 @@ export const {orderAdded, orderUpdated, orderRemoved} = ordersSlice.actions;
 export const selectAllOrders = (state: RootState) => state.order.data;
 export const selectOrderStatus = (state: RootState) => state.order.status;
 export const selectOrderById = (state: RootState, id: string) => state.order.data.find(e => e.id == id);
+export const selectReceivedOrder = (state: RootState) => state.order.data.filter(e => e.received);
+export const selectUnreceivedOrder = (state: RootState) => state.order.data.filter(e => !e.received);
 /**
  * 商品の遅延時間を含め、最大の完成する時刻を返します
  * 注文がない場合, 現在時刻を返します
