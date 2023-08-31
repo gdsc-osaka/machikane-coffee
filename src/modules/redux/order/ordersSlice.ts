@@ -137,38 +137,23 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
     });
 
 /**
- * 親オーダーのステータスに依存して子オーダーのステータスを変更する. 逆もする.
- * (親オーダー: order.received, 子オーダー: order.order_statuses.XXX.received)
+ * order_statuses の status が全て completed のとき, ルートの status も completed に設定する
  */
-const switchOrderStatus = (newOrder: Order, oldOrder: Order, key: "received" | "completed") => {
+const switchOrderStatus = (newOrder: Order) => {
     const statusKeys = Object.keys(newOrder.order_statuses);
 
-    if (xor(newOrder[key], oldOrder[key])) {
-        // order[key] が変化したとき
-        for (const statusKey of statusKeys) {
-            newOrder.order_statuses = {...newOrder.order_statuses,
-                [statusKey]: {...newOrder.order_statuses[statusKey], [key]: newOrder[key]}}
-        }
-    } else if (statusKeys.findIndex(k => !newOrder.order_statuses[k][key]) == -1) {
-        // order_statuses の [key] が全て true のとき
-        newOrder[key] = true;
-    } else {
-        // order[key] が変化してないかつ order_statuses の [key] にfalseがある
-        newOrder[key] = false;
+    if (statusKeys.findIndex(k => newOrder.order_statuses[k].status != "completed") == -1) {
+        // order_statuses の status が全て completed のとき
+        newOrder.status = "completed";
     }
 }
 
 /**
  * 注文を更新する. UIで操作された部分のみ更新すれば, その更新に依存するそれ以外の部分も自動で書き換えられる (completed 等)
  */
-export const updateOrder = createAsyncThunk<Order, {shopId: string, newOrder: Order}, {state: RootState}>('orders/updateOrder',
-    async ({shopId, newOrder}, {getState}) => {
-        const oldOrder = selectOrderById(getState(), newOrder.id);
-
-        if (oldOrder) {
-            switchOrderStatus(newOrder, oldOrder, "received");
-            switchOrderStatus(newOrder, oldOrder, "completed");
-        }
+export const updateOrder = createAsyncThunk<Order, {shopId: string, newOrder: Order}, {}>('orders/updateOrder',
+    async ({shopId, newOrder}) => {
+        switchOrderStatus(newOrder);
 
         const docRef = doc(db, `shops/${shopId}/orders/${newOrder.id}`);
         await updateDoc(docRef.withConverter(orderConverter), newOrder);
