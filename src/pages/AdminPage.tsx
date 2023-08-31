@@ -5,7 +5,7 @@ import {fetchProducts, selectAllProduct, selectProductStatus} from "../modules/r
 import {useAppDispatch} from "../modules/redux/store";
 import {useParams} from "react-router-dom";
 import {ProductAmount} from "../modules/redux/order/types";
-import OrderForm from "../components/Order/OrderForm";
+import OrderForm from "../components/order/OrderForm";
 import {CircularProgress} from "@mui/material";
 import {
     addOrder, fetchOrders,
@@ -13,7 +13,8 @@ import {
     selectReceivedOrder,
     selectUnreceivedOrder
 } from "../modules/redux/order/ordersSlice";
-import OrderList from "../components/Order/OrderList";
+import OrderList from "../components/order/OrderList";
+import ShopManager from "../components/order/ShopManager";
 
 const AdminPage = () => {
     const dispatch = useAppDispatch();
@@ -56,7 +57,10 @@ const AdminPage = () => {
     return(
         productStatus == "succeeded" ?
             <RowLayout>
-                <OrderForm products={products} onChangeAmount={onChangeAmount} productAmount={productAmount} onOrderAddClicked={onOrderAddClicked}/>
+                <Column>
+                    <OrderForm products={products} onChangeAmount={onChangeAmount} productAmount={productAmount} onOrderAddClicked={onOrderAddClicked}/>
+                    <ShopManager/>
+                </Column>
                 <OrderList orders={unreceivedOrders} onOrderUpdated={(id, order) => {}} products={products}/>
             </RowLayout>
             : <CircularProgress />

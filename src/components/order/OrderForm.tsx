@@ -4,6 +4,7 @@ import {Product} from "../../modules/redux/product/types";
 import ProductCounter from "./ProductCounter";
 import {ProductAmount} from "../../modules/redux/order/types";
 import SubTotal from "./SubTotal";
+import {Column} from "../layout/Column";
 
 type OrderFormProps = {
     products: Product[],
@@ -37,13 +38,6 @@ const OrderForm = (props: OrderFormProps) => {
         </ContentContainer>
     </Column>
 }
-
-const Column = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1.5rem;
-`
 
 const ContentContainer = styled.div`
   display: flex;

@@ -39,7 +39,7 @@ export const fetchOrders = createAsyncThunk("orders/fetchOrders",
     });
 
 /**
- * Order をリアルタイム更新する. ユーザー側で使用されることを想定
+ * order をリアルタイム更新する. ユーザー側で使用されることを想定
  */
 export const streamOrders = createAsyncThunk('orders/streamOrders',
     (shopId: string, {dispatch}) => {
@@ -178,9 +178,9 @@ const ordersSlice = createSlice({
             state.data.update(e => e.id == order.id, order);
         },
         /**
-         * 指定した ID の Order を消去する
+         * 指定した ID の order を消去する
          * @param state
-         * @param action 消去する Order の ID
+         * @param action 消去する order の ID
          */
         orderRemoved(state, action: PayloadAction<string>) {
             const id = action.payload;

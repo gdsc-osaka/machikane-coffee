@@ -10,6 +10,7 @@ import {Provider} from "react-redux";
 import React from "react";
 import {createTheme, CssBaseline, ThemeProvider} from "@mui/material";
 import {themeOptions} from "./themeOptions";
+import AdminBaristaPage from "./pages/AdminBaristaPage";
 
 const App = () => {
     const theme = createTheme(themeOptions);
@@ -22,6 +23,7 @@ const App = () => {
                 <BrowserRouter>
                     <Routes>
                         <Route path="/:shopId/admin" Component={AdminPage} />
+                        <Route path="/:shopId/admin-barista" Component={AdminBaristaPage} />
                         <Route path="/:shopId/user" Component={User} />
                         <Route path="/:shopId/timer" Component={Timer} />
                         <Route path="/:shopId/test" Component={TestPage} />

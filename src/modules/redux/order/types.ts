@@ -66,7 +66,7 @@ export type Order = {
 };
 
 /**
- * データの追加時、ユーザーが設定しなければいけないフィールドのみにした Order
+ * データの追加時、ユーザーが設定しなければいけないフィールドのみにした order
  */
 export type RawOrder = Omit<Order, "id" | "index" | "created_at" | "complete_at" | "received" | "completed" | "order_statuses" | "delay_seconds">;
 
@@ -89,6 +89,6 @@ export function assertOrder(data: any): asserts data is Order {
             d?.complete_at instanceof Timestamp
         )
     ) {
-        throw new Error("data is not Order type");
+        throw new Error("data is not order type");
     }
 }
