@@ -50,7 +50,7 @@ const AdminPage = () => {
             }
         }
 
-        await dispatch(addOrder({shopId: shopId, rawOrder: {is_student: false, product_amount: trueProductAmount}}));
+        await dispatch(addOrder({shopId: shopId, rawOrder: {is_student: false, product_amount: trueProductAmount, status: "idle"}}));
     }
 
     return(

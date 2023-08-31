@@ -79,10 +79,10 @@ const TestShop = () => {
 
 
     const onAddShopClicked = async () => {
-        await dispatch(addShop({shopId: id, rawShop: {display_name: name}}))
+        await dispatch(addShop({shopId: id, rawShop: {display_name: name, baristas: {}, emg_message: ""}}))
     }
     const onUpdateShopClicked = async () => {
-        await dispatch(updateShop({shopId: id, rawShop: {display_name: name}}))
+        await dispatch(updateShop({shopId: id, rawShop: {display_name: name, baristas: {}, emg_message: ""}}))
     }
 
     const onChangeShopStatusClicked = async () => {
@@ -296,7 +296,7 @@ const TestOrder = () => {
     }
 
     const onAddOrderClicked = async () => {
-        await dispatch(addOrder({shopId: shopId, rawOrder: {is_student: isStudent, product_amount: productAmount}}));
+        await dispatch(addOrder({shopId: shopId, rawOrder: {is_student: isStudent, product_amount: productAmount, status: "idle"}}));
         setProductAmount({});
     }
 
