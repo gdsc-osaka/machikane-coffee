@@ -128,7 +128,6 @@ export const changeShopStatus = createAsyncThunk<Shop | undefined, {shopId: stri
         }
     })
 
-
 const shopsSlice = createSlice({
     name: "shops",
     initialState: {
