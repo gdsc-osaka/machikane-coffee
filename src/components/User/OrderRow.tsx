@@ -15,7 +15,7 @@ const OrderRow: VFC<Props> = (props) => {
 
     const orderItemStyles = {
         display: 'flex',
-        width: '392px',
+        alignSelf: 'stretch',
         alignItems: 'center',
         backgroundColor: '#F7ECE5',
     };
@@ -61,6 +61,19 @@ const OrderRow: VFC<Props> = (props) => {
         flex: '1 0 0',
         alignSelf: 'stretch',
     }
+    // const verticalFullWidth = {
+    //     display: 'flex',
+    //     // flexDirection: 'column',
+    //     alignItems: 'center',
+    //     alignSelf: 'stretch',
+    // }
+    const verticalBar = {
+        width: '1px',
+        height: '50px',
+        backGroundColor: 'black',
+        color: 'black',
+        zIndex: '6',
+    }
     
     if(waitTime <= 0){
         message = 'できあがりました'
@@ -76,33 +89,39 @@ const OrderRow: VFC<Props> = (props) => {
             <TableCell>
                 {message}
             </TableCell> */}
+            <TableCell>
             <div style={orderItemStyles}>
                 <div style={contentStyles}>
                     <div style={indexStyles}>1</div>
+                    
+                    <div style={verticalBar} /> 
+                    
                     <div style={productNameColumnStyles}>aa</div>
+                    <div style={verticalBar} />
                     <div style={messageContainerStyles}>this is message</div>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="33" height="33" viewBox="0 0 33 33" fill="none">
-                    <g filter="url(#filter0_d_54617_1046)">
-                    <path d="M5 3V28H30L5 3Z" fill="#F7ECE5"/>
-                    </g>
-                    <path d="M30 28V3H5L30 28Z" fill="#FFFBFF"/>
-                    <defs>
-                    <filter id="filter0_d_54617_1046" x="0" y="0" width="33" height="33" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-                    <feFlood flood-opacity="0" result="BackgroundImageFix"/>
-                    <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-                    <feOffset dx="-1" dy="1"/>
-                    <feGaussianBlur stdDeviation="2"/>
-                    <feComposite in2="hardAlpha" operator="out"/>
-                    <feColorMatrix type="matrix" values="0 0 0 0 0.615686 0 0 0 0 0.556863 0 0 0 0 0.505882 0 0 0 0.3 0"/>
-                    <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_54617_1046"/>
-                    <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_54617_1046" result="shape"/>
-                    </filter>
-                    </defs>
-                    </svg>
-
-                    <div style={foldContainerStyles}/>
                 </div>
+                <div style={foldContainerStyles}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="33" height="33" viewBox="0 0 33 33" fill="none">
+                        <g filter="url(#filter0_d_54617_1046)">
+                        <path d="M5 3V28H30L5 3Z" fill="#F7ECE5"/>
+                        </g>
+                        <path d="M30 28V3H5L30 28Z" fill="#FFFBFF"/>
+                        <defs>
+                        <filter id="filter0_d_54617_1046" x="0" y="0" width="33" height="33" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                        <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+                        <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+                        <feOffset dx="-1" dy="1"/>
+                        <feGaussianBlur stdDeviation="2"/>
+                        <feComposite in2="hardAlpha" operator="out"/>
+                        <feColorMatrix type="matrix" values="0 0 0 0 0.615686 0 0 0 0 0.556863 0 0 0 0 0.505882 0 0 0 0.3 0"/>
+                        <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_54617_1046"/>
+                        <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_54617_1046" result="shape"/>
+                        </filter>
+                        </defs>
+                        </svg>
+                    </div>
             </div>
+            </TableCell>
         </TableRow>
     );
 }
