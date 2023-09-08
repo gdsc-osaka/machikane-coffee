@@ -1,11 +1,13 @@
 import React from "react";
 import { Image } from "@mui/icons-material";
-// import { useRouter } from 'next/router';
+import { useRouter } from 'next/router';
 
 const Header = () => {
 
   let titleText = "";
-  const routerPath = "user";
+  const routerPath = useRouter().asPath;
+
+  console.log(routerPath);
 
   switch(routerPath) {
     case "user":

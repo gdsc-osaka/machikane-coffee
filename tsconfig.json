@@ -2,7 +2,7 @@
     "compilerOptions": {
       "baseUrl": ".",
       "paths": {
-        "next/router": ["node_modules/next/router"]
+        // "next/router": ["node_modules/next/router"]
       },
       "target": "es5",
       "lib": [
