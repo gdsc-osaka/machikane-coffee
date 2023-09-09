@@ -12,38 +12,30 @@ import {
 } from "../modules/redux/order/ordersSlice";
 import { Timestamp } from "firebase/firestore";
 import OrderRow from "../components/User/OrderRow";
+import WaitForReceive from "../components/User/waitForReceive";
 
 const User = () => {
 
-    // const numberedTickets: NumberedTicket[] = [
-    //   {
-    //     id: "randomstring1",
-    //     number: 1,
-    //     status: "お受け取りありがとうございました。",
-    //   },
-    //   {
-    //     id: "randomstring",
-    //     number: 2,
-    //     status: "できあがりました、お受け取り下さい。",
-    //   },
-    //   {
-    //     id: "randomstring",
-    //     number: 3,
-    //     status: 3,
-    //   },
-    // ];
-
     const params = useParams();
     const shopId = params.shopId ?? '';
-
-    
-
     const dispatch = useAppDispatch();
 
     const orders = useSelector(selectAllOrders);
     const orderStatus = useSelector(selectOrderStatus);
 
-    
+    const WaitForReceiveOrders = orders.filter((order) => {
+      const completeAt = order.complete_at.seconds as unknown as number;
+      const currentTime = new Date().getTime() / 1000;
+      const waitTime = Math.floor((completeAt - currentTime + order.delay_seconds) / 60);
+      return waitTime < -2; //TODOここがn分経過の分岐点
+    });
+
+    const orderItems = orders.filter((order) => {
+      const completeAt = order.complete_at.seconds as unknown as number;
+      const currentTime = new Date().getTime() / 1000;
+      const waitTime = Math.floor((completeAt - currentTime + order.delay_seconds) / 60);
+      return waitTime >= -2; //TODOここがn分経過の分岐点
+    });
     
 
     useEffect(() => {
@@ -53,6 +45,8 @@ const User = () => {
     }, [dispatch, orderStatus]);
 
     return (
+      <>
+      <WaitForReceive orders={WaitForReceiveOrders} />
       <Table>
         {/* <TableHead>
           <TableRow>
@@ -65,13 +59,14 @@ const User = () => {
           </TableRow>
         </TableHead> */}
         <TableBody>
-          {orders.map((order) => {
+          {orderItems.map((order) => {
             return (
               <OrderRow order={order} />
             );
           })}
         </TableBody>
       </Table>
+      </>
     );
   };
   

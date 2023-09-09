@@ -1,6 +1,8 @@
 import { VFC } from "react";
 import { Order } from "../../modules/redux/order/types";
 import { TableRow, TableCell } from "@mui/material";
+// import { selectProductById } from "../../modules/redux/product/productsSlice";
+// import { RootState } from "../../modules/redux/store";
 
 type Props = {
     order: Order
@@ -34,6 +36,14 @@ const OrderRow: VFC<Props> = (props) => {
         height: '27px',
         // flexDirection: 'column',
         justifyContent: 'center',
+        color: 'var(--m-3-sys-light-on-surface, #201B16)',
+        // textAlign: 'center',
+        fontFamily: 'Roboto',
+        fontSize: '16px',
+        fontStyle: 'normal',
+        fontWeight: '700',
+        lineHeight: '24px', /* 150% */
+        letterSpacing: '0.15px',
     };
 
     const productNameColumnStyles = {
@@ -51,6 +61,12 @@ const OrderRow: VFC<Props> = (props) => {
         alignItems: 'center',
         gap: '10px',
         alignSelf: 'stretch',
+        color: 'var(--m-3-black, #000)',
+        fontFamily: 'Roboto',
+        fontSize: '12px',
+        fontStyle: 'normal',
+        fontWeight: '500',
+        lineHeight: '21px', /* 175% */
     };
 
     const foldContainerStyles = {
@@ -75,30 +91,27 @@ const OrderRow: VFC<Props> = (props) => {
         zIndex: '6',
     }
     
-    if(waitTime <= 0){
-        message = 'できあがりました'
+    if(order.status === "completed"){
+        message = 'できあがりました';
+    }
+    else if(waitTime < 2) {
+        message = 'まもなく完成します';
     }
     else{
-        message = '約' + waitTime + '分';
+        message = 'あと約' + waitTime + '分';
     }
     return(
         <TableRow>
-            {/* <TableCell>
-                {order.index}
-            </TableCell>
-            <TableCell>
-                {message}
-            </TableCell> */}
             <TableCell>
             <div style={orderItemStyles}>
                 <div style={contentStyles}>
-                    <div style={indexStyles}>1</div>
+                    <div style={indexStyles}>{order.index}</div>
                     
                     <div style={verticalBar} /> 
                     
-                    <div style={productNameColumnStyles}>aa</div>
+                    <div style={productNameColumnStyles}></div>
                     <div style={verticalBar} />
-                    <div style={messageContainerStyles}>this is message</div>
+                    <div style={messageContainerStyles}>{message}</div>
                 </div>
                 <div style={foldContainerStyles}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="33" height="33" viewBox="0 0 33 33" fill="none">
