@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components'
+import "./timer.css"
 
 const StyledTimeDisplay = styled.div`
 	color: ${({ textColor }) => textColor ? textColor : `#333`};
@@ -21,7 +22,7 @@ const TimeDisplay = ({ className, time, delimiter, fontSize }) => {
 				newTime.map((n, i, array) => (
 					<>
             {/* padStartは文字列のメソッドであるため、Stringでnを文字列に変換 */}
-						<span>{String(n).padStart(2, "0")}</span>
+						<span class="timer-num">{String(n).padStart(2, "0")}</span>
 
             {/* 末尾の区切り文字は表示しない */}
 						{(i !== array.length - 1) && delimiter}

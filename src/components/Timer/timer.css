@@ -1,0 +1,20 @@
+.timer-num {
+    background-color: #F7ECE5;
+    margin: 10px 10px 10px 10px;
+    border-radius: 30px;
+    padding: 25px 50px 25px;
+  }
+
+  .timer-unit {
+    text-align: center;
+  }
+  
+  .timer-hour-unit {
+    position: relative;
+    right: 240px;
+  }
+
+  .timer-min-unit {
+    position: relative;
+    left: 10px;
+  }
