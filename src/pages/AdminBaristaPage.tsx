@@ -22,17 +22,17 @@ const AdminBaristaPage = () => {
         }
     }, [dispatch, shopStatus]);
 
-    return shop == undefined ? <div/> :
-        <Column style={{width: "100%"}}>
+    if (shop == undefined) {
+        return <div/>
+    } else {
+        const ids = Object.keys(shop.baristas);
+
+        return <Column style={{width: "100%"}}>
             <ToggleButtonGroup sx={{padding: "0 1rem"}} fullWidth={true} value={id}>
-                <ToggleButton value={1}>
-                    1
-                </ToggleButton>
-                <ToggleButton value={2}>
-                    2
-                </ToggleButton>
+                {ids.map(id => <ToggleButton value={id}>{id}番</ToggleButton>)}
             </ToggleButtonGroup>
         </Column>
+    }
 }
 
 export default AdminBaristaPage
