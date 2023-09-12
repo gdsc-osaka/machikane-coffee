@@ -1,39 +1,29 @@
 import React from "react";
 import { Image } from "@mui/icons-material";
-import { useRouter } from 'next/router';
+import { useLocation } from "react-router-dom";
+import {useParams} from "react-router-dom";
 
 const Header = () => {
 
+  const params = useParams();
+  const shopId = params.shopId ?? 'toyonaka';
+  
   let titleText = "";
-  const routerPath = useRouter().asPath;
+  const routerPath = useLocation().pathname;
 
-  console.log(routerPath);
-
+  
   switch(routerPath) {
-    case "user":
-      titleText = 'コーヒー愛好会';
+    case "/"+shopId+"/admin/cashier":
+      titleText = 'レジ';
       break;
 
-    // case 'admin':
-    //   titleText = '管理ページ';
-    //   break;
-
-    // case 'Barista':
-    //   titleText = 'ドリップ';
-    //   break;
-
-    // case 'Cashier':
-    //   titleText = 'レジ';
-    //   break;
-
-    // case 'Login':
-    //   titleText = 'コーヒー愛好会';
-    //   break;
+    case "/"+shopId+"/admin/barista":
+      titleText = 'ドリップ';
+      break;
 
     default:
       titleText = 'コーヒー愛好会';
       break;
-
   }
 
   const imageStyle = {
