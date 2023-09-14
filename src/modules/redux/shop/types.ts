@@ -3,14 +3,25 @@ import {Timestamp} from "firebase/firestore";
 export type ShopStatus = "active" | "pause_ordering"
 
 /**
+ * ドリップ係の番号とそのステータスのマップ
+ */
+export type BaristaMap = {
+    [K in number]: "active" | "inactive"
+}
+
+/**
  * 店情報
+ * @property emg_message 緊急時のメッセージ
  * @property last_active_time 最後に営業中だった時間
+ * @property baristas BaristaMap
  */
 export type Shop = {
     id: string;
     status: ShopStatus;
+    emg_message: string;
     last_active_time: Timestamp;
     display_name: string;
+    baristas: BaristaMap;
 };
 
 /**
