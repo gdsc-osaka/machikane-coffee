@@ -14,9 +14,10 @@ import { BaristaMap, RawShop, Shop } from "../../modules/redux/shop/types";
 const ShopManager = () => {
     const [emgMsg, setEmgMsg] = useState('');
     const [baristaCount, setBaristaCount] = useState(1);
-
     const [name, setName] = useState('')
     const [id, setId] = useState('')
+    const [baristas, setBaristas] = useState<BaristaMap>({1:"inactive"});
+    const [lastActiveTime, setLastActiveTime] = useState();
 
     const dispatch = useAppDispatch();
     const params = useParams();
@@ -30,29 +31,12 @@ const ShopManager = () => {
         }
     }, [dispatch, shopStatus]);
 
-    // const rawShop = 
-
-    // let f = true;
-    // if (f){
-    //     console.log(shopId);
-    //     console.log(shop);
-    //     console.log(shop?.baristas);
-    //     console.log(shop?.display_name);
-    //     console.log(shopStatus);
-    //     f = false;
-    // }
-    
-    // console.log(shop?.baristas);
-    // console.log(shop?.display_name);
-
-    const [baristas, setBaristas] = useState<BaristaMap>({});
-
-    // tmp
+    // TODO tmp value so need to change
     // setId("toyonaka");
     const tmpId = "toyonaka";
         
     const handleEmergency = async (value: boolean) => {
-        if(value){
+        if(value){  // active
             // status
             await dispatch(changeShopStatus({shopId: tmpId, status: "pause_ordering"}))
 
@@ -61,39 +45,47 @@ const ShopManager = () => {
                 shopId: tmpId,
                 rawShop: {display_name: name, baristas: baristas, emg_message: emgMsg}
             }))
+        }else{  // pause
+            // status
+            await dispatch(changeShopStatus({shopId: tmpId, status: "active"}))
+
+            // emgMsg
+            await dispatch(updateShop({
+                shopId: tmpId,
+                rawShop: {display_name: name, baristas: baristas, emg_message: ""}
+            }))
         }
     }
 
     const handleBaristaCount = async (diff: number) => {
         const newCount = baristaCount + diff;
+        const trueBaristas = Object.assign({}, baristas);   // make the copy
 
-        if (newCount > 0) {
-            setBaristaCount(newCount);
-        }
-
-        // make the copy
-        const trueBaristas = Object.assign({}, baristas)
-
-        console.log("trueBarista: " + trueBaristas);
-        console.log("trueBarista[1]: " + trueBaristas[1]);
-        console.log("baristaCount: " + baristaCount);
-
-        if(diff > 0){
-            trueBaristas[baristaCount] = "inactive";
-        }else{
-            delete trueBaristas[baristaCount];
-        }
-
-        setBaristas(trueBaristas);
-        
-        await dispatch(updateShop({
-            shopId: tmpId,
-            rawShop: {
-                display_name: name, baristas: trueBaristas, emg_message: emgMsg
+        if(newCount > 0) {
+            if(diff > 0){
+                // 更新後のbarista数
+                console.log("add: "+newCount);
+                trueBaristas[newCount] = "inactive";
+            }else{
+                // 更新前のbarista数
+                console.log("del: " + baristaCount);
+                delete trueBaristas[baristaCount];
             }
-        }))
 
-        await dispatch(changeShopStatus({shopId: shopId, status: "active"}))
+            console.log(newCount);
+
+            setBaristaCount(newCount);
+            setBaristas(trueBaristas);
+
+            await dispatch(updateShop({
+                shopId: tmpId,
+                rawShop: {
+                    display_name: name, baristas: trueBaristas, emg_message: emgMsg
+                }
+            }))
+    
+            await dispatch(changeShopStatus({shopId: shopId, status: "active"}))
+        }
     }
 
     return <Column>
