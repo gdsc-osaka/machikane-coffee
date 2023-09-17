@@ -1,8 +1,10 @@
 import { VFC } from "react";
 import { Order } from "../../modules/redux/order/types";
 import { TableRow, TableCell } from "@mui/material";
-// import { selectProductById } from "../../modules/redux/product/productsSlice";
-// import { RootState } from "../../modules/redux/store";
+import { selectProductById } from "../../modules/redux/product/productsSlice";
+import { RootState } from "../../modules/redux/store";
+import { useSelector } from "react-redux";
+import ProductNameForOrderRow from "./prductNameForOrderRow";
 
 type Props = {
     order: Order
@@ -13,8 +15,16 @@ const OrderRow: VFC<Props> = (props) => {
     const completeAt = order.complete_at.seconds as unknown as number;
     const currentTime = new Date().getTime() / 1000;
     const waitTime = Math.floor((completeAt - currentTime + order.delay_seconds) / 60);
-    let message;
 
+    let message;
+    let productList = [];
+
+    // const productIds = Object.keys(order.product_amount);
+    // const product = useSelector((state: RootState) => selectProductById(state, productIds[0]));
+    
+    // console.log(productIds);
+    // console.log(product);
+    
     const orderItemStyles = {
         display: 'flex',
         alignSelf: 'stretch',
@@ -50,7 +60,7 @@ const OrderRow: VFC<Props> = (props) => {
         display: 'flex',
         width: '170px',
         padding: '8px 0px',
-        // flexDirection: 'column',
+        flexDirection: 'column' as 'column',
         alignItems: 'flex-start',
         gap: '8px',
         alignSelf: 'stretch',
@@ -58,7 +68,6 @@ const OrderRow: VFC<Props> = (props) => {
 
     const messageContainerStyles = {
         display: 'flex',
-        alignItems: 'center',
         gap: '10px',
         alignSelf: 'stretch',
         color: 'var(--m-3-black, #000)',
@@ -67,6 +76,8 @@ const OrderRow: VFC<Props> = (props) => {
         fontStyle: 'normal',
         fontWeight: '500',
         lineHeight: '21px', /* 175% */
+        flexDirection: 'column' as 'column',
+        alignItems: 'flex-start',
     };
 
     const foldContainerStyles = {
@@ -79,7 +90,7 @@ const OrderRow: VFC<Props> = (props) => {
     }
     // const verticalFullWidth = {
     //     display: 'flex',
-    //     // flexDirection: 'column',
+    //     flexDirection: 'column' as 'column',
     //     alignItems: 'center',
     //     alignSelf: 'stretch',
     // }
@@ -100,6 +111,10 @@ const OrderRow: VFC<Props> = (props) => {
     else{
         message = 'あと約' + waitTime + '分';
     }
+
+    for (const productId in order.product_amount) { 
+        productList.push(<ProductNameForOrderRow productId={productId}/>);
+    }
     return(
         <TableRow>
             <TableCell>
@@ -109,9 +124,16 @@ const OrderRow: VFC<Props> = (props) => {
                     
                     <div style={verticalBar} /> 
                     
-                    <div style={productNameColumnStyles}></div>
+                    
+                    <div style={productNameColumnStyles}>
+                        <div>商品</div>
+                        {/* {productList} */}
+                    </div>
                     <div style={verticalBar} />
-                    <div style={messageContainerStyles}>{message}</div>
+                    <div style={messageContainerStyles}>
+                        <div>待ち時間</div>
+                        {message}
+                    </div>
                 </div>
                 <div style={foldContainerStyles}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="33" height="33" viewBox="0 0 33 33" fill="none">
