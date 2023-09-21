@@ -43,11 +43,12 @@ const Header = () => {
     display: 'flex',
     // width: 412px;
     // height: 60px;
-    padding: '0px 20px',
+    padding: '8px 20px',
     flexDirection: 'column' as 'column',
     // justifyContent: 'center',
     alignIitems: 'flex-start',
     gap: '10px',
+    borderBottom: 'solid #837468 1px'
   }
   const logoStyle = {
     display: 'flex',
