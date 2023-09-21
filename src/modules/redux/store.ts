@@ -9,7 +9,13 @@ const store = configureStore({
         shop: shopReducer,
         product: productReducer,
         order: orderReducer
-    }
+    },
+    middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware({
+            serializableCheck: {
+                ignoredActions: ['shops/fetchShops/fulfilled', 'products/fetchProducts/pending', 'products/fetchProducts/rejected', 'products/fetchProducts/fulfilled'],
+            },
+        }),
 })
 
 export default store;
