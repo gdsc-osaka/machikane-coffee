@@ -11,7 +11,7 @@ import {
     addOrder, fetchOrders,
     selectOrderStatus,
     selectReceivedOrder,
-    selectUnreceivedOrder
+    selectCompletedOrder
 } from "../modules/redux/order/ordersSlice";
 import OrderList from "../components/order/OrderList";
 import ShopManager from "../components/order/ShopManager";
@@ -20,7 +20,7 @@ const AdminPage = () => {
     const dispatch = useAppDispatch();
     const products = useSelector(selectAllProduct);
     const productStatus = useSelector(selectProductStatus);
-    const unreceivedOrders = useSelector(selectUnreceivedOrder);
+    const unreceivedOrders = useSelector(selectCompletedOrder);
     const orderStatus = useSelector(selectOrderStatus);
     const params = useParams();
     const shopId = params.shopId ?? '';

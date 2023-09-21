@@ -19,6 +19,22 @@ export const themeOptions: ThemeOptions = {
     components: {
         MuiDivider: {
 
+        },
+        MuiToggleButton: {
+            styleOverrides: {
+                root: {
+                    borderRadius: "5rem",
+                    borderColor: "#271900",
+                    padding: "0.5rem",
+                    "&.Mui-selected": {
+                        color: "#271900",
+                        backgroundColor: '#FFDEA7',
+                        borderWidth: "1px"
+                    },
+                },
+                primary: {
+                }
+            }
         }
     }
 }
