@@ -1,5 +1,11 @@
 import { Column } from "../layout/Column";
-import { IconButton, Switch, TextField, Typography } from "@mui/material";
+import {
+  CircularProgress,
+  IconButton,
+  Switch,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { Expanded } from "../layout/Expanded";
 import { useEffect, useMemo, useState } from "react";
 import { Row } from "../layout/Row";
@@ -16,61 +22,25 @@ import {
 import { useParams } from "react-router";
 import { useSelector } from "react-redux";
 import { RootState, useAppDispatch } from "../../modules/redux/store";
-import { BaristaMap, RawShop, Shop } from "../../modules/redux/shop/types";
-
+import {
+  BaristaMap,
+  RawShop,
+  Shop,
+  ShopStatus,
+} from "../../modules/redux/shop/types";
 const ShopManager = () => {
   //   const [name, setName] = useState("");
-
   const dispatch = useAppDispatch();
   const params = useParams();
   const shopId = params.shopId ?? "";
-
   const shopStatus = useSelector(selectShopStatus);
   const shop = useSelector<RootState, Shop | undefined>((state) =>
     selectShopById(state, shopId)
   );
-
-  console.log("shop?.status: ");
-  console.log(shop?.status);
-  console.log(shop?.status === "pause_ordering");
-
-  const [emgMsg, setEmgMsg] = useState(
-    shop?.emg_message ? shop.emg_message : ""
-  );
-
-  // useMemo: shop?.baristasが変化した時に値を返す
-  const baristas = useMemo<BaristaMap>(() => {
-    console.log("useMemo: ");
-    console.log(shop?.baristas);
-    return shop?.baristas ?? { 1: "inactive" };
-  }, [shop?.baristas]);
-
-  //   const baristaCount = useMemo<number>(() => {
-  //     return Object.keys(baristas).length;
-  //   }, [baristas]);
-
-  const [baristaCount, setBaristaCount] = useState(
-    Object.keys(baristas).length ? Object.keys(baristas).length : 1
-  );
-
-  console.log("count: ");
-  console.log(Object.keys(baristas).length);
-
-  //   const emgMsg = useMemo<string>(() => {
-  //     return shop?.emg_message ?? "";asq
-  //   }, [shop?.emg_message]);
-
-  // TODO 初期値 toggle button
-
-  const name = useMemo<string>(() => {
-    return shop?.display_name ?? "";
-  }, [shop?.display_name]);
-
-  const status = useMemo<string>(() => {
-    console.log("status(useMemo): ");
-    console.log(shop?.status);
-    return shop?.status ?? "active";
-  }, [shop?.status]);
+  const [emgMsg, setEmgMsg] = useState("");
+  const [baristaCount, setBaristaCount] = useState(1);
+  const [baristas, setBaristas] = useState<BaristaMap>({ 1: "active" });
+  const [status, setStatus] = useState<ShopStatus>("active");
 
   useEffect(() => {
     if (shopStatus === "idle" || shopStatus === "failed") {
@@ -78,66 +48,65 @@ const ShopManager = () => {
     }
   }, [dispatch, shopStatus]);
 
-  // useEffect: baristasが変化した時に関数内を実行
   useEffect(() => {
-    console.log(baristas);
-  }, [baristas]);
-
-  useEffect(() => {
-    console.log("status: ");
-    console.log(status);
-  }, [status]);
-
-  useEffect(() => {
-    console.log();
-  }, []);
+    if (shop !== undefined) {
+      setEmgMsg(shop.emg_message);
+      setBaristaCount(Object.keys(shop.baristas).length);
+      setBaristas(shop.baristas);
+      setStatus(shop.status);
+    }
+  }, [shop]);
 
   const handleEmergency = async (value: boolean) => {
-    console.log("status(emergency)");
-    console.log(shop?.status);
-    if (shop?.baristas) {
-      console.log("baristas length: " + Object.keys(shop?.baristas).length);
-    }
-
     if (value) {
-      // active
-      // status
-      await dispatch(
-        changeShopStatus({ shopId: shopId, status: "pause_ordering" })
-      );
-
-      // emgMsg
-      await dispatch(
-        updateShop({
-          shopId: shopId,
-          rawShop: {
-            display_name: name,
-            baristas: baristas,
-            emg_message: emgMsg,
-          },
-        })
-      );
-    } else {
       // pause
-      // status
-      await dispatch(changeShopStatus({ shopId: shopId, status: "active" }));
+      if (shop !== undefined) {
+        // emgMsg
+        await dispatch(
+          updateShop({
+            shopId: shopId,
+            rawShop: {
+              ...shop,
+              emg_message: emgMsg,
+            },
+          })
+        );
 
-      // emgMsg
-      await dispatch(
-        updateShop({
-          shopId: shopId,
-          rawShop: { display_name: name, baristas: baristas, emg_message: "" },
-        })
-      );
+        // status
+        await dispatch(
+          changeShopStatus({ shopId: shopId, status: "pause_ordering" })
+        );
+
+        setStatus("pause_ordering");
+      }
+    } else {
+      // active
+      if (shop !== undefined) {
+        // emgMsg
+        await dispatch(
+          updateShop({
+            shopId: shopId,
+            rawShop: {
+              ...shop,
+              emg_message: "",
+            },
+          })
+        );
+
+        // status
+        await dispatch(
+          changeShopStatus({
+            shopId: shopId,
+            status: "active",
+          })
+        );
+
+        setStatus("active");
+      }
     }
   };
-
   const handleBaristaCount = async (diff: number) => {
     const newCount = baristaCount + diff;
-
-    // console.log("baristas(cnt) before: ");
-    // console.log(baristas);
-    // console.log(newCount);
     const trueBaristas = Object.assign({}, baristas); // make the copy
 
     if (newCount > 0) {
@@ -149,31 +118,28 @@ const ShopManager = () => {
         delete trueBaristas[baristaCount];
       }
 
-      //   console.log("trueBaristas(cnt): ");
-      //   console.log(trueBaristas);
-
-      setBaristaCount(newCount);
-      //   setBaristas(trueBaristas);
+      if (shop !== undefined) {
+        await dispatch(
+          updateShop({
+            shopId: shopId,
+            rawShop: {
+              ...shop,
+              baristas: trueBaristas,
+            },
+          })
+        );
+      }
 
       await dispatch(
-        updateShop({
+        changeShopStatus({
           shopId: shopId,
-          rawShop: {
-            display_name: name,
-            baristas: trueBaristas,
-            emg_message: emgMsg,
-          },
+          status: status,
         })
       );
-
-      //   console.log("baristas(cnt): ");
-      //   console.log(baristas);
-
-      await dispatch(changeShopStatus({ shopId: shopId, status: "active" }));
     }
   };
-
-  return (
+  return shop !== undefined &&
+    (shop.status === "active" || shop.status === "pause_ordering") ? (
     <Column>
       <Typography variant={"h4"} sx={{ fontWeight: "bold" }}>
         管理
@@ -183,8 +149,8 @@ const ShopManager = () => {
           提供中止
         </Typography>
         <Switch
-          //   disabled={emgMsg.length === 0}
-          defaultChecked={shop?.status === "pause_ordering"}
+          disabled={shop.status === "active" && emgMsg.length === 0}
+          defaultChecked={shop.status === "pause_ordering"}
           onChange={(e) => handleEmergency(e.target.checked)}
         />
       </Expanded>
@@ -212,7 +178,8 @@ const ShopManager = () => {
         </Row>
       </Expanded>
     </Column>
+  ) : (
+    <CircularProgress />
   );
 };
-
 export default ShopManager;
