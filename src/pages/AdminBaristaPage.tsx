@@ -160,10 +160,15 @@ const AdminBaristaPage = () => {
                 担当を離れるときは選択を解除してください
             </Typography>
             <Typography variant={"h4"} fontWeight={"bold"}>
-                注文一覧
+                未完成の注文一覧
             </Typography>
-            {orders.map(order =>
-                <StickyNote>
+            {orders.map(order => {
+                // 全て完了した場合
+                if (Object.values(order.order_statuses).findIndex(orderStatus => orderStatus.status != "completed") == -1) {
+                    return <React.Fragment/>
+                }
+
+                return <StickyNote>
                     <Flex>
                         <Row>
                             <IndexIcon>
@@ -201,6 +206,7 @@ const AdminBaristaPage = () => {
                         </Flex>
                     })}
                 </StickyNote>
+                }
             )}
         </Column>
     }
