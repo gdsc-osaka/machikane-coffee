@@ -1,4 +1,4 @@
-import {Box, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
+import {Box, Button, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
 import {useEffect, useState} from "react";
 import {RootState, useAppDispatch} from "../modules/redux/store";
 import {useSelector} from "react-redux";
@@ -12,9 +12,10 @@ import React from "react";
 import styled from "styled-components";
 import StickyNote from "../components/StickyNote";
 import IndexIcon from "../components/order/IndexIcon";
-import {fetchOrders, selectAllOrders, selectOrderStatus} from "../modules/redux/order/ordersSlice";
+import {fetchOrders, selectAllOrders, selectOrderStatus, updateOrder} from "../modules/redux/order/ordersSlice";
 import {fetchProducts, selectAllProduct, selectProductStatus} from "../modules/redux/product/productsSlice";
 import {getOrderLabel} from "../modules/util/orderUtils";
+import {Order, Status} from "../modules/redux/order/types";
 
 const Column = styled.div`
   display: flex;
@@ -40,9 +41,19 @@ const Row = styled.div`
   gap: 0.375rem;
 `
 
+/**
+ * Order.orderedStatusesの要素を識別する
+ * @property orderId OrderのドキュメントID
+ * @property orderStatusId ProductのID
+ */
+type OrderStatusId = {
+    orderId: string;
+    orderStatusId: string;
+}
+
 const AdminBaristaPage = () => {
-    const [selectedId, setSelectedId] = useState(0);
-    const [baristaIds, setBaristaIds] = useState<number[]>([]);
+    const [selectedIdIndex, setSelectedIdIndex] = useState(0);
+    const [working, setWorking] = useState<OrderStatusId | undefined>();
 
     const dispatch = useAppDispatch();
     const params = useParams();
@@ -53,6 +64,8 @@ const AdminBaristaPage = () => {
     const orders = useSelector(selectAllOrders);
     const productStatus = useSelector(selectProductStatus);
     const products = useSelector(selectAllProduct);
+    const isWorking = working != undefined;
+    const baristaIds = shop == undefined ? [] : Object.keys(shop.baristas).map((e) => parseInt(e));
 
     // データを取得
     useEffect(() => {
@@ -60,13 +73,11 @@ const AdminBaristaPage = () => {
             dispatch(fetchShops());
         }
     }, [dispatch, shopStatus]);
-
     useEffect(() => {
         if (orderStatus == "idle" || orderStatus == "failed") {
             dispatch(fetchOrders(shopId));
         }
     }, [dispatch, orderStatus]);
-
     useEffect(() => {
         if (productStatus == "idle" || productStatus == "failed") {
             dispatch(fetchProducts(shopId));
@@ -77,18 +88,33 @@ const AdminBaristaPage = () => {
     useEffect(() => {
         if (shop != undefined) {
             const ids = Object.keys(shop.baristas).map((e) => parseInt(e));
-            setBaristaIds(ids);
             const firstInactiveId = ids.findIndex(id => shop.baristas[id] == "inactive") + 1;
-            setSelectedId(firstInactiveId);
+            setSelectedIdIndex(firstInactiveId);
         }
     }, [shop])
+
+    // それぞれのボタンを押したとき
+    const changeOrderStatus = (order: Order, orderStatusId: string, type: Status) => {
+        const newOrder: Order = {
+            ...order,
+            order_statuses: {
+                ...order.order_statuses,
+                [orderStatusId]: {
+                    ...order.order_statuses[orderStatusId], status: type, barista_id: selectedIdIndex + 1
+                }
+            }
+        }
+
+        dispatch(updateOrder({shopId: shopId, newOrder: newOrder}));
+        setWorking(type == "working" ? {orderId: order.id, orderStatusId: orderStatusId} : undefined);
+    }
 
     if (shop == undefined) {
         return <div/>
     } else {
         return <Column>
-            <ToggleButtonGroup color={"primary"} fullWidth={true} value={selectedId} exclusive>
-                {baristaIds.map(id => <ToggleButton value={id} disabled={shop.baristas[id] == "active"}>{selectedId == id ? <CheckIcon style={{marginRight: "0.5rem"}}/> : <React.Fragment/>}{id}番</ToggleButton>)}
+            <ToggleButtonGroup color={"primary"} fullWidth={true} value={selectedIdIndex} exclusive>
+                {baristaIds.map(id => <ToggleButton value={id} disabled={shop.baristas[id] == "active"}>{selectedIdIndex == id ? <CheckIcon style={{marginRight: "0.5rem"}}/> : <React.Fragment/>}{id}番</ToggleButton>)}
             </ToggleButtonGroup>
             <Typography variant={"body2"} textAlign={"right"} alignSelf={"stretch"}>
                 担当を離れるときは選択を解除してください
@@ -108,11 +134,14 @@ const AdminBaristaPage = () => {
                             </Typography>
                         </Row>
                     </Flex>
-                    {Object.keys(order.order_statuses).map(statusKey => {
-                        const orderStatus = order.order_statuses[statusKey];
+                    {Object.keys(order.order_statuses).map(orderStatusId => {
+                        const orderStatus = order.order_statuses[orderStatusId];
                         const product = products.find(prod => prod.id == orderStatus.product_id);
+                        const isWorkingOnThis = working != undefined && working.orderId == order.id && working.orderStatusId == orderStatusId;
+                        const isWorkingOnOther = isWorking && !isWorkingOnThis;
+                        const isCompleted = orderStatus.status == "completed";
 
-                        return <Flex>
+                        return <Flex style={{paddingLeft: "2.5rem"}}>
                             <Row>
                                 {orderStatus.status == "idle" ? <HourglassEmptyRoundedIcon/> : <React.Fragment/>}
                                 {orderStatus.status == "working" ? <HourglassBottomRoundedIcon/> : <React.Fragment/>}
@@ -122,7 +151,12 @@ const AdminBaristaPage = () => {
                                 </Typography>
                             </Row>
                             <Row>
-
+                                {isWorkingOnThis ? <Button variant={"outlined"} onClick={e => changeOrderStatus(order, orderStatusId, "idle")}>取り消し</Button> : <React.Fragment/>}
+                                <Button variant={"contained"} disabled={isWorking && !isWorkingOnThis || isCompleted}
+                                        onClick={e => changeOrderStatus(order, orderStatusId,
+                                            isWorkingOnThis ? "completed" : "working")}>
+                                    {isWorkingOnThis ? "完成" : isCompleted ?  "完成済" : isWorkingOnOther ? "他の商品を作成中です" : "つくる"}
+                                </Button>
                             </Row>
                         </Flex>
                     })}
