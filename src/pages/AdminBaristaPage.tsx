@@ -93,16 +93,16 @@ const AdminBaristaPage = () => {
     }, [shop])
 
     // windowが閉じられたとき or refreshされたとき, selectedIdをinactiveに戻す
-    useEffect(() => {
-        // BUG: a
-        window.addEventListener("beforeunload", (e) => {
-            console.log("unload")
-            if (shop != undefined) {
-                console.log("updateshop")
-                dispatch(updateShop({shopId, rawShop: {...shop, baristas: {...shop.baristas, [selectedId]: "inactive"}}}));
-            }
-        })
-    }, [])
+    // useEffect(() => {
+    //     // ISSUE#21
+    //     window.addEventListener("beforeunload", (e) => {
+    //         console.log("unload")
+    //         if (shop != undefined) {
+    //             console.log("updateshop")
+    //             dispatch(updateShop({shopId, rawShop: {...shop, baristas: {...shop.baristas, [selectedId]: "inactive"}}}));
+    //         }
+    //     })
+    // }, [])
 
     // バリスタIDの変更
     const handleBaristaId = (
