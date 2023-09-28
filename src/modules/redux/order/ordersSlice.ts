@@ -137,12 +137,12 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
     });
 
 /**
- * order_statuses の status が全て completed のとき, ルートの status も completed に設定する
+ * order_statuses の status が全て completed かつ status が idle のとき, ルートの status も completed に設定する
  */
 const switchOrderStatus = (newOrder: Order) => {
     const statusKeys = Object.keys(newOrder.order_statuses);
 
-    if (statusKeys.findIndex(k => newOrder.order_statuses[k].status != "completed") == -1) {
+    if (statusKeys.findIndex(k => newOrder.order_statuses[k].status != "completed") == -1 && newOrder.status == "idle") {
         // order_statuses の status が全て completed のとき
         newOrder.status = "completed";
     }
@@ -227,7 +227,7 @@ export const selectAllOrders = (state: RootState) => state.order.data;
 export const selectOrderStatus = (state: RootState) => state.order.status;
 export const selectOrderById = (state: RootState, id: string) => state.order.data.find(e => e.id == id);
 export const selectReceivedOrder = (state: RootState) => state.order.data.filter(e => e.status == "received");
-export const selectCompletedOrder = (state: RootState) => state.order.data.filter(e => e.status == "completed");
+export const selectUnreceivedOrder = (state: RootState) => state.order.data.filter(e => e.status != "received");
 /**
  * 商品の遅延時間を含め、最大の完成する時刻を返します
  * 注文がない場合, 現在時刻を返します
