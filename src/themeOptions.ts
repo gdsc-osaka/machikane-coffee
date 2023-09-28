@@ -25,7 +25,7 @@ export const themeOptions: ThemeOptions = {
                 root: {
                     borderRadius: "5rem",
                     borderColor: "#271900",
-                    padding: "0.5rem",
+                    padding: "0.4rem",
                     "&.Mui-selected": {
                         color: "#271900",
                         backgroundColor: '#FFDEA7',
