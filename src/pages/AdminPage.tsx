@@ -16,10 +16,10 @@ import {
     DialogTitle, Grid, Stack
 } from "@mui/material";
 import {
-    addOrder, deleteOrder, fetchOrders,
+    addOrder, deleteOrder,
     selectOrderStatus,
     selectReceivedOrder,
-    selectUnreceivedOrder, updateOrder
+    selectUnreceivedOrder, streamOrders, updateOrder
 } from "../modules/redux/order/ordersSlice";
 import OrderList from "../components/order/OrderList";
 import ShopManager from "../components/order/ShopManager";
@@ -51,7 +51,7 @@ const AdminPage = () => {
 
     useEffect(() => {
         if (orderStatus == "idle" || orderStatus == "failed") {
-            dispatch(fetchOrders(shopId));
+            dispatch(streamOrders(shopId));
         }
     }, [dispatch, orderStatus]);
 

@@ -12,11 +12,17 @@ import React from "react";
 import styled from "styled-components";
 import StickyNote from "../components/StickyNote";
 import IndexIcon from "../components/order/IndexIcon";
-import {fetchOrders, selectAllOrders, selectOrderStatus, updateOrder} from "../modules/redux/order/ordersSlice";
+import {
+    selectAllOrders,
+    selectOrderStatus,
+    streamOrders,
+    updateOrder
+} from "../modules/redux/order/ordersSlice";
 import {fetchProducts, selectAllProduct, selectProductStatus} from "../modules/redux/product/productsSlice";
 import {getOrderLabel} from "../modules/util/orderUtils";
 import {Order, Status} from "../modules/redux/order/types";
 import {Flex} from "../components/layout/Flex";
+import * as stream from "stream";
 
 const Column = styled.div`
   display: flex;
@@ -69,7 +75,7 @@ const AdminBaristaPage = () => {
     }, [dispatch, shopStatus]);
     useEffect(() => {
         if (orderStatus == "idle" || orderStatus == "failed") {
-            dispatch(fetchOrders(shopId));
+            dispatch(streamOrders(shopId));
         }
     }, [dispatch, orderStatus]);
     useEffect(() => {
