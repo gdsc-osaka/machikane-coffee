@@ -8,6 +8,7 @@ import {RootState} from "../store";
 import {
     addDoc,
     collection,
+    deleteDoc,
     doc,
     getDoc,
     getDocs,
@@ -137,12 +138,12 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
     });
 
 /**
- * order_statuses の status が全て completed のとき, ルートの status も completed に設定する
+ * order_statuses の status が全て completed かつ status が idle のとき, ルートの status も completed に設定する
  */
 const switchOrderStatus = (newOrder: Order) => {
     const statusKeys = Object.keys(newOrder.order_statuses);
 
-    if (statusKeys.findIndex(k => newOrder.order_statuses[k].status != "completed") == -1) {
+    if (statusKeys.findIndex(k => newOrder.order_statuses[k].status != "completed") == -1 && newOrder.status == "idle") {
         // order_statuses の status が全て completed のとき
         newOrder.status = "completed";
     }
@@ -160,6 +161,13 @@ export const updateOrder = createAsyncThunk<Order, {shopId: string, newOrder: Or
         return newOrder;
     });
 
+export const deleteOrder = createAsyncThunk<Order, {shopId: string, order: Order}, {}>('orders/deleteOrder',
+    async ({shopId, order}) => {
+        const docRef = doc(db, `shops/${shopId}/orders/${order.id}`);
+        await deleteDoc(docRef);
+        return order;
+    })
+
 const ordersSlice = createSlice({
     name: "orders",
     initialState: {
@@ -171,7 +179,7 @@ const ordersSlice = createSlice({
     } as AsyncState<Order[]> & {unsubscribe: (() => void) | null},
     reducers: {
         orderAdded(state, action: PayloadAction<Order>) {
-            state.data.unshift(action.payload);
+            state.data.push(action.payload);
         },
         orderUpdated(state, action: PayloadAction<Order>) {
             const order = action.payload;
@@ -185,7 +193,7 @@ const ordersSlice = createSlice({
         orderRemoved(state, action: PayloadAction<string>) {
             const id = action.payload;
             state.data.remove(e => e.id == id);
-        }
+        },
     },
     extraReducers: builder => {
         builder
@@ -209,7 +217,7 @@ const ordersSlice = createSlice({
         builder.addCase(addOrder.fulfilled, (state, action) => {
             const order = action.payload;
             if (order != undefined) {
-                state.data.unshift(order);
+                state.data.push(order);
             }
         })
 
@@ -217,6 +225,11 @@ const ordersSlice = createSlice({
            const newOrder = action.payload;
            state.data.update(e => e.id == newOrder.id, newOrder);
         });
+
+        builder.addCase(deleteOrder.fulfilled, (state, action) => {
+            const orders = state.data;
+            orders.splice(orders.findIndex(e => e.id == action.payload.id), 1);
+        })
     },
 });
 
@@ -227,7 +240,7 @@ export const selectAllOrders = (state: RootState) => state.order.data;
 export const selectOrderStatus = (state: RootState) => state.order.status;
 export const selectOrderById = (state: RootState, id: string) => state.order.data.find(e => e.id == id);
 export const selectReceivedOrder = (state: RootState) => state.order.data.filter(e => e.status == "received");
-export const selectCompletedOrder = (state: RootState) => state.order.data.filter(e => e.status == "completed");
+export const selectUnreceivedOrder = (state: RootState) => state.order.data.filter(e => e.status != "received");
 /**
  * 商品の遅延時間を含め、最大の完成する時刻を返します
  * 注文がない場合, 現在時刻を返します

@@ -16,6 +16,7 @@ import {fetchOrders, selectAllOrders, selectOrderStatus, updateOrder} from "../m
 import {fetchProducts, selectAllProduct, selectProductStatus} from "../modules/redux/product/productsSlice";
 import {getOrderLabel} from "../modules/util/orderUtils";
 import {Order, Status} from "../modules/redux/order/types";
+import {Flex} from "../components/layout/Flex";
 
 const Column = styled.div`
   display: flex;
@@ -23,14 +24,6 @@ const Column = styled.div`
   align-items: flex-start;
   gap: 0.5rem;
   padding: 0.6rem 0.8rem;
-`
-
-const Flex = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  align-self: stretch;
-  padding: 0.375rem 0.5rem;
 `
 
 const Row = styled.div`

@@ -1,11 +1,11 @@
 import {ReactNode} from "react";
 import styled from "styled-components";
 
-const Container = styled.div`
+const Container = styled.div<{ color: string }>`
   display: flex;
   align-items: flex-start;
   align-self: stretch;
-  background-color: #FFF8F5;
+  background-color: ${(props) => props.color};
 `
 
 const Column = styled.div`
@@ -15,11 +15,11 @@ const Column = styled.div`
   flex: 1 0 0;
 `
 
-const FoldIcon = () => {
-    return <div style={{width: "3rem", height: "3rem", marginLeft: "-2rem"}}>
+const FoldIcon = (props: {color: string}) => {
+    return <div style={{width: "3rem", height: "3rem", marginLeft: "-2rem", zIndex: 2}}>
         <svg viewBox="-4 4 33 33" fill="none">
             <g filter="url(#filter0_d_54558_1552)">
-                <path d="M5 3V28H30L5 3Z" fill="#FFF8F5"/>
+                <path d="M5 3V28H30L5 3Z" fill={props.color}/>
             </g>
             <path d="M30 28V3H5L30 28Z" fill="#FFFBFF"/>
             <defs>
@@ -39,15 +39,17 @@ const FoldIcon = () => {
 }
 
 type StickyNoteContainerProps = {
-    children: ReactNode
+    children?: ReactNode,
+    variant?: "surface" | "surface-variant"
 }
 
 const StickyNote = (props: StickyNoteContainerProps) => {
-    return <Container>
+    const color = props.variant == "surface-variant" ? "#FFF8F5" : "#F7ECE5";
+    return <Container color={color}>
         <Column>
             {props.children}
         </Column>
-        <FoldIcon/>
+        <FoldIcon color={color}/>
     </Container>
 }
 
