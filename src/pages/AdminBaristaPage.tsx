@@ -1,10 +1,10 @@
-import {Box, Button, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
+import {Box, Button, CircularProgress, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
 import {useEffect, useState} from "react";
 import {RootState, useAppDispatch} from "../modules/redux/store";
 import {useSelector} from "react-redux";
-import {fetchShops, selectShopById, selectShopStatus} from "../modules/redux/shop/shopsSlice";
+import {fetchShops, selectShopById, selectShopStatus, updateShop} from "../modules/redux/shop/shopsSlice";
 import {useParams} from "react-router-dom";
-import {Shop} from "../modules/redux/shop/types";
+import {BaristaMap, RawShop, Shop} from "../modules/redux/shop/types";
 import CheckIcon from '@mui/icons-material/Check';
 import HourglassEmptyRoundedIcon from '@mui/icons-material/HourglassEmptyRounded';
 import HourglassBottomRoundedIcon from '@mui/icons-material/HourglassBottomRounded';
@@ -52,8 +52,9 @@ type OrderStatusId = {
 }
 
 const AdminBaristaPage = () => {
-    const [selectedIdIndex, setSelectedIdIndex] = useState(0);
+    const [selectedId, setSelectedId] = useState(0);
     const [working, setWorking] = useState<OrderStatusId | undefined>();
+    const [baristas, setBaristas] = useState<BaristaMap>({});
 
     const dispatch = useAppDispatch();
     const params = useParams();
@@ -87,34 +88,73 @@ const AdminBaristaPage = () => {
     // shopが取得された後にbaristaIdとselectedIdを初期化
     useEffect(() => {
         if (shop != undefined) {
-            const ids = Object.keys(shop.baristas).map((e) => parseInt(e));
-            const firstInactiveId = ids.findIndex(id => shop.baristas[id] == "inactive") + 1;
-            setSelectedIdIndex(firstInactiveId);
+            setBaristas(shop.baristas);
         }
     }, [shop])
 
+    // windowが閉じられたとき or refreshされたとき, selectedIdをinactiveに戻す
+    useEffect(() => {
+        // BUG: a
+        window.addEventListener("beforeunload", (e) => {
+            console.log("unload")
+            if (shop != undefined) {
+                console.log("updateshop")
+                dispatch(updateShop({shopId, rawShop: {...shop, baristas: {...shop.baristas, [selectedId]: "inactive"}}}));
+            }
+        })
+    }, [])
+
+    // バリスタIDの変更
+    const handleBaristaId = (
+        newId: number | null | undefined
+    ) => {
+        const oldId = selectedId;
+
+        if (shop != undefined && oldId != newId) {
+            let newBaristas: BaristaMap;
+
+            if (newId != null) {
+                // idを最初に設定したときはoldIdが0なので場合分けする
+                newBaristas = oldId > 0 ? {...shop.baristas, [newId]: "active", [oldId]: "inactive"} : {...shop.baristas, [newId]: "active"};
+                setSelectedId(newId);
+            } else {
+                // 選択中のボタンを押したとき
+                newBaristas = {...shop.baristas, [oldId]: "inactive"};
+                setSelectedId(0);
+            }
+
+            const rawShop: RawShop = {...shop, baristas: newBaristas};
+            dispatch(updateShop({shopId, rawShop}));
+            setBaristas(newBaristas);
+        }
+    };
+
     // それぞれのボタンを押したとき
-    const changeOrderStatus = (order: Order, orderStatusId: string, type: Status) => {
+    const handleOrderStatus = (order: Order, orderStatusId: string, type: Status) => {
         const newOrder: Order = {
             ...order,
             order_statuses: {
                 ...order.order_statuses,
                 [orderStatusId]: {
-                    ...order.order_statuses[orderStatusId], status: type, barista_id: selectedIdIndex + 1
+                    ...order.order_statuses[orderStatusId], status: type, barista_id: selectedId
                 }
             }
         }
 
-        dispatch(updateOrder({shopId: shopId, newOrder: newOrder}));
+        dispatch(updateOrder({shopId, newOrder}));
         setWorking(type == "working" ? {orderId: order.id, orderStatusId: orderStatusId} : undefined);
     }
 
     if (shop == undefined) {
-        return <div/>
+        return <CircularProgress/>
     } else {
         return <Column>
-            <ToggleButtonGroup color={"primary"} fullWidth={true} value={selectedIdIndex} exclusive>
-                {baristaIds.map(id => <ToggleButton value={id} disabled={shop.baristas[id] == "active"}>{selectedIdIndex == id ? <CheckIcon style={{marginRight: "0.5rem"}}/> : <React.Fragment/>}{id}番</ToggleButton>)}
+            <ToggleButtonGroup color={"primary"} fullWidth={true} value={selectedId} exclusive onChange={(e, id) => handleBaristaId(id)}>
+                {baristaIds.map(id =>
+                    <ToggleButton value={id} disabled={baristas[id] == "active" && selectedId != id}>
+                        {selectedId == id ? <CheckIcon style={{marginRight: "0.5rem"}}/> : <React.Fragment/>}
+                        {id}番
+                    </ToggleButton>)}
             </ToggleButtonGroup>
             <Typography variant={"body2"} textAlign={"right"} alignSelf={"stretch"}>
                 担当を離れるときは選択を解除してください
@@ -151,9 +191,9 @@ const AdminBaristaPage = () => {
                                 </Typography>
                             </Row>
                             <Row>
-                                {isWorkingOnThis ? <Button variant={"outlined"} onClick={e => changeOrderStatus(order, orderStatusId, "idle")}>取り消し</Button> : <React.Fragment/>}
-                                <Button variant={"contained"} disabled={isWorking && !isWorkingOnThis || isCompleted}
-                                        onClick={e => changeOrderStatus(order, orderStatusId,
+                                {isWorkingOnThis ? <Button variant={"outlined"} onClick={e => handleOrderStatus(order, orderStatusId, "idle")}>取り消し</Button> : <React.Fragment/>}
+                                <Button variant={"contained"} disabled={isWorking && !isWorkingOnThis || isCompleted || selectedId == 0}
+                                        onClick={e => handleOrderStatus(order, orderStatusId,
                                             isWorkingOnThis ? "completed" : "working")}>
                                     {isWorkingOnThis ? "完成" : isCompleted ?  "完成済" : isWorkingOnOther ? "他の商品を作成中です" : "つくる"}
                                 </Button>
