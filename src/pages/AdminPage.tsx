@@ -95,7 +95,7 @@ const AdminPage = () => {
     return(
         productStatus == "succeeded" ?
             <React.Fragment>
-                <Grid container spacing={2} sx={{padding: "30px 50px"}}>
+                <Grid container spacing={2} sx={{padding: "30px 30px"}}>
                     <Grid item xs={12} sm={6} lg={5}>
                         <Stack spacing={2}>
                             <OrderForm products={products} onChangeAmount={onChangeAmount} productAmount={productAmount} onOrderAddClicked={onOrderAddClicked}/>
