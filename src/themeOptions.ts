@@ -32,7 +32,20 @@ export const themeOptions: ThemeOptions = {
                         borderWidth: "1px"
                     },
                 },
-                primary: {
+            }
+        },
+        MuiButton: {
+            defaultProps: {
+                disableElevation: true
+            },
+            styleOverrides: {
+                root: {
+                    borderRadius: 100,
+                    paddingTop: 5,
+                    paddingBottom: 5,
+                },
+                outlined: {
+                    borderColor: "#837468"
                 }
             }
         }

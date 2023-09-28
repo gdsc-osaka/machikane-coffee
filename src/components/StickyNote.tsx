@@ -16,7 +16,7 @@ const Column = styled.div`
 `
 
 const FoldIcon = () => {
-    return <div style={{width: "3rem", height: "3rem"}}>
+    return <div style={{width: "3rem", height: "3rem", marginLeft: "-2rem"}}>
         <svg viewBox="-4 4 33 33" fill="none">
             <g filter="url(#filter0_d_54558_1552)">
                 <path d="M5 3V28H30L5 3Z" fill="#FFF8F5"/>
