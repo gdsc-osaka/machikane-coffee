@@ -8,6 +8,7 @@ import {RootState} from "../store";
 import {
     addDoc,
     collection,
+    deleteDoc,
     doc,
     getDoc,
     getDocs,
@@ -160,6 +161,13 @@ export const updateOrder = createAsyncThunk<Order, {shopId: string, newOrder: Or
         return newOrder;
     });
 
+export const deleteOrder = createAsyncThunk<Order, {shopId: string, order: Order}, {}>('orders/deleteOrder',
+    async ({shopId, order}) => {
+        const docRef = doc(db, `shops/${shopId}/orders/${order.id}`);
+        await deleteDoc(docRef);
+        return order;
+    })
+
 const ordersSlice = createSlice({
     name: "orders",
     initialState: {
@@ -171,7 +179,7 @@ const ordersSlice = createSlice({
     } as AsyncState<Order[]> & {unsubscribe: (() => void) | null},
     reducers: {
         orderAdded(state, action: PayloadAction<Order>) {
-            state.data.unshift(action.payload);
+            state.data.push(action.payload);
         },
         orderUpdated(state, action: PayloadAction<Order>) {
             const order = action.payload;
@@ -185,7 +193,7 @@ const ordersSlice = createSlice({
         orderRemoved(state, action: PayloadAction<string>) {
             const id = action.payload;
             state.data.remove(e => e.id == id);
-        }
+        },
     },
     extraReducers: builder => {
         builder
@@ -209,7 +217,7 @@ const ordersSlice = createSlice({
         builder.addCase(addOrder.fulfilled, (state, action) => {
             const order = action.payload;
             if (order != undefined) {
-                state.data.unshift(order);
+                state.data.push(order);
             }
         })
 
@@ -217,6 +225,11 @@ const ordersSlice = createSlice({
            const newOrder = action.payload;
            state.data.update(e => e.id == newOrder.id, newOrder);
         });
+
+        builder.addCase(deleteOrder.fulfilled, (state, action) => {
+            const orders = state.data;
+            orders.splice(orders.findIndex(e => e.id == action.payload.id), 1);
+        })
     },
 });
 
