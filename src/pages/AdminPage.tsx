@@ -7,7 +7,7 @@ import {useParams} from "react-router-dom";
 import {Order, ProductAmount} from "../modules/redux/order/types";
 import OrderForm from "../components/order/OrderForm";
 import {
-    Button,
+    Button, Card,
     CircularProgress,
     Dialog,
     DialogActions,
@@ -97,7 +97,9 @@ const AdminPage = () => {
             <RowLayout>
                 <Column>
                     <OrderForm products={products} onChangeAmount={onChangeAmount} productAmount={productAmount} onOrderAddClicked={onOrderAddClicked}/>
-                    <ShopManager/>
+                    <Card sx={{width: "100%", padding: "20px"}}>
+                        <ShopManager/>
+                    </Card>
                 </Column>
                 <OrderList orders={unreceivedOrders} products={products} onClickReceive={handleReceiveOrder} onClickDelete={handleDeleteOrder}/>
                 <ReceivedOrderList receivedOrders={receivedOrders} products={products} onClickUnreceive={handleUnreceiveOrder}/>
