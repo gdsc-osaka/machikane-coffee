@@ -11,7 +11,7 @@ export const themeOptions: ThemeOptions = {
         }
     },
     typography: {
-        fontFamily: "Roboto",
+        fontFamily: 'Noto Sans JP',
         h4: {
             fontSize: "1.8rem"
         },
