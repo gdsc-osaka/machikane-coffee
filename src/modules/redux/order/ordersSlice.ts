@@ -43,14 +43,19 @@ export const fetchOrders = createAsyncThunk("orders/fetchOrders",
  * order をリアルタイム更新する. ユーザー側で使用されることを想定
  */
 export const streamOrders = createAsyncThunk('orders/streamOrders',
-    (shopId: string, {dispatch}) => {
+    (shopId: string, {dispatch, getState}) => {
         const _query = ordersQuery(shopId);
         const unsubscribe = onSnapshot(_query,(snapshot) => {
+                const state: RootState = getState() as RootState;
+
                 snapshot.docChanges().forEach((change) => {
 
                    if (change.type == "added") {
                        const order = change.doc.data();
-                       dispatch(orderAdded(order));
+
+                       if (state.order.data.findIndex(e => e.id == order.id) == -1) {
+                           dispatch(orderAdded(order));
+                       }
                    }
                    if (change.type == "modified") {
                        const order = change.doc.data();
@@ -216,7 +221,8 @@ const ordersSlice = createSlice({
 
         builder.addCase(addOrder.fulfilled, (state, action) => {
             const order = action.payload;
-            if (order != undefined) {
+            // 重複するデータが存在しないとき
+            if (order != undefined && state.data.findIndex(e => e.id == order.id) == -1) {
                 state.data.push(order);
             }
         })
@@ -236,11 +242,11 @@ const ordersSlice = createSlice({
 const orderReducer = ordersSlice.reducer;
 export default orderReducer;
 export const {orderAdded, orderUpdated, orderRemoved} = ordersSlice.actions;
-export const selectAllOrders = (state: RootState) => state.order.data;
+export const selectAllOrders = (state: RootState) => state.order.data.slice().sort((a, b) => a.created_at.toDate().getTime() - b.created_at.toDate().getTime());
 export const selectOrderStatus = (state: RootState) => state.order.status;
 export const selectOrderById = (state: RootState, id: string) => state.order.data.find(e => e.id == id);
-export const selectReceivedOrder = (state: RootState) => state.order.data.filter(e => e.status == "received");
-export const selectUnreceivedOrder = (state: RootState) => state.order.data.filter(e => e.status != "received");
+export const selectReceivedOrder = (state: RootState) => selectAllOrders(state).filter(e => e.status == "received");
+export const selectUnreceivedOrder = (state: RootState) => selectAllOrders(state).filter(e => e.status != "received");
 /**
  * 商品の遅延時間を含め、最大の完成する時刻を返します
  * 注文がない場合, 現在時刻を返します

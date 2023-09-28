@@ -7,19 +7,19 @@ import {useParams} from "react-router-dom";
 import {Order, ProductAmount} from "../modules/redux/order/types";
 import OrderForm from "../components/order/OrderForm";
 import {
-    Button,
+    Button, Card,
     CircularProgress,
     Dialog,
     DialogActions,
     DialogContent,
     DialogContentText,
-    DialogTitle
+    DialogTitle, Grid, Stack
 } from "@mui/material";
 import {
-    addOrder, deleteOrder, fetchOrders,
+    addOrder, deleteOrder,
     selectOrderStatus,
     selectReceivedOrder,
-    selectUnreceivedOrder, updateOrder
+    selectUnreceivedOrder, streamOrders, updateOrder
 } from "../modules/redux/order/ordersSlice";
 import OrderList from "../components/order/OrderList";
 import ShopManager from "../components/order/ShopManager";
@@ -51,7 +51,7 @@ const AdminPage = () => {
 
     useEffect(() => {
         if (orderStatus == "idle" || orderStatus == "failed") {
-            dispatch(fetchOrders(shopId));
+            dispatch(streamOrders(shopId));
         }
     }, [dispatch, orderStatus]);
 
@@ -94,13 +94,25 @@ const AdminPage = () => {
 
     return(
         productStatus == "succeeded" ?
-            <RowLayout>
-                <Column>
-                    <OrderForm products={products} onChangeAmount={onChangeAmount} productAmount={productAmount} onOrderAddClicked={onOrderAddClicked}/>
-                    <ShopManager/>
-                </Column>
-                <OrderList orders={unreceivedOrders} products={products} onClickReceive={handleReceiveOrder} onClickDelete={handleDeleteOrder}/>
-                <ReceivedOrderList receivedOrders={receivedOrders} products={products} onClickUnreceive={handleUnreceiveOrder}/>
+            <React.Fragment>
+                <Grid container spacing={2} sx={{padding: "30px 30px"}}>
+                    <Grid item xs={12} sm={6} lg={5}>
+                        <Stack spacing={2}>
+                            <OrderForm products={products} onChangeAmount={onChangeAmount} productAmount={productAmount} onOrderAddClicked={onOrderAddClicked}/>
+                            <Card sx={{width: "100%", padding: "20px"}}>
+                                <ShopManager/>
+                            </Card>
+                        </Stack>
+                    </Grid>
+                    <Grid item container xs={12} sm={6} lg={7} spacing={2}>
+                        <Grid item xs={12} sm={12} lg={6}>
+                            <OrderList orders={unreceivedOrders} products={products} onClickReceive={handleReceiveOrder} onClickDelete={handleDeleteOrder}/>
+                        </Grid>
+                        <Grid item xs={12} sm={12} lg={6}>
+                            <ReceivedOrderList receivedOrders={receivedOrders} products={products} onClickUnreceive={handleUnreceiveOrder}/>
+                        </Grid>
+                    </Grid>
+                </Grid>
                 <Dialog open={openDelete}
                         onClose={handleCloseDelete}
                         aria-labelledby="order-delete-alert-dialog"
@@ -120,7 +132,7 @@ const AdminPage = () => {
                         </Button>
                     </DialogActions>
                 </Dialog>
-            </RowLayout>
+            </React.Fragment>
             : <CircularProgress />
     )
 }

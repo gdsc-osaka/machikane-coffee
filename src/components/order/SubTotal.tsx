@@ -1,6 +1,6 @@
 import {ProductAmount} from "../../modules/redux/order/types";
 import styled from "styled-components";
-import {Divider, Typography} from "@mui/material";
+import {Divider, Stack, Typography} from "@mui/material";
 import {Product} from "../../modules/redux/product/types";
 import React from "react";
 
@@ -29,7 +29,7 @@ const SubTotal = (props: SubTotalProps) => {
     }
 
     return (
-        <Container>
+        <Stack spacing={1}>
             {ids.map(id => {
                 const amount = productAmount[id];
 
@@ -40,8 +40,8 @@ const SubTotal = (props: SubTotalProps) => {
                 const product = products.find((product) => product.id == id);
 
                 return <Row>
-                    <Typography>
-                        {product?.display_name ?? ""}
+                    <Typography variant={"body1"}>
+                        {product?.shorter_name ?? ""}
                     </Typography>
                     <SubRow>
                         <Typography>
@@ -64,7 +64,7 @@ const SubTotal = (props: SubTotalProps) => {
                     ¥{total}
                 </Typography>
             </Row>
-        </Container>
+        </Stack>
     );
 }
 

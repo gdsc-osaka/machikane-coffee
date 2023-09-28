@@ -11,7 +11,7 @@ export const themeOptions: ThemeOptions = {
         }
     },
     typography: {
-        fontFamily: "Roboto",
+        fontFamily: 'Noto Sans JP',
         h4: {
             fontSize: "1.8rem"
         },
@@ -53,11 +53,22 @@ export const themeOptions: ThemeOptions = {
             styleOverrides: {
                 root: {
                     borderRadius: 10,
-                    backgroundColor: "#EBE0D9"
+                    backgroundColor: "#EBE0D9",
                 },
                 colorPrimary: {
                     backgroundColor: "#FFDCBE",
                     color: "#000"
+                }
+            }
+        },
+        MuiCard: {
+            defaultProps: {
+                raised: false
+            },
+            styleOverrides: {
+                root: {
+                    borderRadius: 10,
+                    boxShadow: "none"
                 }
             }
         }

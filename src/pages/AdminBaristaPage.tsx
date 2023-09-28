@@ -1,4 +1,4 @@
-import {Box, Button, CircularProgress, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
+import {Box, Button, CircularProgress, Stack, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
 import {useEffect, useState} from "react";
 import {RootState, useAppDispatch} from "../modules/redux/store";
 import {useSelector} from "react-redux";
@@ -12,11 +12,17 @@ import React from "react";
 import styled from "styled-components";
 import StickyNote from "../components/StickyNote";
 import IndexIcon from "../components/order/IndexIcon";
-import {fetchOrders, selectAllOrders, selectOrderStatus, updateOrder} from "../modules/redux/order/ordersSlice";
+import {
+    selectAllOrders,
+    selectOrderStatus,
+    streamOrders,
+    updateOrder
+} from "../modules/redux/order/ordersSlice";
 import {fetchProducts, selectAllProduct, selectProductStatus} from "../modules/redux/product/productsSlice";
 import {getOrderLabel} from "../modules/util/orderUtils";
 import {Order, Status} from "../modules/redux/order/types";
 import {Flex} from "../components/layout/Flex";
+import * as stream from "stream";
 
 const Column = styled.div`
   display: flex;
@@ -69,7 +75,7 @@ const AdminBaristaPage = () => {
     }, [dispatch, shopStatus]);
     useEffect(() => {
         if (orderStatus == "idle" || orderStatus == "failed") {
-            dispatch(fetchOrders(shopId));
+            dispatch(streamOrders(shopId));
         }
     }, [dispatch, orderStatus]);
     useEffect(() => {
@@ -141,18 +147,20 @@ const AdminBaristaPage = () => {
     if (shop == undefined) {
         return <CircularProgress/>
     } else {
-        return <Column>
-            <ToggleButtonGroup color={"primary"} fullWidth={true} value={selectedId} exclusive onChange={(e, id) => handleBaristaId(id)}>
-                {baristaIds.map(id =>
-                    <ToggleButton value={id} disabled={baristas[id] == "active" && selectedId != id}>
-                        {selectedId == id ? <CheckIcon style={{marginRight: "0.5rem"}}/> : <React.Fragment/>}
-                        {id}番
-                    </ToggleButton>)}
-            </ToggleButtonGroup>
-            <Typography variant={"body2"} textAlign={"right"} alignSelf={"stretch"}>
-                担当を離れるときは選択を解除してください
-            </Typography>
-            <Typography variant={"h4"} fontWeight={"bold"}>
+        return <Stack spacing={2} sx={{padding: "25px 10px"}}>
+            <Stack spacing={1}>
+                <ToggleButtonGroup color={"primary"} fullWidth={true} value={selectedId} exclusive onChange={(e, id) => handleBaristaId(id)}>
+                    {baristaIds.map(id =>
+                        <ToggleButton value={id} disabled={baristas[id] == "active" && selectedId != id}>
+                            {selectedId == id ? <CheckIcon style={{marginRight: "0.5rem"}}/> : <React.Fragment/>}
+                            {id}番
+                        </ToggleButton>)}
+                </ToggleButtonGroup>
+                <Typography variant={"body2"} textAlign={"right"} alignSelf={"stretch"}>
+                    担当を離れるときは選択を解除してください
+                </Typography>
+            </Stack>
+            <Typography variant={"h4"} fontWeight={"bold"} sx={{padding: "5px 0"}}>
                 未完成の注文一覧
             </Typography>
             {orders.map(order => {
@@ -201,7 +209,7 @@ const AdminBaristaPage = () => {
                 </StickyNote>
                 }
             )}
-        </Column>
+        </Stack>
     }
 }
 

@@ -1,6 +1,6 @@
 import {Order} from "../../modules/redux/order/types";
 import {Column} from "../layout/Column";
-import {Button, Typography} from "@mui/material";
+import {Button, Stack, Typography} from "@mui/material";
 import StickyNote from "../StickyNote";
 import IndexIcon from "./IndexIcon";
 import {getOrderLabel} from "../../modules/util/orderUtils";
@@ -17,11 +17,12 @@ type ReceivedOrderListProps = {
 }
 
 const ReceivedOrderList = (props: ReceivedOrderListProps) => {
-    return <Column minWidth={"360px"}>
+    return <Stack spacing={3}>
         <Typography variant={"h4"} sx={{fontWeight: "bold"}}>
             受け取り済み注文一覧
         </Typography>
-        {props.receivedOrders.map(order => <StickyNote variant={"surface-variant"}>
+        <Stack spacing={2}>
+            {props.receivedOrders.map(order => <StickyNote variant={"surface-variant"}>
                 <Flex>
                     <Row>
                         <IndexIcon>
@@ -35,9 +36,9 @@ const ReceivedOrderList = (props: ReceivedOrderListProps) => {
                         未受取にする
                     </Button>
                 </Flex>
-            </StickyNote>
-        )}
-    </Column>
+            </StickyNote>)}
+        </Stack>
+    </Stack>
 }
 
 export default ReceivedOrderList;
