@@ -48,6 +48,18 @@ export const themeOptions: ThemeOptions = {
                     borderColor: "#837468"
                 }
             }
+        },
+        MuiChip: {
+            styleOverrides: {
+                root: {
+                    borderRadius: 10,
+                    backgroundColor: "#EBE0D9"
+                },
+                colorPrimary: {
+                    backgroundColor: "#FFDCBE",
+                    color: "#000"
+                }
+            }
         }
     }
 }
