@@ -199,8 +199,9 @@ const AdminBaristaPage = () => {
                         const orderStatus = order.order_statuses[orderStatusId];
                         const product = products.find(prod => prod.id == orderStatus.product_id);
                         const isWorkingOnThis = working != undefined && working.orderId == order.id && working.orderStatusId == orderStatusId;
-                        const isWorkingOnOther = isWorking && !isWorkingOnThis;
+                        const isWorkingOnOther = working != undefined && (working.orderId != order.id || working.orderStatusId != orderStatusId);
                         const isCompleted = orderStatus.status == "completed";
+                        const disabled = isWorkingOnOther || isCompleted || selectedId == 0 || (orderStatus.status == "working" && orderStatus.barista_id != selectedId);
 
                         return <Flex style={{paddingLeft: "2.5rem"}}>
                             <Row>
@@ -212,11 +213,20 @@ const AdminBaristaPage = () => {
                                 </Typography>
                             </Row>
                             <Row>
-                                {isWorkingOnThis ? <Button variant={"outlined"} onClick={e => handleOrderStatus(order, orderStatusId, "idle")}>取り消し</Button> : <React.Fragment/>}
-                                <Button variant={"contained"} disabled={isWorking && !isWorkingOnThis || isCompleted || selectedId == 0}
+                                {isWorkingOnThis ?
+                                    <Button variant={"outlined"}
+                                            disabled={disabled}
+                                            onClick={e => handleOrderStatus(order, orderStatusId, "idle")}>
+                                        取り消し
+                                    </Button> : <React.Fragment/>}
+                                <Button variant={"contained"}
+                                        disabled={disabled}
                                         onClick={e => handleOrderStatus(order, orderStatusId,
                                             isWorkingOnThis ? "completed" : "working")}>
-                                    {isWorkingOnThis ? "完成" : isCompleted ?  "完成済" : isWorkingOnOther ? "他の商品を作成中です" : "つくる"}
+                                    {isWorkingOnThis ? "完成" :
+                                        isCompleted ?  "完成済" :
+                                            orderStatus.status == "working" ? `${orderStatus.barista_id}番が作成中です` :
+                                                isWorkingOnOther ? "他の商品を作成中です" : "つくる"}
                                 </Button>
                             </Row>
                         </Flex>
