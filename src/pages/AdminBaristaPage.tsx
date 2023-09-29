@@ -1,8 +1,13 @@
-import {Box, Button, CircularProgress, Stack, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
+import {Button, CircularProgress, Stack, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
 import {useEffect, useState} from "react";
 import {RootState, useAppDispatch} from "../modules/redux/store";
 import {useSelector} from "react-redux";
-import {fetchShops, selectShopById, selectShopStatus, updateShop} from "../modules/redux/shop/shopsSlice";
+import {
+    selectShopById,
+    selectShopStatus,
+    selectShopUnsubscribe, streamShop,
+    updateShop
+} from "../modules/redux/shop/shopsSlice";
 import {useParams} from "react-router-dom";
 import {BaristaMap, RawShop, Shop} from "../modules/redux/shop/types";
 import CheckIcon from '@mui/icons-material/Check';
@@ -14,7 +19,7 @@ import StickyNote from "../components/StickyNote";
 import IndexIcon from "../components/order/IndexIcon";
 import {
     selectAllOrders,
-    selectOrderStatus,
+    selectOrderStatus, selectOrderUnsubscribe,
     streamOrders,
     updateOrder
 } from "../modules/redux/order/ordersSlice";
@@ -67,10 +72,13 @@ const AdminBaristaPage = () => {
     const isWorking = working != undefined;
     const baristaIds = shop == undefined ? [] : Object.keys(shop.baristas).map((e) => parseInt(e));
 
+    const shopUnsubscribe = useSelector(selectShopUnsubscribe);
+    const orderUnsubscribe = useSelector(selectOrderUnsubscribe);
+
     // データを取得
     useEffect(() => {
         if (shopStatus == "idle" || shopStatus == "failed") {
-            dispatch(fetchShops());
+            dispatch(streamShop(shopId));
         }
     }, [dispatch, shopStatus]);
     useEffect(() => {
@@ -91,17 +99,24 @@ const AdminBaristaPage = () => {
         }
     }, [shop])
 
-    // windowが閉じられたとき or refreshされたとき, selectedIdをinactiveに戻す
-    // useEffect(() => {
-    //     // ISSUE#21
-    //     window.addEventListener("beforeunload", (e) => {
-    //         console.log("unload")
-    //         if (shop != undefined) {
-    //             console.log("updateshop")
-    //             dispatch(updateShop({shopId, rawShop: {...shop, baristas: {...shop.baristas, [selectedId]: "inactive"}}}));
-    //         }
-    //     })
-    // }, [])
+    // windowが閉じられたとき or refreshされたとき, selectedIdをinactiveに戻す & unsubscribe
+    useEffect(() => {
+        window.addEventListener("beforeunload", (e) => {
+            // ISSUE#21
+            // if (shop != undefined) {
+            //     console.log("updateshop")
+            //     dispatch(updateShop({shopId, rawShop: {...shop, baristas: {...shop.baristas, [selectedId]: "inactive"}}}));
+            // }
+
+            if (shopUnsubscribe != null) {
+                shopUnsubscribe();
+            }
+
+            if (orderUnsubscribe != null) {
+                orderUnsubscribe();
+            }
+        })
+    }, [])
 
     // バリスタIDの変更
     const handleBaristaId = (
@@ -184,8 +199,9 @@ const AdminBaristaPage = () => {
                         const orderStatus = order.order_statuses[orderStatusId];
                         const product = products.find(prod => prod.id == orderStatus.product_id);
                         const isWorkingOnThis = working != undefined && working.orderId == order.id && working.orderStatusId == orderStatusId;
-                        const isWorkingOnOther = isWorking && !isWorkingOnThis;
+                        const isWorkingOnOther = working != undefined && (working.orderId != order.id || working.orderStatusId != orderStatusId);
                         const isCompleted = orderStatus.status == "completed";
+                        const disabled = isWorkingOnOther || isCompleted || selectedId == 0 || (orderStatus.status == "working" && orderStatus.barista_id != selectedId);
 
                         return <Flex style={{paddingLeft: "2.5rem"}}>
                             <Row>
@@ -197,11 +213,20 @@ const AdminBaristaPage = () => {
                                 </Typography>
                             </Row>
                             <Row>
-                                {isWorkingOnThis ? <Button variant={"outlined"} onClick={e => handleOrderStatus(order, orderStatusId, "idle")}>取り消し</Button> : <React.Fragment/>}
-                                <Button variant={"contained"} disabled={isWorking && !isWorkingOnThis || isCompleted || selectedId == 0}
+                                {isWorkingOnThis ?
+                                    <Button variant={"outlined"}
+                                            disabled={disabled}
+                                            onClick={e => handleOrderStatus(order, orderStatusId, "idle")}>
+                                        取り消し
+                                    </Button> : <React.Fragment/>}
+                                <Button variant={"contained"}
+                                        disabled={disabled}
                                         onClick={e => handleOrderStatus(order, orderStatusId,
                                             isWorkingOnThis ? "completed" : "working")}>
-                                    {isWorkingOnThis ? "完成" : isCompleted ?  "完成済" : isWorkingOnOther ? "他の商品を作成中です" : "つくる"}
+                                    {isWorkingOnThis ? "完成" :
+                                        isCompleted ?  "完成済" :
+                                            orderStatus.status == "working" ? `${orderStatus.barista_id}番が作成中です` :
+                                                isWorkingOnOther ? "他の商品を作成中です" : "つくる"}
                                 </Button>
                             </Row>
                         </Flex>
