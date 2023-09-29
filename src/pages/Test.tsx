@@ -44,6 +44,7 @@ import {
 } from "../modules/redux/order/ordersSlice";
 import JsonFormatter from "react-json-formatter";
 import { getFunctions, httpsCallable } from "firebase/functions";
+// import firebase from "firebase";
 
 const jsonStyle = {
   propertyStyle: { color: "#9cdcfe" },
@@ -81,11 +82,6 @@ const TestShop = () => {
   const shops = useSelector(selectAllShops);
   const shopStatus = useSelector(selectShopStatus);
 
-  const functions = getFunctions();
-  const setAdminClaim = httpsCallable(functions, "setAdminClaim");
-
-  const uid = "";
-
   useEffect(() => {
     if (shopStatus == "idle") {
       dispatch(fetchShops());
@@ -94,6 +90,15 @@ const TestShop = () => {
 
   useEffect(() => {
     // HTTP request
+    const functions = getFunctions();
+    const setAdminClaim = httpsCallable(functions, "setAdminClaim");
+
+    const uid = "B9HB7lHbbzeWaRyMj0SSaEsJqkK2";
+
+    // console.log(functions);
+    // console.log(setAdminClaim.name);
+    // console.log("setAdminClaim");
+
     setAdminClaim({ uid: uid });
   }, []);
 
