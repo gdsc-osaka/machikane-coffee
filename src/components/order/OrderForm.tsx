@@ -24,14 +24,14 @@ const OrderForm = (props: OrderFormProps) => {
             注文登録
         </Typography>
         <Grid container spacing={0}>
-            <Grid item md={6} sx={{paddingRight: "10px"}}>
+            <Grid item md={7} sx={{paddingRight: "10px"}}>
                 <Stack spacing={2}>
                     {products.map(product => <ProductCounter product={product}
                                                              amount={productAmount[product.id] ?? 0}
                                                              onChangeAmount={(amount) => props.onChangeAmount(product.id, amount)}/>)}
                 </Stack>
             </Grid>
-            <Grid item md={6} sx={{paddingLeft: "10px"}}>
+            <Grid item md={5} sx={{paddingLeft: "10px"}}>
                 <Stack spacing={2}>
                     <SubTotal productAmount={productAmount} products={products}/>
                     <Button variant={"contained"} disabled={isNoAmount} onClick={props.onOrderAddClicked}>

@@ -68,7 +68,7 @@ export const themeOptions: ThemeOptions = {
             styleOverrides: {
                 root: {
                     borderRadius: 10,
-                    boxShadow: "none"
+                    // boxShadow: "none"
                 }
             }
         }
