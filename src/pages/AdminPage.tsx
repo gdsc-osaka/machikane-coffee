@@ -29,6 +29,7 @@ import {selectShopUnsubscribe} from "../modules/redux/shop/shopsSlice";
 const AdminPage = () => {
     const [openDelete, setOpenDelete] = useState(false);
     const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
+    const [productAmount, setProductAmount] = useState<ProductAmount>({});
 
     const dispatch = useAppDispatch();
     const products = useSelector(selectAllProduct);
@@ -41,7 +42,6 @@ const AdminPage = () => {
 
     const shopUnsubscribe = useSelector(selectShopUnsubscribe);
 
-    const [productAmount, setProductAmount] = useState<ProductAmount>({});
     const onChangeAmount = (productId: string, amount: number) => {
         setProductAmount({...productAmount, [productId]: amount});
     }
@@ -72,6 +72,7 @@ const AdminPage = () => {
                 delete trueProductAmount[id];
             }
         }
+        setProductAmount({});
 
         await dispatch(addOrder({shopId: shopId, rawOrder: {is_student: false, product_amount: trueProductAmount, status: "idle"}}));
     }
