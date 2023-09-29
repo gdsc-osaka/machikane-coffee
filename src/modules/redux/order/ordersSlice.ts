@@ -1,5 +1,5 @@
 import {createAsyncThunk, createSlice, PayloadAction} from "@reduxjs/toolkit";
-import {AsyncState} from "../stateType";
+import {AsyncState, Unsubscribe} from "../stateType";
 import {CargoOrder, Order, OrderStatuses, RawOrder} from "./types";
 import {db} from "../../firebase/firebase";
 import {orderConverter} from "../../firebase/converters";
@@ -181,7 +181,7 @@ const ordersSlice = createSlice({
         error: null,
         // リアルタイムリッスンの Stream を unsubscribe する
         unsubscribe: null,
-    } as AsyncState<Order[]> & {unsubscribe: (() => void) | null},
+    } as AsyncState<Order[]> & Unsubscribe,
     reducers: {
         orderAdded(state, action: PayloadAction<Order>) {
             state.data.push(action.payload);
@@ -261,3 +261,7 @@ export const selectMaxCompleteAt = (state: RootState): Date => {
     orders.sort((a, b) => getTrueCompleteAt(a).getTime() - getTrueCompleteAt(b).getTime());
     return getTrueCompleteAt(orders[0]);
 }
+/**
+ * streamOrdersのunsubscribeを取得
+ */
+export const selectOrderUnsubscribe = (state: RootState) => state.order.unsubscribe;

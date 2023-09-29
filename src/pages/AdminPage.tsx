@@ -24,6 +24,7 @@ import {
 import OrderList from "../components/order/OrderList";
 import ShopManager from "../components/order/ShopManager";
 import ReceivedOrderList from "../components/order/ReceivedOrderList";
+import {selectShopUnsubscribe} from "../modules/redux/shop/shopsSlice";
 
 const AdminPage = () => {
     const [openDelete, setOpenDelete] = useState(false);
@@ -37,6 +38,8 @@ const AdminPage = () => {
     const orderStatus = useSelector(selectOrderStatus);
     const params = useParams();
     const shopId = params.shopId ?? '';
+
+    const shopUnsubscribe = useSelector(selectShopUnsubscribe);
 
     const [productAmount, setProductAmount] = useState<ProductAmount>({});
     const onChangeAmount = (productId: string, amount: number) => {
@@ -54,6 +57,12 @@ const AdminPage = () => {
             dispatch(streamOrders(shopId));
         }
     }, [dispatch, orderStatus]);
+
+    useEffect(() => {
+        if (shopUnsubscribe != null) {
+            shopUnsubscribe();
+        }
+    }, []);
 
     const onOrderAddClicked = async () => {
         const trueProductAmount = Object.assign({}, productAmount);

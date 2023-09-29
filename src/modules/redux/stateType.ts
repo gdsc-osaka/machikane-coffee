@@ -6,3 +6,7 @@ export type AsyncState<T> = {
     status: 'idle' | 'loading' | 'succeeded' | 'failed',
     error: string | null,
 }
+
+export type Unsubscribe = {
+    unsubscribe: (() => void) | null
+}

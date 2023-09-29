@@ -1,8 +1,13 @@
-import {Box, Button, CircularProgress, Stack, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
+import {Button, CircularProgress, Stack, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
 import {useEffect, useState} from "react";
 import {RootState, useAppDispatch} from "../modules/redux/store";
 import {useSelector} from "react-redux";
-import {fetchShops, selectShopById, selectShopStatus, updateShop} from "../modules/redux/shop/shopsSlice";
+import {
+    selectShopById,
+    selectShopStatus,
+    selectShopUnsubscribe, streamShop,
+    updateShop
+} from "../modules/redux/shop/shopsSlice";
 import {useParams} from "react-router-dom";
 import {BaristaMap, RawShop, Shop} from "../modules/redux/shop/types";
 import CheckIcon from '@mui/icons-material/Check';
@@ -14,7 +19,7 @@ import StickyNote from "../components/StickyNote";
 import IndexIcon from "../components/order/IndexIcon";
 import {
     selectAllOrders,
-    selectOrderStatus,
+    selectOrderStatus, selectOrderUnsubscribe,
     streamOrders,
     updateOrder
 } from "../modules/redux/order/ordersSlice";
@@ -67,10 +72,13 @@ const AdminBaristaPage = () => {
     const isWorking = working != undefined;
     const baristaIds = shop == undefined ? [] : Object.keys(shop.baristas).map((e) => parseInt(e));
 
+    const shopUnsubscribe = useSelector(selectShopUnsubscribe);
+    const orderUnsubscribe = useSelector(selectOrderUnsubscribe);
+
     // データを取得
     useEffect(() => {
         if (shopStatus == "idle" || shopStatus == "failed") {
-            dispatch(fetchShops());
+            dispatch(streamShop(shopId));
         }
     }, [dispatch, shopStatus]);
     useEffect(() => {
@@ -91,17 +99,24 @@ const AdminBaristaPage = () => {
         }
     }, [shop])
 
-    // windowが閉じられたとき or refreshされたとき, selectedIdをinactiveに戻す
-    // useEffect(() => {
-    //     // ISSUE#21
-    //     window.addEventListener("beforeunload", (e) => {
-    //         console.log("unload")
-    //         if (shop != undefined) {
-    //             console.log("updateshop")
-    //             dispatch(updateShop({shopId, rawShop: {...shop, baristas: {...shop.baristas, [selectedId]: "inactive"}}}));
-    //         }
-    //     })
-    // }, [])
+    // windowが閉じられたとき or refreshされたとき, selectedIdをinactiveに戻す & unsubscribe
+    useEffect(() => {
+        window.addEventListener("beforeunload", (e) => {
+            // ISSUE#21
+            // if (shop != undefined) {
+            //     console.log("updateshop")
+            //     dispatch(updateShop({shopId, rawShop: {...shop, baristas: {...shop.baristas, [selectedId]: "inactive"}}}));
+            // }
+
+            if (shopUnsubscribe != null) {
+                shopUnsubscribe();
+            }
+
+            if (orderUnsubscribe != null) {
+                orderUnsubscribe();
+            }
+        })
+    }, [])
 
     // バリスタIDの変更
     const handleBaristaId = (
