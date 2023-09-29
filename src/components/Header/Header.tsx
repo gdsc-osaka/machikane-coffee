@@ -17,7 +17,7 @@ const Header = () => {
       titleText = 'レジ';
       break;
 
-    case "/"+shopId+"/admin/barista":
+    case "/"+shopId+"/admin-barista":
       titleText = 'ドリップ';
       break;
 
@@ -32,7 +32,7 @@ const Header = () => {
   };
   const fontStyle = {
     // textAlign: 'center',
-    fontFamily: 'Roboto',
+    fontFamily: 'Noto Sans JP',
     fontSize: '18px',
     fontStyle: 'normal',
     fontWeight: '600',
