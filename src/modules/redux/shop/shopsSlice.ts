@@ -123,7 +123,6 @@ export const changeShopStatus = createAsyncThunk<Shop | undefined, {shopId: stri
 
             try {
                 const ordersSnapshot = await getDocs(_query);
-                console.log(ordersSnapshot.docs.map(e => e.data()));
 
                 const newShop = selectShopById(getState(), shopId);
 

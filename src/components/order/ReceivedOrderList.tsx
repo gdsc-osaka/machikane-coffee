@@ -8,6 +8,8 @@ import React from "react";
 import {Product} from "../../modules/redux/product/types";
 import {Flex} from "../layout/Flex";
 import {Row} from "../layout/Row";
+import {MotionList, MotionListItem} from "../motion/motionList";
+import {AnimatePresence} from "framer-motion";
 
 type ReceivedOrderListProps = {
     receivedOrders: Order[],
@@ -21,23 +23,29 @@ const ReceivedOrderList = (props: ReceivedOrderListProps) => {
         <Typography variant={"h4"} sx={{fontWeight: "bold"}}>
             受け取り済み注文一覧
         </Typography>
-        <Stack spacing={2}>
-            {props.receivedOrders.map(order => <StickyNote variant={"surface-variant"}>
-                <Flex>
-                    <Row>
-                        <IndexIcon>
-                            {order.index}
-                        </IndexIcon>
-                        <Typography variant={"body2"}>
-                            {getOrderLabel(order, props.products)}
-                        </Typography>
-                    </Row>
-                    <Button variant={"outlined"} onClick={() => props.onClickUnreceive(order)}>
-                        未受取にする
-                    </Button>
-                </Flex>
-            </StickyNote>)}
-        </Stack>
+        <MotionList layoutId={"received-order-list"}>
+            <AnimatePresence>
+                {props.receivedOrders.map(order =>
+                    <MotionListItem key={order.id}>
+                        <StickyNote variant={"surface-variant"}>
+                            <Flex>
+                                <Row>
+                                    <IndexIcon>
+                                        {order.index}
+                                    </IndexIcon>
+                                    <Typography variant={"body2"}>
+                                        {getOrderLabel(order, props.products)}
+                                    </Typography>
+                                </Row>
+                                <Button variant={"outlined"} onClick={() => props.onClickUnreceive(order)}>
+                                    未受取にする
+                                </Button>
+                            </Flex>
+                        </StickyNote>
+                    </MotionListItem>
+                )}
+            </AnimatePresence>
+        </MotionList>
     </Stack>
 }
 

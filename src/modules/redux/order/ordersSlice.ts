@@ -23,7 +23,6 @@ import {
 } from "firebase/firestore";
 import {getToday} from "../../util/dateUtils";
 import {QueryConstraint} from "@firebase/firestore";
-import {xor} from "../../util/boolUtils";
 
 const ordersQuery = (shopId: string, ...queryConstraints: QueryConstraint[]) => {
     const today = Timestamp.fromDate(getToday());
@@ -78,16 +77,13 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
         let waitingSec = 0;
         // 提供状況
         const orderStatuses: OrderStatuses = {};
-        console.log(rawOrder);
 
         for (const productId of Object.keys(rawOrder.product_amount)) {
             const amount = rawOrder.product_amount[productId];
             const product = selectProductById(getState(), productId);
 
-            console.log(productId);
             // Product が登録されているまたはフェッチされているとき
             if (product != null) {
-                console.log(product.span);
                 waitingSec += product.span * amount;
             }
 
@@ -233,8 +229,7 @@ const ordersSlice = createSlice({
         });
 
         builder.addCase(deleteOrder.fulfilled, (state, action) => {
-            const orders = state.data;
-            orders.splice(orders.findIndex(e => e.id == action.payload.id), 1);
+            state.data.remove(e => e.id == action.payload.id);
         })
     },
 });
@@ -242,7 +237,7 @@ const ordersSlice = createSlice({
 const orderReducer = ordersSlice.reducer;
 export default orderReducer;
 export const {orderAdded, orderUpdated, orderRemoved} = ordersSlice.actions;
-export const selectAllOrders = (state: RootState) => state.order.data.slice().sort((a, b) => a.created_at.toDate().getTime() - b.created_at.toDate().getTime());
+export const selectAllOrders = (state: RootState) => state.order.data.slice().sort((a, b) => b.created_at.toDate().getTime() - a.created_at.toDate().getTime());
 export const selectOrderStatus = (state: RootState) => state.order.status;
 export const selectOrderById = (state: RootState, id: string) => state.order.data.find(e => e.id == id);
 export const selectReceivedOrder = (state: RootState) => selectAllOrders(state).filter(e => e.status == "received");
