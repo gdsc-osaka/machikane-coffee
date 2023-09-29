@@ -44,7 +44,7 @@ type StickyNoteContainerProps = {
 }
 
 const StickyNote = (props: StickyNoteContainerProps) => {
-    const color = props.variant == "surface-variant" ? "#FFF8F5" : "#F7ECE5";
+    const color = props.variant == "surface-variant" ? "#F7ECE5" : "#FFF8F5";
     return <Container color={color}>
         <Column>
             {props.children}
