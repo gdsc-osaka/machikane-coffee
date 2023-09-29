@@ -77,7 +77,6 @@ const AdminPage = () => {
     }
 
     const handleReceiveOrder = (order: Order) => {
-        console.log("update")
         dispatch(updateOrder({shopId, newOrder: {...order, status: "received"}}));
     }
 

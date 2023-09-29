@@ -28,6 +28,8 @@ import {getOrderLabel} from "../modules/util/orderUtils";
 import {Order, Status} from "../modules/redux/order/types";
 import {Flex} from "../components/layout/Flex";
 import * as stream from "stream";
+import {MotionList, MotionListItem} from "src/components/motion/motionList";
+import {AnimatePresence} from "framer-motion";
 
 const Column = styled.div`
   display: flex;
@@ -178,62 +180,67 @@ const AdminBaristaPage = () => {
             <Typography variant={"h4"} fontWeight={"bold"} sx={{padding: "5px 0"}}>
                 未完成の注文一覧
             </Typography>
-            {orders.map(order => {
-                // 全て完了した場合
-                if (Object.values(order.order_statuses).findIndex(orderStatus => orderStatus.status != "completed") == -1) {
-                    return <React.Fragment/>
-                }
+            <MotionList layoutId={"barista-order-list"}>
+                <AnimatePresence>
+                    {orders.map(order => {
+                        // 全て完了した場合
+                        if (Object.values(order.order_statuses).findIndex(orderStatus => orderStatus.status != "completed") == -1) {
+                            return <React.Fragment/>
+                        }
 
-                return <StickyNote>
-                    <Flex>
-                        <Row>
-                            <IndexIcon>
-                                {order.index}
-                            </IndexIcon>
-                            <Typography variant={"body2"}>
-                                {getOrderLabel(order, products)}
-                            </Typography>
-                        </Row>
-                    </Flex>
-                    {Object.keys(order.order_statuses).map(orderStatusId => {
-                        const orderStatus = order.order_statuses[orderStatusId];
-                        const product = products.find(prod => prod.id == orderStatus.product_id);
-                        const isWorkingOnThis = working != undefined && working.orderId == order.id && working.orderStatusId == orderStatusId;
-                        const isWorkingOnOther = working != undefined && (working.orderId != order.id || working.orderStatusId != orderStatusId);
-                        const isCompleted = orderStatus.status == "completed";
-                        const disabled = isWorkingOnOther || isCompleted || selectedId == 0 || (orderStatus.status == "working" && orderStatus.barista_id != selectedId);
+                        return <MotionListItem key={order.id}>
+                            <StickyNote>
+                                <Flex>
+                                    <Row>
+                                        <IndexIcon>
+                                            {order.index}
+                                        </IndexIcon>
+                                        <Typography variant={"body2"}>
+                                            {getOrderLabel(order, products)}
+                                        </Typography>
+                                    </Row>
+                                </Flex>
+                                {Object.keys(order.order_statuses).map(orderStatusId => {
+                                    const orderStatus = order.order_statuses[orderStatusId];
+                                    const product = products.find(prod => prod.id == orderStatus.product_id);
+                                    const isWorkingOnThis = working != undefined && working.orderId == order.id && working.orderStatusId == orderStatusId;
+                                    const isWorkingOnOther = working != undefined && (working.orderId != order.id || working.orderStatusId != orderStatusId);
+                                    const isCompleted = orderStatus.status == "completed";
+                                    const disabled = isWorkingOnOther || isCompleted || selectedId == 0 || (orderStatus.status == "working" && orderStatus.barista_id != selectedId);
 
-                        return <Flex style={{paddingLeft: "2.5rem"}}>
-                            <Row>
-                                {orderStatus.status == "idle" ? <HourglassEmptyRoundedIcon/> : <React.Fragment/>}
-                                {orderStatus.status == "working" ? <HourglassBottomRoundedIcon/> : <React.Fragment/>}
-                                {orderStatus.status == "completed" ? <CheckIcon/> : <React.Fragment/>}
-                                <Typography variant={"body2"}>
-                                    {product?.shorter_name ?? ""}
-                                </Typography>
-                            </Row>
-                            <Row>
-                                {isWorkingOnThis ?
-                                    <Button variant={"outlined"}
-                                            disabled={disabled}
-                                            onClick={e => handleOrderStatus(order, orderStatusId, "idle")}>
-                                        取り消し
-                                    </Button> : <React.Fragment/>}
-                                <Button variant={"contained"}
-                                        disabled={disabled}
-                                        onClick={e => handleOrderStatus(order, orderStatusId,
-                                            isWorkingOnThis ? "completed" : "working")}>
-                                    {isWorkingOnThis ? "完成" :
-                                        isCompleted ?  "完成済" :
-                                            orderStatus.status == "working" ? `${orderStatus.barista_id}番が作成中です` :
-                                                isWorkingOnOther ? "他の商品を作成中です" : "つくる"}
-                                </Button>
-                            </Row>
-                        </Flex>
+                                    return <Flex style={{paddingLeft: "2.5rem"}}>
+                                        <Row>
+                                            {orderStatus.status == "idle" ? <HourglassEmptyRoundedIcon/> : <React.Fragment/>}
+                                            {orderStatus.status == "working" ? <HourglassBottomRoundedIcon/> : <React.Fragment/>}
+                                            {orderStatus.status == "completed" ? <CheckIcon/> : <React.Fragment/>}
+                                            <Typography variant={"body2"}>
+                                                {product?.shorter_name ?? ""}
+                                            </Typography>
+                                        </Row>
+                                        <Row>
+                                            {isWorkingOnThis ?
+                                                <Button variant={"outlined"}
+                                                        disabled={disabled}
+                                                        onClick={e => handleOrderStatus(order, orderStatusId, "idle")}>
+                                                    取り消し
+                                                </Button> : <React.Fragment/>}
+                                            <Button variant={"contained"}
+                                                    disabled={disabled}
+                                                    onClick={e => handleOrderStatus(order, orderStatusId,
+                                                        isWorkingOnThis ? "completed" : "working")}>
+                                                {isWorkingOnThis ? "完成" :
+                                                    isCompleted ?  "完成済" :
+                                                        orderStatus.status == "working" ? `${orderStatus.barista_id}番が作成中です` :
+                                                            isWorkingOnOther ? "他の商品を作成中です" : "つくる"}
+                                            </Button>
+                                        </Row>
+                                    </Flex>
+                                })}
+                            </StickyNote>
+                        </MotionListItem>
                     })}
-                </StickyNote>
-                }
-            )}
+                </AnimatePresence>
+            </MotionList>
         </Stack>
     }
 }
