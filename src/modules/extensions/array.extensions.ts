@@ -12,6 +12,8 @@ Array.prototype.update = function<T>(predicate: (value: T, index: number, obj: T
 
 Array.prototype.remove = function<T>(predicate: (value: T, index: number, obj: T[]) => unknown): Array<T> {
     const index = this.findIndex(predicate);
-    this.splice(index, 1);
+    if (index != -1) {
+        this.splice(index, 1);
+    }
     return this;
 }
