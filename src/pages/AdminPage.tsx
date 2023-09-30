@@ -108,9 +108,7 @@ const AdminPage = () => {
                     <Grid item xs={12} sm={6} lg={5}>
                         <Stack spacing={4}>
                             <OrderForm products={products} onChangeAmount={onChangeAmount} productAmount={productAmount} onOrderAddClicked={onOrderAddClicked}/>
-                            <Card sx={{width: "100%", padding: "20px"}}>
-                                <ShopManager/>
-                            </Card>
+                            <ShopManager/>
                         </Stack>
                     </Grid>
                     <Grid item container xs={12} sm={6} lg={7} spacing={4}>
