@@ -1,10 +1,12 @@
-import { VFC } from "react";
+import { VFC, useEffect } from "react";
 import { Order } from "../../modules/redux/order/types";
-import { TableRow, TableCell } from "@mui/material";
-import { selectProductById } from "../../modules/redux/product/productsSlice";
+import { TableRow, TableCell, Divider } from "@mui/material";
+import { selectAllProduct, selectProductStatus, fetchProducts, selectProductById, selectProductByIds } from "../../modules/redux/product/productsSlice";
 import { RootState } from "../../modules/redux/store";
 import { useSelector } from "react-redux";
 import ProductNameForOrderRow from "./prductNameForOrderRow";
+import { useAppDispatch } from "../../modules/redux/store";
+import { useParams } from "react-router-dom";
 
 type Props = {
     order: Order
@@ -19,11 +21,13 @@ const OrderRow: VFC<Props> = (props) => {
     let message;
     let productList = [];
 
-    // const productIds = Object.keys(order.product_amount);
-    // const product = useSelector((state: RootState) => selectProductById(state, productIds[0]));
+    //プロダクト全部取ってくる
+    const dispatch = useAppDispatch();
+    const products = useSelector(selectAllProduct);
+    const productStatus = useSelector(selectProductStatus);
+    const params = useParams();
+    const shopId = params.shopId ?? '';
     
-    // console.log(productIds);
-    // console.log(product);
     
     const orderItemStyles = {
         display: 'flex',
@@ -68,7 +72,8 @@ const OrderRow: VFC<Props> = (props) => {
 
     const messageContainerStyles = {
         display: 'flex',
-        gap: '10px',
+        gap: '8px',
+        padding: '8px 0px',
         alignSelf: 'stretch',
         color: 'var(--m-3-black, #000)',
         fontFamily: 'Roboto',
@@ -95,12 +100,17 @@ const OrderRow: VFC<Props> = (props) => {
     //     alignSelf: 'stretch',
     // }
     const verticalBar = {
-        width: '1px',
-        height: '50px',
+        // height: '60px',
         backGroundColor: 'black',
         color: 'black',
         zIndex: '6',
     }
+
+    useEffect(() => {
+        if (productStatus == "idle" || productStatus == "failed") {
+            dispatch(fetchProducts(shopId));
+        }
+    }, [dispatch, productStatus]);
     
     if(order.status === "completed"){
         message = 'できあがりました';
@@ -113,7 +123,7 @@ const OrderRow: VFC<Props> = (props) => {
     }
 
     for (const productId in order.product_amount) { 
-        productList.push(<ProductNameForOrderRow productId={productId}/>);
+        productList.push(productId);
     }
     return(
         <TableRow>
@@ -122,14 +132,23 @@ const OrderRow: VFC<Props> = (props) => {
                 <div style={contentStyles}>
                     <div style={indexStyles}>{order.index}</div>
                     
-                    <div style={verticalBar} /> 
-                    
+                    {/* <div style={verticalBar} />  */}
+                    <Divider orientation="vertical" style={verticalBar} flexItem />
                     
                     <div style={productNameColumnStyles}>
                         <div>商品</div>
-                        {/* {productList} */}
+                        {productList.map((productId) =>  {
+                            const productName = products.find((product) => product.id === productId)?.shorter_name ?? "";
+                            const productAmount = order.product_amount[productId];
+                            return (
+                                <div>
+                                    {productName + "x" + productAmount}
+                                </div>
+                            );
+                        })}
                     </div>
-                    <div style={verticalBar} />
+                    {/* <div style={verticalBar} /> */}
+                    <Divider orientation="vertical" style={verticalBar} flexItem />
                     <div style={messageContainerStyles}>
                         <div>待ち時間</div>
                         {message}

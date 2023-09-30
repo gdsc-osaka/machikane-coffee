@@ -13,11 +13,13 @@ type Props = {
 const ProductNameForOrderRow: VFC<Props> = (props) => {
     
     const product = useSelector((state: RootState) => selectProductById(state, props.productId));
+    
     const [productShorterName, setProductShorterName] = useState<string>("");
 
     useEffect(() => {
         if(product?.shorter_name)setProductShorterName(product?.shorter_name);
     }, [product]);
+
     console.log(props.productId);
     console.log(product);
 
