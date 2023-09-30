@@ -1,55 +1,186 @@
 import {Column} from "../layout/Column";
-import {IconButton, Switch, TextField, Typography} from "@mui/material";
+import {
+    CircularProgress,
+    IconButton,
+    Switch,
+    TextField,
+    Typography,
+} from "@mui/material";
 import {Expanded} from "../layout/Expanded";
-import {useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import {Row} from "../layout/Row";
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import RemoveRoundedIcon from '@mui/icons-material/RemoveRounded';
+import AddRoundedIcon from "@mui/icons-material/AddRounded";
+import RemoveRoundedIcon from "@mui/icons-material/RemoveRounded";
+import {
+    changeShopStatus,
+    fetchShops,
+    selectAllShops,
+    selectShopById,
+    selectShopStatus,
+    updateShop,
+} from "../../modules/redux/shop/shopsSlice";
+import {useParams} from "react-router";
+import {useSelector} from "react-redux";
+import {RootState, useAppDispatch} from "../../modules/redux/store";
+import {
+    BaristaMap,
+    RawShop,
+    Shop,
+    ShopStatus,
+} from "../../modules/redux/shop/types";
 
 const ShopManager = () => {
-    const [emgMsg, setEmgMsg] = useState('');
+    //   const [name, setName] = useState("");
+    const dispatch = useAppDispatch();
+    const params = useParams();
+    const shopId = params.shopId ?? "";
+    const shopStatus = useSelector(selectShopStatus);
+    const shop = useSelector<RootState, Shop | undefined>((state) =>
+        selectShopById(state, shopId)
+    );
+    const [emgMsg, setEmgMsg] = useState("");
     const [baristaCount, setBaristaCount] = useState(1);
+    const [baristas, setBaristas] = useState<BaristaMap>({1: "active"});
+    const [status, setStatus] = useState<ShopStatus>("active");
 
-    const handleEmergency = (value: boolean) => {
+    useEffect(() => {
+        if (shopStatus === "idle" || shopStatus === "failed") {
+            dispatch(fetchShops());
+        }
+    }, [dispatch, shopStatus]);
 
-    }
+    useEffect(() => {
+        if (shop !== undefined) {
+            setEmgMsg(shop.emg_message);
+            setBaristaCount(Object.keys(shop.baristas).length);
+            setBaristas(shop.baristas);
+            setStatus(shop.status);
+        }
+    }, [shop]);
 
-    const handleBaristaCount = (diff: number) => {
+    const handleEmergency = async (value: boolean) => {
+        if (value) {
+            // pause
+            if (shop !== undefined) {
+                // emgMsg
+                await dispatch(
+                    updateShop({
+                        shopId: shopId,
+                        rawShop: {
+                            ...shop,
+                            emg_message: emgMsg,
+                        },
+                    })
+                );
+
+                // status
+                await dispatch(
+                    changeShopStatus({shopId: shopId, status: "pause_ordering"})
+                );
+
+                setStatus("pause_ordering");
+            }
+        } else {
+            // active
+            if (shop !== undefined) {
+                // emgMsg
+                await dispatch(
+                    updateShop({
+                        shopId: shopId,
+                        rawShop: {
+                            ...shop,
+                            emg_message: "",
+                        },
+                    })
+                );
+
+                // status
+                await dispatch(
+                    changeShopStatus({
+                        shopId: shopId,
+                        status: "active",
+                    })
+                );
+
+                setStatus("active");
+            }
+        }
+    };
+    const handleBaristaCount = async (diff: number) => {
         const newCount = baristaCount + diff;
+        const trueBaristas = Object.assign({}, baristas); // make the copy
 
         if (newCount > 0) {
-            setBaristaCount(newCount);
+            if (diff > 0) {
+                // 更新後のbarista数
+                trueBaristas[newCount] = "inactive";
+            } else {
+                // 更新前のbarista数
+                delete trueBaristas[baristaCount];
+            }
+
+            if (shop !== undefined) {
+                await dispatch(
+                    updateShop({
+                        shopId: shopId,
+                        rawShop: {
+                            ...shop,
+                            baristas: trueBaristas,
+                        },
+                    })
+                );
+            }
+
+            await dispatch(
+                changeShopStatus({
+                    shopId: shopId,
+                    status: status,
+                })
+            );
         }
-    }
-
-    return <Column>
-        <Typography variant={"h4"} sx={{fontWeight: "bold"}}>
-            管理
-        </Typography>
-        <Expanded>
-            <Typography variant={"h5"} sx={{fontWeight: "bold"}}>
-                提供中止
+    };
+    return shop !== undefined &&
+    (shop.status === "active" || shop.status === "pause_ordering") ? (
+        <Column>
+            <Typography variant={"h4"} sx={{fontWeight: "bold"}}>
+                管理
             </Typography>
-            <Switch disabled={emgMsg.length == 0} onChange={e => handleEmergency(e.target.checked)}/>
-        </Expanded>
-        <TextField id="emg-message" label="メッセージ" variant="outlined" helperText={"入力すると提供中止ボタンが押せます"}
-                   value={emgMsg} onChange={e => setEmgMsg(e.target.value)}
-                   sx={{width: "100%"}} />
-        <Expanded>
-            <Typography variant={"h5"} sx={{fontWeight: "bold"}}>
-                ドリップ担当者数
-            </Typography>
-            <Row>
-                <IconButton onClick={() => handleBaristaCount(-1)}>
-                    <RemoveRoundedIcon/>
-                </IconButton>
-                {baristaCount}人
-                <IconButton onClick={() => handleBaristaCount(1)}>
-                    <AddRoundedIcon/>
-                </IconButton>
-            </Row>
-        </Expanded>
-    </Column>
-}
-
-export default  ShopManager
+            <Expanded>
+                <Typography variant={"h5"} sx={{fontWeight: "bold"}}>
+                    提供中止
+                </Typography>
+                <Switch
+                    disabled={shop.status === "active" && emgMsg.length === 0}
+                    defaultChecked={shop.status === "pause_ordering"}
+                    onChange={(e) => handleEmergency(e.target.checked)}
+                />
+            </Expanded>
+            <TextField
+                id="emg-message"
+                label="メッセージ"
+                variant="outlined"
+                helperText={"入力すると提供中止ボタンが押せます"}
+                value={emgMsg}
+                onChange={(e) => setEmgMsg(e.target.value)}
+                sx={{width: "100%"}}
+            />
+            <Expanded>
+                <Typography variant={"h5"} sx={{fontWeight: "bold"}}>
+                    ドリップ担当者数
+                </Typography>
+                <Row>
+                    <IconButton onClick={() => handleBaristaCount(-1)}>
+                        <RemoveRoundedIcon/>
+                    </IconButton>
+                    {baristaCount}人
+                    <IconButton onClick={() => handleBaristaCount(1)}>
+                        <AddRoundedIcon/>
+                    </IconButton>
+                </Row>
+            </Expanded>
+        </Column>
+    ) : (
+        <CircularProgress/>
+    );
+};
+export default ShopManager;

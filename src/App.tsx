@@ -19,8 +19,9 @@ const App = () => {
         <Provider store={store}>
             <ThemeProvider theme={theme}>
                 <CssBaseline/>
-                <Header/>
+                
                 <BrowserRouter>
+                    <Header/>
                     <Routes>
                         <Route path="/:shopId/admin" Component={AdminPage} />
                         <Route path="/:shopId/admin-barista" Component={AdminBaristaPage} />

@@ -3,6 +3,8 @@ import styled from "styled-components";
 import {Product} from "../../modules/redux/product/types";
 import {Checkbox, IconButton} from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
+import IndexIcon from "./IndexIcon";
+import {getOrderLabel} from "../../modules/util/orderUtils";
 
 type OrderListItemProps = {
     order: Order;
@@ -13,26 +15,13 @@ type OrderListItemProps = {
 const OrderListItem = (props: OrderListItemProps) => {
     const order = props.order;
     const products = props.products;
-    let labelStr = "";
-
-    for (const productId in order.product_amount) {
-        if (labelStr.length != 0) {
-            labelStr += " / "
-        }
-
-        const product = products.find(e => e.id == productId);
-        const amount = order.product_amount[productId];
-
-        if (product != undefined) {
-            labelStr += `${product.shorter_name}×${amount}`;
-        }
-    }
+    let labelStr = getOrderLabel(order, products);
 
     return (
         <Container>
             <Row>
                 <CenterWithGap>
-                    <Index>{order.index}</Index>
+                    <IndexIcon>{order.index}</IndexIcon>
                     {labelStr}
                 </CenterWithGap>
                 <Center>
@@ -83,17 +72,6 @@ const CenterWithGap = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
-`
-
-const Index = styled.div`
-  display: flex;
-  width: 2rem;
-  height: 2rem;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  border-radius: 100px;
-  background-color: #F2DFD1;
 `
 
 export default OrderListItem;

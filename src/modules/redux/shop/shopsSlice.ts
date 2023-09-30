@@ -1,5 +1,5 @@
-import {createAsyncThunk, createSlice} from "@reduxjs/toolkit";
-import {AsyncState} from "../stateType";
+import {createAsyncThunk, createSlice, PayloadAction} from "@reduxjs/toolkit";
+import {AsyncState, Unsubscribe} from "../stateType";
 import {RawShop, Shop, ShopStatus} from "./types";
 import {db} from "../../firebase/firebase";
 import {orderConverter, shopConverter} from "../../firebase/converters";
@@ -10,11 +10,14 @@ import {
     getDoc,
     getDocs,
     increment,
-    query, runTransaction,
+    onSnapshot,
+    query,
+    runTransaction,
     serverTimestamp,
     setDoc,
     Timestamp,
-    updateDoc, where
+    updateDoc,
+    where
 } from "firebase/firestore";
 import {getToday} from "../../util/dateUtils";
 
@@ -26,6 +29,30 @@ export const fetchShops = createAsyncThunk("shops/fetchShops",
     const snapshot = await getDocs(shopsRef);
     return snapshot.docs.map(doc => doc.data());
 });
+
+/**
+ * shopをリアルタイム更新する.
+ */
+export const streamShop = createAsyncThunk('orders/streamShops',
+    (shopId: string, {dispatch, getState}) => {
+        const unsubscribe = onSnapshot(shopRef(shopId),(snapshot) => {
+            const state: RootState = getState() as RootState;
+            const shop = snapshot.data();
+
+            if (shop != undefined) {
+                if (state.shop.data.findIndex(e => e.id == shop.id) == -1) {
+                    // 同じドキュメントが存在しなければ
+                    dispatch(shopAdded(shop));
+                } else {
+                    dispatch(shopUpdated(shop));
+                }
+            } else {
+                dispatch(shopRemoved(shopId));
+            }
+        });
+
+        return unsubscribe;
+    })
 
 export const addShop = createAsyncThunk("shops/addShop",
     async ({shopId, rawShop}: {shopId: string, rawShop: RawShop}) => {
@@ -96,7 +123,6 @@ export const changeShopStatus = createAsyncThunk<Shop | undefined, {shopId: stri
 
             try {
                 const ordersSnapshot = await getDocs(_query);
-                console.log(ordersSnapshot.docs.map(e => e.data()));
 
                 const newShop = selectShopById(getState(), shopId);
 
@@ -134,8 +160,26 @@ const shopsSlice = createSlice({
         data: [],
         status: "idle",
         error: null,
-    } as AsyncState<Shop[]>,
-    reducers: {},
+        unsubscribe: null,
+    } as AsyncState<Shop[]> & Unsubscribe,
+    reducers: {
+        shopAdded(state, action: PayloadAction<Shop>) {
+            state.data.push(action.payload);
+        },
+        shopUpdated(state, action: PayloadAction<Shop>) {
+            const shop = action.payload;
+            state.data.update(e => e.id == shop.id, shop);
+        },
+        /**
+         * 指定した ID の shop を消去する
+         * @param state
+         * @param action 消去する shop の ID
+         */
+        shopRemoved(state, action: PayloadAction<string>) {
+            const id = action.payload;
+            state.data.remove(e => e.id == id);
+        },
+    },
     extraReducers: builder => {
         builder
             .addCase(fetchShops.pending, (state, action) => {
@@ -178,6 +222,7 @@ const shopsSlice = createSlice({
 
 const shopReducer = shopsSlice.reducer;
 export default shopReducer;
+const {shopAdded, shopUpdated, shopRemoved} = shopsSlice.actions;
 
 /**
  * shopId と一致する Shop エンティティを返す
@@ -192,3 +237,8 @@ export const selectShopError = (state: RootState) => state.shop.error;
  * 店が pause_ordering のとき, 何秒遅延しているかを返します. shopId に一致する Shop がない場合, 0 を返します.
  * */
 export const selectShopDelaySeconds = (state: RootState, shopId: string) => new Date().getSeconds() - (selectShopById(state, shopId)?.last_active_time.toDate().getSeconds() ?? new Date().getSeconds());
+/**
+ * streamShopsのunsubscribeを取得
+ * @param state
+ */
+export const selectShopUnsubscribe = (state: RootState) => state.shop.unsubscribe;

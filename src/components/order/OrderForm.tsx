@@ -1,10 +1,10 @@
 import styled from "styled-components";
-import {Button, Typography} from "@mui/material";
+import {Box, Button, Grid, Stack, Typography} from "@mui/material";
 import {Product} from "../../modules/redux/product/types";
 import ProductCounter from "./ProductCounter";
 import {ProductAmount} from "../../modules/redux/order/types";
 import SubTotal from "./SubTotal";
-import {Column} from "../layout/Column";
+import Container from "@mui/material/Container";
 
 type OrderFormProps = {
     products: Product[],
@@ -19,24 +19,28 @@ const OrderForm = (props: OrderFormProps) => {
     // ProductCounter から商品を追加していない
     const isNoAmount = Object.keys(productAmount).findIndex(id => productAmount[id] > 0) == -1
 
-    return <Column>
+    return <Stack spacing={3}>
         <Typography variant={"h4"} sx={{fontWeight: "bold"}}>
             注文登録
         </Typography>
-        <ContentContainer>
-            <CounterContainer>
-                {products.map(product => <ProductCounter product={product}
-                                                               amount={productAmount[product.id] ?? 0}
-                                                               onChangeAmount={(amount) => props.onChangeAmount(product.id, amount)}/>)}
-            </CounterContainer>
-            <SubTotalContainer>
-                <SubTotal productAmount={productAmount} products={products}/>
-                <Button variant={"contained"} disabled={isNoAmount} onClick={props.onOrderAddClicked}>
-                    注文
-                </Button>
-            </SubTotalContainer>
-        </ContentContainer>
-    </Column>
+        <Grid container spacing={0}>
+            <Grid item md={7} sx={{paddingRight: "10px"}}>
+                <Stack spacing={2}>
+                    {products.map(product => <ProductCounter product={product}
+                                                             amount={productAmount[product.id] ?? 0}
+                                                             onChangeAmount={(amount) => props.onChangeAmount(product.id, amount)}/>)}
+                </Stack>
+            </Grid>
+            <Grid item md={5} sx={{paddingLeft: "10px"}}>
+                <Stack spacing={2}>
+                    <SubTotal productAmount={productAmount} products={products}/>
+                    <Button variant={"contained"} disabled={isNoAmount} onClick={props.onOrderAddClicked}>
+                        注文
+                    </Button>
+                </Stack>
+            </Grid>
+        </Grid>
+    </Stack>
 }
 
 const ContentContainer = styled.div`
