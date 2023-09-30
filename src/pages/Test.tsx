@@ -45,6 +45,7 @@ import {
 import JsonFormatter from "react-json-formatter";
 import { getFunctions, httpsCallable } from "firebase/functions";
 // import firebase from "firebase";
+import { initializeApp } from "firebase/app";
 
 const jsonStyle = {
   propertyStyle: { color: "#9cdcfe" },
@@ -88,18 +89,30 @@ const TestShop = () => {
     }
   }, [dispatch, shopStatus]);
 
+  const firebaseConfig = {
+    apiKey: "AIzaSyCFgXdiuj5NvgS9AVVuc9GMHiW8XnkWujY",
+    authDomain: "machikane-coffee.firebaseapp.com",
+    projectId: "machikane-coffee",
+    storageBucket: "machikane-coffee.appspot.com",
+    messagingSenderId: "838446105130",
+    appId: "1:838446105130:web:681b58b1ce980aaa83b953",
+    measurementId: "G-DP4B9FYBBR",
+  };
+
+  // Initialize Firebase
+  initializeApp(firebaseConfig);
+
   useEffect(() => {
     // HTTP request
     const functions = getFunctions();
     const setAdminClaim = httpsCallable(functions, "setAdminClaim");
-
     const uid = "B9HB7lHbbzeWaRyMj0SSaEsJqkK2";
 
-    // console.log(functions);
-    // console.log(setAdminClaim.name);
-    // console.log("setAdminClaim");
+    console.log(functions);
+    console.log(setAdminClaim.name);
+    console.log("setAdminClaim");
 
-    setAdminClaim({ uid: uid });
+    // setAdminClaim({ uid: uid });
   }, []);
 
   const onAddShopClicked = async () => {
