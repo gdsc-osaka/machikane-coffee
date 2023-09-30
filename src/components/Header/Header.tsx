@@ -27,7 +27,7 @@ const Header = () => {
   }
 
   const imageStyle = {
-    width: '40px',
+    width: '60px',
     height: '40px',
   };
   const fontStyle = {
@@ -62,7 +62,7 @@ const Header = () => {
     return (
       <div style={headerStyle}>
         <div style={logoStyle}>
-          <img style={imageStyle} src="/images/logo192.png" />
+          <img style={imageStyle} src="/images/logo.png" />
           <div style={fontStyle}>{titleText}</div>
         </div>
       </div>
