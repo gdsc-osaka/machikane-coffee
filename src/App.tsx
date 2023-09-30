@@ -11,6 +11,7 @@ import React from "react";
 import { createTheme, CssBaseline, ThemeProvider } from "@mui/material";
 import { themeOptions } from "./themeOptions";
 import AdminBaristaPage from "./pages/AdminBaristaPage";
+import LogInPage from "./pages/LogInPage";
 
 const App = () => {
   const theme = createTheme(themeOptions);
@@ -28,6 +29,7 @@ const App = () => {
             <Route path="/:shopId/user" Component={User} />
             <Route path="/:shopId/timer" Component={Timer} />
             <Route path="/:shopId/test" Component={TestPage} />
+            <Route path="/:shopId/login" Component={LogInPage} />
           </Routes>
         </BrowserRouter>
         <Footer />
