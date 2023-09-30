@@ -12,14 +12,11 @@ export const MotionList = (props: {children: ReactNode, layoutId: string}) => {
     </motion.ul>
 }
 
-export const MotionListItem = (props: {children: ReactNode, key: string}) => {
+export const MotionListItem = (props: {children: ReactNode, key: string, spacing?: number}) => {
     const theme = useTheme();
     const isPresent = useIsPresent();
 
     const animations = {
-        style: {
-            position: isPresent ? "static" : "absolute"
-        },
         initial: { x:-100, opacity: 0 },
         animate: { x:0, opacity: 1 },
         exit: { x:100, opacity: 0 },
@@ -30,7 +27,7 @@ export const MotionListItem = (props: {children: ReactNode, key: string}) => {
         layout
         {...animations}
         key={props.key}
-        style={{marginBottom: theme.spacing(2)}}
+        style={{marginBottom: theme.spacing(props.spacing ?? 2), position: isPresent ? "static" : "absolute"}}
     >
         {props.children}
     </motion.li>
