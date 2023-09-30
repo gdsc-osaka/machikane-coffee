@@ -27,8 +27,8 @@ const Header = () => {
   }
 
   const imageStyle = {
-    width: '60px',
-    height: '40px',
+    width: '45px',
+    height: '30px',
   };
   const fontStyle = {
     // textAlign: 'center',
@@ -43,7 +43,7 @@ const Header = () => {
     display: 'flex',
     // width: 412px;
     // height: 60px;
-    padding: '8px 20px',
+    padding: '15px 20px',
     flexDirection: 'column' as 'column',
     // justifyContent: 'center',
     alignIitems: 'flex-start',
@@ -56,7 +56,7 @@ const Header = () => {
     alignItems: 'center',
     gap: '10px',
     marginRight: 'auto',
-    padding: '0px 20px',
+    padding: '0px 10px',
   }
 
     return (
