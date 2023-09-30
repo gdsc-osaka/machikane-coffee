@@ -45,17 +45,17 @@ const SubTotal = (props: SubTotalProps) => {
 
                     const product = products.find((product) => product.id == id);
 
-                    return <MotionListItem key={id}>
+                    return <MotionListItem key={id} spacing={1}>
                         <Row>
-                            <Typography variant={"body1"}>
+                            <Typography variant={"body2"}>
                                 {product?.shorter_name ?? ""}
                             </Typography>
                             <SubRow>
-                                <Typography>
+                                <Typography variant={"body2"}>
                                     {amount}点
                                 </Typography>
                                 <RightAlign>
-                                    <Typography>
+                                    <Typography variant={"body2"}>
                                         ¥{product != null ? product.price * amount : 0}
                                     </Typography>
                                 </RightAlign>
@@ -63,15 +63,15 @@ const SubTotal = (props: SubTotalProps) => {
                         </Row>
                     </MotionListItem>
                 })}
-                {!isEmpty ? <MotionListItem key={"subtotal-divider"}>
-                    <Divider variant={"fullWidth"} flexItem style={{marginBottom: theme.spacing(1)}}/>
+                {!isEmpty ? <MotionListItem key={"subtotal-divider"} spacing={1}>
+                    <Divider variant={"fullWidth"} flexItem/>
                 </MotionListItem> : <React.Fragment/>}
                 <MotionListItem key={"total"}>
                     <Row>
-                        <Typography>
+                        <Typography variant={"body1"}>
                             合計
                         </Typography>
-                        <Typography>
+                        <Typography variant={"body1"}>
                             ¥{total}
                         </Typography>
                     </Row>
