@@ -120,7 +120,9 @@ const AdminPage = () => {
     ) : (
       <Navigate to={"/" + shopId + "/user"} />
     )
-  ) : null;
+  ) : (
+    <CircularProgress />
+  );
 };
 
 const RowLayout = styled.div`
