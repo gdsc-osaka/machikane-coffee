@@ -7,14 +7,13 @@ import {
   Typography,
 } from "@mui/material";
 import { Expanded } from "../layout/Expanded";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Row } from "../layout/Row";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import RemoveRoundedIcon from "@mui/icons-material/RemoveRounded";
 import {
   changeShopStatus,
   fetchShops,
-  selectAllShops,
   selectShopById,
   selectShopStatus,
   updateShop,
@@ -24,12 +23,10 @@ import { useSelector } from "react-redux";
 import { RootState, useAppDispatch } from "../../modules/redux/store";
 import {
   BaristaMap,
-  RawShop,
   Shop,
   ShopStatus,
 } from "../../modules/redux/shop/types";
 const ShopManager = () => {
-  //   const [name, setName] = useState("");
   const dispatch = useAppDispatch();
   const params = useParams();
   const shopId = params.shopId ?? "";
@@ -149,7 +146,7 @@ const ShopManager = () => {
           提供中止
         </Typography>
         <Switch
-          disabled={shop.status === "active" && emgMsg.length === 0}
+          disabled={emgMsg.length === 0}
           defaultChecked={shop.status === "pause_ordering"}
           onChange={(e) => handleEmergency(e.target.checked)}
         />
