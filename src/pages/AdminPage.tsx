@@ -175,21 +175,4 @@ const AdminPage = () => {
     )
 }
 
-const RowLayout = styled.div`
-  display: flex;
-  width: auto;
-  height: auto;
-  padding: 1rem 2rem;
-  justify-content: left;
-  align-items: flex-start;
-  gap: 1rem;
-`;
-
-const Column = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 3vh;
-`;
-
 export default AdminPage;
