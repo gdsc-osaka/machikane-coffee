@@ -1,31 +1,18 @@
-import React, {useEffect, useLayoutEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 import styled from "styled-components";
 import {useSelector} from "react-redux";
-import {
-    fetchProducts,
-    selectAllProduct,
-    selectProductStatus,
-} from "../modules/redux/product/productsSlice";
+import {fetchProducts, selectAllProduct, selectProductStatus,} from "../modules/redux/product/productsSlice";
 import {useAppDispatch} from "../modules/redux/store";
-import {Navigate, redirect, useParams} from "react-router-dom";
+import {Navigate, useParams} from "react-router-dom";
 import {ProductAmount} from "../modules/redux/order/types";
 import OrderForm from "../components/order/OrderForm";
 import {CircularProgress} from "@mui/material";
-import {
-    addOrder,
-    fetchOrders,
-    selectOrderStatus,
-    selectReceivedOrder,
-    selectUnreceivedOrder,
-} from "../modules/redux/order/ordersSlice";
+import {addOrder, fetchOrders, selectOrderStatus, selectUnreceivedOrder,} from "../modules/redux/order/ordersSlice";
 import OrderList from "../components/order/OrderList";
 import ShopManager from "../components/order/ShopManager";
-import firebase from "src/modules/firebase/firebase";
 import "firebase/auth";
 
-import {getAuth, getIdTokenResult, onAuthStateChanged} from "firebase/auth";
-import {useNavigate} from "react-router-dom";
-import {isatty} from "tty";
+import {getAuth} from "firebase/auth";
 
 const AdminPage = () => {
     const dispatch = useAppDispatch();

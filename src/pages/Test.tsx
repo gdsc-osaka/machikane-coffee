@@ -11,7 +11,6 @@ import React, {useEffect, useState} from "react";
 import {RootState, useAppDispatch} from "../modules/redux/store";
 import {
     Button,
-    Card,
     Checkbox,
     Divider,
     FormControl,
@@ -45,8 +44,6 @@ import {
 import JsonFormatter from "react-json-formatter";
 import {getFunctions, httpsCallable} from "firebase/functions";
 import {initializeApp} from "firebase/app";
-import {getAuth} from "firebase/auth";
-import app from "../modules/firebase/firebase";
 
 const jsonStyle = {
     propertyStyle: {color: "#9cdcfe"},
