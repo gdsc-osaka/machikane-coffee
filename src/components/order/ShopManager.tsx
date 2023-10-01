@@ -14,7 +14,7 @@ import {
     changeShopStatus,
     fetchShops,
     selectShopById,
-    selectShopStatus,
+    selectShopStatus, streamShop,
     updateShop,
 } from "../../modules/redux/shop/shopsSlice";
 import {useParams} from "react-router";
@@ -41,7 +41,7 @@ const ShopManager = () => {
 
     useEffect(() => {
         if (shopStatus === "idle" || shopStatus === "failed") {
-            dispatch(fetchShops());
+            dispatch(streamShop(shopId));
         }
     }, [dispatch, shopStatus]);
 
