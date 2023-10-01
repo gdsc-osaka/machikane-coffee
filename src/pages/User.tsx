@@ -1,16 +1,9 @@
-import React from "react";
-import { Table, TableHead, TableBody, TableRow, TableCell } from "@mui/material";
-import { NumberedTicket } from "../types/user/numberedTicket";
-import { fetchOrders } from "../modules/redux/order/ordersSlice";
-import { useParams } from "react-router-dom";
-import { useAppDispatch } from "../modules/redux/store";
-import { selectAllOrders } from "../modules/redux/order/ordersSlice";
-import { useSelector } from "react-redux";
-import { useEffect } from "react";
-import {
-  selectOrderStatus,
-} from "../modules/redux/order/ordersSlice";
-import { Timestamp } from "firebase/firestore";
+import React, {useEffect} from "react";
+import {Table, TableBody} from "@mui/material";
+import {fetchOrders, selectAllOrders, selectOrderStatus} from "../modules/redux/order/ordersSlice";
+import {useParams} from "react-router-dom";
+import {useAppDispatch} from "../modules/redux/store";
+import {useSelector} from "react-redux";
 import OrderRow from "../components/User/OrderRow";
 
 const User = () => {

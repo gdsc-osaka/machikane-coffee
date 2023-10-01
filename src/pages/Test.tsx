@@ -1,36 +1,35 @@
 import { useSelector } from "react-redux";
 import {
-  addShop,
-  changeShopStatus,
-  fetchShops,
-  selectAllShops,
-  selectShopStatus,
-  updateShop,
+    addShop,
+    changeShopStatus,
+    fetchShops,
+    selectAllShops,
+    selectShopStatus,
+    updateShop,
 } from "../modules/redux/shop/shopsSlice";
 import React, { useEffect, useState } from "react";
 import { RootState, useAppDispatch } from "../modules/redux/store";
 import {
-  Button,
-  Card,
-  Checkbox,
-  Divider,
-  FormControl,
-  FormControlLabel,
-  Grid,
-  List,
-  ListItem,
-  Paper,
-  Radio,
-  RadioGroup,
-  TextField,
-  Typography,
+    Button,
+    Checkbox,
+    Divider,
+    FormControl,
+    FormControlLabel,
+    Grid,
+    List,
+    ListItem,
+    Paper,
+    Radio,
+    RadioGroup,
+    TextField,
+    Typography,
 } from "@mui/material";
 import {
-  addProduct,
-  fetchProducts,
-  selectAllProduct,
-  selectProductStatus,
-  updateProduct,
+    addProduct,
+    fetchProducts,
+    selectAllProduct,
+    selectProductStatus,
+    updateProduct,
 } from "../modules/redux/product/productsSlice";
 import { useParams } from "react-router-dom";
 import { Order, ProductAmount } from "../modules/redux/order/types";
@@ -43,8 +42,6 @@ import {
   updateOrder,
 } from "../modules/redux/order/ordersSlice";
 import JsonFormatter from "react-json-formatter";
-import { getFunctions, httpsCallable } from "firebase/functions";
-// import firebase from "firebase";
 import { initializeApp } from "firebase/app";
 
 const jsonStyle = {
@@ -79,7 +76,7 @@ const TestShop = () => {
   const [name, setName] = useState("");
   const [id, setId] = useState("");
   const [status, setStatus] = useState("active");
-
+    
   const shops = useSelector(selectAllShops);
   const shopStatus = useSelector(selectShopStatus);
 
@@ -88,32 +85,6 @@ const TestShop = () => {
       dispatch(fetchShops());
     }
   }, [dispatch, shopStatus]);
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyCFgXdiuj5NvgS9AVVuc9GMHiW8XnkWujY",
-    authDomain: "machikane-coffee.firebaseapp.com",
-    projectId: "machikane-coffee",
-    storageBucket: "machikane-coffee.appspot.com",
-    messagingSenderId: "838446105130",
-    appId: "1:838446105130:web:681b58b1ce980aaa83b953",
-    measurementId: "G-DP4B9FYBBR",
-  };
-
-  // Initialize Firebase
-  initializeApp(firebaseConfig);
-
-  useEffect(() => {
-    // HTTP request
-    const functions = getFunctions();
-    const setAdminClaim = httpsCallable(functions, "setAdminClaim");
-    const uid = "B9HB7lHbbzeWaRyMj0SSaEsJqkK2";
-
-    console.log(functions);
-    console.log(setAdminClaim.name);
-    console.log("setAdminClaim");
-
-    // setAdminClaim({ uid: uid });
-  }, []);
 
   const onAddShopClicked = async () => {
     await dispatch(

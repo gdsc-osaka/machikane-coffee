@@ -11,29 +11,31 @@ import React from "react";
 import { createTheme, CssBaseline, ThemeProvider } from "@mui/material";
 import { themeOptions } from "./themeOptions";
 import AdminBaristaPage from "./pages/AdminBaristaPage";
+import LogInPage from "./pages/LogInPage";
 
 const App = () => {
-  const theme = createTheme(themeOptions);
+    const theme = createTheme(themeOptions);
 
-  return (
-    <Provider store={store}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
+    return (
+        <Provider store={store}>
+            <ThemeProvider theme={theme}>
+                <CssBaseline/>
 
-        <BrowserRouter>
-          <Header />
-          <Routes>
-            <Route path="/:shopId/admin" Component={AdminPage} />
-            <Route path="/:shopId/admin-barista" Component={AdminBaristaPage} />
-            <Route path="/:shopId/user" Component={User} />
-            <Route path="/:shopId/timer" Component={Timer} />
-            <Route path="/:shopId/test" Component={TestPage} />
-          </Routes>
-        </BrowserRouter>
-        <Footer />
-      </ThemeProvider>
-    </Provider>
-  );
+                <BrowserRouter>
+                    <Header/>
+                    <Routes>
+                        <Route path="/:shopId/admin" Component={AdminPage}/>
+                        <Route path="/:shopId/admin-barista" Component={AdminBaristaPage}/>
+                        <Route path="/:shopId/user" Component={User}/>
+                        <Route path="/:shopId/timer" Component={Timer}/>
+                        <Route path="/:shopId/test" Component={TestPage}/>
+                        <Route path="/:shopId/login" Component={LogInPage}/>
+                    </Routes>
+                </BrowserRouter>
+                <Footer/>
+            </ThemeProvider>
+        </Provider>
+    );
 };
 
 export default App;

@@ -1,9 +1,10 @@
 import React, {useEffect, useState} from "react";
 import styled from "styled-components";
 import {useSelector} from "react-redux";
-import {fetchProducts, selectAllProduct, selectProductStatus} from "../modules/redux/product/productsSlice";
+import {fetchProducts, selectAllProduct, selectProductStatus,} from "../modules/redux/product/productsSlice";
 import {useAppDispatch} from "../modules/redux/store";
-import {useParams} from "react-router-dom";
+import {Navigate, useParams} from "react-router-dom";
+import {getAuth} from "firebase/auth";
 import {Order, ProductAmount} from "../modules/redux/order/types";
 import OrderForm from "../components/order/OrderForm";
 import {
@@ -38,13 +39,34 @@ const AdminPage = () => {
     const receivedOrders = useSelector(selectReceivedOrder);
     const orderStatus = useSelector(selectOrderStatus);
     const params = useParams();
-    const shopId = params.shopId ?? '';
+    const shopId = params.shopId ?? "";
+    const [IsAdmin, setIsAdmin] = useState<boolean | undefined>(undefined);
 
     const shopUnsubscribe = useSelector(selectShopUnsubscribe);
 
     const onChangeAmount = (productId: string, amount: number) => {
         setProductAmount({...productAmount, [productId]: amount});
-    }
+    };
+
+    useEffect(() => {
+        const auth = getAuth();
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                user.getIdTokenResult(true).then((result) => {
+                    if (result.claims.admin === true) {
+                        // admin
+                        console.log("admin");
+                        setIsAdmin(true);
+                    } else {
+                        // user
+                        console.log("user");
+                        setIsAdmin(false);
+                    }
+                });
+            }
+        });
+        console.log(IsAdmin);
+    }, [IsAdmin]);
 
     useEffect(() => {
         if (productStatus == "idle" || productStatus == "failed") {
@@ -74,8 +96,17 @@ const AdminPage = () => {
         }
         setProductAmount({});
 
-        await dispatch(addOrder({shopId: shopId, rawOrder: {is_student: false, product_amount: trueProductAmount, status: "idle"}}));
-    }
+        await dispatch(
+            addOrder({
+                shopId: shopId,
+                rawOrder: {
+                    is_student: false,
+                    product_amount: trueProductAmount,
+                    status: "idle",
+                },
+            })
+        );
+    };
 
     const handleReceiveOrder = (order: Order) => {
         dispatch(updateOrder({shopId, newOrder: {...order, status: "received"}}));
@@ -152,13 +183,13 @@ const RowLayout = styled.div`
   justify-content: left;
   align-items: flex-start;
   gap: 1rem;
-`
+`;
 
 const Column = styled.div`
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 3vh;
-`
+`;
 
 export default AdminPage;
