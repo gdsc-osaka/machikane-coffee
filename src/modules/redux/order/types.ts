@@ -8,6 +8,8 @@ export type ProductAmount = {
     [K in string]: number
 };
 
+export type Status = "idle" | "working" | "completed"
+
 /**
  * 商品IDと提供の状況 (受け取り済み、完成済み)
  * @property product_id 商品ID
@@ -16,7 +18,7 @@ export type ProductAmount = {
  */
 export type OrderStatus = {
     product_id: string;
-    status: "idle" | "working" | "completed";
+    status: Status;
     barista_id: number;
 
     /**

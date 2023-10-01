@@ -1,15 +1,15 @@
 import store from "./modules/redux/store";
 import Header from "./components/Header/Header";
-import {BrowserRouter, Route, Routes} from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import AdminPage from "./pages/AdminPage";
 import User from "./pages/User";
 import Timer from "./pages/Timer";
-import {TestPage} from "./pages/Test";
+import { TestPage } from "./pages/Test";
 import Footer from "./components/Footer/Footer";
-import {Provider} from "react-redux";
+import { Provider } from "react-redux";
 import React from "react";
-import {createTheme, CssBaseline, ThemeProvider} from "@mui/material";
-import {themeOptions} from "./themeOptions";
+import { createTheme, CssBaseline, ThemeProvider } from "@mui/material";
+import { themeOptions } from "./themeOptions";
 import AdminBaristaPage from "./pages/AdminBaristaPage";
 import LogInPage from "./pages/LogInPage";
 
