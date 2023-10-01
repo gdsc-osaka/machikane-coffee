@@ -18,7 +18,7 @@ import styled from "styled-components";
 import StickyNote from "../components/StickyNote";
 import IndexIcon from "../components/order/IndexIcon";
 import {
-    selectAllOrders,
+    selectAllOrdersInverse,
     selectOrderStatus, selectOrderUnsubscribe,
     streamOrders,
     updateOrder
@@ -27,7 +27,6 @@ import {fetchProducts, selectAllProduct, selectProductStatus} from "../modules/r
 import {getOrderLabel} from "../modules/util/orderUtils";
 import {Order, Status} from "../modules/redux/order/types";
 import {Flex} from "../components/layout/Flex";
-import * as stream from "stream";
 import {MotionList, MotionListItem} from "src/components/motion/motionList";
 import {AnimatePresence} from "framer-motion";
 
@@ -68,7 +67,7 @@ const AdminBaristaPage = () => {
     const shopStatus = useSelector(selectShopStatus);
     const shop = useSelector<RootState, Shop | undefined>(state => selectShopById(state, shopId));
     const orderStatus = useSelector(selectOrderStatus);
-    const orders = useSelector(selectAllOrders);
+    const orders = useSelector(selectAllOrdersInverse);
     const productStatus = useSelector(selectProductStatus);
     const products = useSelector(selectAllProduct);
     const isWorking = working != undefined;
