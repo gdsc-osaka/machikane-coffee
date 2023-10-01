@@ -1,51 +1,51 @@
-import * as React from 'react';
-import Avatar from '@mui/material/Avatar';
-import Button from '@mui/material/Button';
-import CssBaseline from '@mui/material/CssBaseline';
-import TextField from '@mui/material/TextField';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
-import Link from '@mui/material/Link';
-import Grid from '@mui/material/Grid';
-import Box from '@mui/material/Box';
+import * as React from "react";
+import Avatar from "@mui/material/Avatar";
+import Button from "@mui/material/Button";
+import CssBaseline from "@mui/material/CssBaseline";
+import TextField from "@mui/material/TextField";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Checkbox from "@mui/material/Checkbox";
+import Link from "@mui/material/Link";
+import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
 // import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import Typography from '@mui/material/Typography';
-import Container from '@mui/material/Container';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
+import Typography from "@mui/material/Typography";
+import Container from "@mui/material/Container";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 const defaultTheme = createTheme();
 
 export default function LogInPage() {
+  const params = useParams();
+  const shopId = params.shopId ?? "";
   const navigate = useNavigate();
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
 
-    var email = (data.get('email') ?? '') as string;
-    var password = (data.get('password') ?? '') as string;
+    var email = (data.get("email") ?? "") as string;
+    var password = (data.get("password") ?? "") as string;
 
-    console.log({email,password});
+    console.log({ email, password });
 
     const auth = getAuth();
-    signInWithEmailAndPassword(auth, email , password)
+    signInWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
-        // Signed in 
+        // Signed in
         const user = userCredential.user;
         console.log(user);
-        navigate("/:shopId/admin");
+        // navigate("/:shopId/admin");
+        navigate("/" + shopId + "/admin");
         // ...
       })
       .catch((error) => {
         const errorCode = error.code;
         const errorMessage = error.message;
-        console.log({errorCode,errorMessage});
-
+        console.log({ errorCode, errorMessage });
       });
   };
-
-  
 
   return (
     <ThemeProvider theme={defaultTheme}>
@@ -54,15 +54,20 @@ export default function LogInPage() {
         <Box
           sx={{
             marginTop: 8,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
           }}
         >
           <Typography component="h1" variant="h5">
             Sign in
           </Typography>
-          <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            noValidate
+            sx={{ mt: 1 }}
+          >
             <TextField
               margin="normal"
               required
@@ -92,7 +97,6 @@ export default function LogInPage() {
               fullWidth
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
-              
             >
               Sign In
             </Button>
@@ -102,4 +106,3 @@ export default function LogInPage() {
     </ThemeProvider>
   );
 }
-

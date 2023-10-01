@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useState } from "react";
 import styled from "styled-components";
 import { useSelector } from "react-redux";
 import {
@@ -7,7 +7,7 @@ import {
   selectProductStatus,
 } from "../modules/redux/product/productsSlice";
 import { useAppDispatch } from "../modules/redux/store";
-import { useParams } from "react-router-dom";
+import { Navigate, redirect, useParams } from "react-router-dom";
 import { ProductAmount } from "../modules/redux/order/types";
 import OrderForm from "../components/order/OrderForm";
 import { CircularProgress } from "@mui/material";
@@ -24,6 +24,8 @@ import firebase from "src/modules/firebase/firebase";
 import "firebase/auth";
 
 import { getAuth, getIdTokenResult, onAuthStateChanged } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
+import { isatty } from "tty";
 
 const AdminPage = () => {
   const dispatch = useAppDispatch();
@@ -33,32 +35,32 @@ const AdminPage = () => {
   const orderStatus = useSelector(selectOrderStatus);
   const params = useParams();
   const shopId = params.shopId ?? "";
+  const [IsAdmin, setIsAdmin] = useState<boolean | undefined>(undefined);
 
   const [productAmount, setProductAmount] = useState<ProductAmount>({});
   const onChangeAmount = (productId: string, amount: number) => {
     setProductAmount({ ...productAmount, [productId]: amount });
   };
 
-  // TODO onAuthStateChanged
-  // https://firebase.google.com/docs/auth/web/manage-users?hl=ja#web-modular-api
   useEffect(() => {
-    console.log("admin");
     const auth = getAuth();
-    // const user = auth.currentUser;
     auth.onAuthStateChanged((user) => {
       if (user) {
         user.getIdTokenResult(true).then((result) => {
           if (result.claims.admin === true) {
             // admin
-            console.log("result.claims: ");
-            console.log(result.claims);
+            console.log("admin");
+            setIsAdmin(true);
+          } else {
+            // user
+            console.log("user");
+            setIsAdmin(false);
           }
         });
       }
     });
-
-    // firebase.auth().currentUser.getIdTokenResult();
-  }, []);
+    console.log(IsAdmin);
+  }, [IsAdmin]);
 
   useEffect(() => {
     if (productStatus == "idle" || productStatus == "failed") {
@@ -93,26 +95,32 @@ const AdminPage = () => {
     );
   };
 
-  return productStatus == "succeeded" ? (
-    <RowLayout>
-      <Column>
-        <OrderForm
-          products={products}
-          onChangeAmount={onChangeAmount}
-          productAmount={productAmount}
-          onOrderAddClicked={onOrderAddClicked}
-        />
-        <ShopManager />
-      </Column>
-      <OrderList
-        orders={unreceivedOrders}
-        onOrderUpdated={(id, order) => {}}
-        products={products}
-      />
-    </RowLayout>
-  ) : (
-    <CircularProgress />
-  );
+  return IsAdmin !== undefined ? (
+    IsAdmin ? (
+      productStatus === "succeeded" ? (
+        <RowLayout>
+          <Column>
+            <OrderForm
+              products={products}
+              onChangeAmount={onChangeAmount}
+              productAmount={productAmount}
+              onOrderAddClicked={onOrderAddClicked}
+            />
+            <ShopManager />
+          </Column>
+          <OrderList
+            orders={unreceivedOrders}
+            onOrderUpdated={(id, order) => {}}
+            products={products}
+          />
+        </RowLayout>
+      ) : (
+        <CircularProgress />
+      )
+    ) : (
+      <Navigate to={"/" + shopId + "/user"} />
+    )
+  ) : null;
 };
 
 const RowLayout = styled.div`
