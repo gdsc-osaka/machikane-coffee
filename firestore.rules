@@ -15,15 +15,5 @@ service cloud.firestore {
     match /{document=**} {
       allow read, write: if request.time < timestamp.date(2023, 9, 9);
     }
-    match /databases/{database}/documents {
-      match /portfolios/{document=**} {
-        allow read;
-        allow write: if request.auth.token.admin == true;
-      }
-      match /skills/{document=**} {
-        allow read;
-        allow write: if request.auth.token.admin == true;
-      }
-    }
   }
 }
