@@ -1,6 +1,6 @@
 import {Product} from "../../modules/redux/product/types";
 import styled from "styled-components";
-import {IconButton, Typography} from "@mui/material";
+import {Card, IconButton, Stack, Typography} from "@mui/material";
 import {Remove, Add} from '@mui/icons-material';
 
 type ProductCounterType = {
@@ -18,28 +18,30 @@ const ProductCounter = (props: ProductCounterType) => {
     }
     const onIncrease = () => onChangeAmount(amount + 1);
 
-    return <RootContainer>
-        <RoundedImage src={product.thumbnail_url}/>
-        <ContentContainer>
-            <Typography sx={{ fontWeight: 'bold', fontSize: "1rem"}}>
-                {product.display_name}
-            </Typography>
-            <Typography sx={{ color: '#837468', fontSize: "0.9rem"}}>
-                ¥{product.price}
-            </Typography>
-            <AmountSelectorContainer>
-                <IconButton onClick={onDecrease}>
-                    <Remove/>
-                </IconButton>
-                <Typography sx={{ fontSize: "2.5rem"}}>
-                    {amount}
+    return <Card sx={{boxShadow: 'none'}}>
+        <Stack direction={"row"} alignItems={"center"} justifyContent={"flex-start"} spacing={1} sx={{padding: "10px"}}>
+            <RoundedImage src={product.thumbnail_url}/>
+            <ContentContainer>
+                <Typography variant={"body1"} sx={{ fontWeight: 'bold', fontSize: "1rem"}}>
+                    {product.display_name}
                 </Typography>
-                <IconButton onClick={onIncrease}>
-                    <Add/>
-                </IconButton>
-            </AmountSelectorContainer>
-        </ContentContainer>
-    </RootContainer>
+                <Typography variant={"body2"} sx={{ color: '#837468'}}>
+                    ¥{product.price}
+                </Typography>
+                <AmountSelectorContainer>
+                    <IconButton onClick={onDecrease}>
+                        <Remove/>
+                    </IconButton>
+                    <Typography variant={"h4"}>
+                        {amount}
+                    </Typography>
+                    <IconButton onClick={onIncrease}>
+                        <Add/>
+                    </IconButton>
+                </AmountSelectorContainer>
+            </ContentContainer>
+        </Stack>
+    </Card>
 }
 
 const RootContainer = styled.div`
@@ -53,8 +55,8 @@ const RootContainer = styled.div`
 `
 
 const RoundedImage = styled.img`
-  width: 8rem;
-  height: 8rem;
+  width: 100px;
+  height: 100px;
   border-radius: 10px;
 `
 

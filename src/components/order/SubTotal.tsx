@@ -1,15 +1,20 @@
 import {ProductAmount} from "../../modules/redux/order/types";
 import styled from "styled-components";
-import {Divider, Typography} from "@mui/material";
+import {Button, Divider, Stack, Typography, useTheme} from "@mui/material";
 import {Product} from "../../modules/redux/product/types";
 import React from "react";
+import {MotionList, MotionListItem} from "../motion/motionList";
+import {AnimatePresence} from "framer-motion";
 
 type SubTotalProps = {
     productAmount: ProductAmount;
     products: Product[];
+    disabledButton: boolean;
+    onClickButton: () => void;
 }
 
 const SubTotal = (props: SubTotalProps) => {
+    const theme = useTheme();
     const products = props.products;
     const productAmount = props.productAmount;
     const ids = Object.keys(productAmount);
@@ -29,42 +34,59 @@ const SubTotal = (props: SubTotalProps) => {
     }
 
     return (
-        <Container>
-            {ids.map(id => {
-                const amount = productAmount[id];
+        <MotionList layoutId={"sub-total"}>
+            <AnimatePresence>
+                {ids.map(id => {
+                    const amount = productAmount[id];
 
-                if (amount <= 0) {
-                    return <React.Fragment/>
-                }
+                    if (amount <= 0) {
+                        return <React.Fragment/>
+                    }
 
-                const product = products.find((product) => product.id == id);
+                    const product = products.find((product) => product.id == id);
 
-                return <Row>
-                    <Typography>
-                        {product?.display_name ?? ""}
-                    </Typography>
-                    <SubRow>
-                        <Typography>
-                            {amount}点
-                        </Typography>
-                        <RightAlign>
-                            <Typography>
-                                ¥{product != null ? product.price * amount : 0}
+                    return <MotionListItem key={id} spacing={1}>
+                        <Row>
+                            <Typography variant={"body2"}>
+                                {product?.shorter_name ?? ""}
                             </Typography>
-                        </RightAlign>
-                    </SubRow>
-                </Row>
-            })}
-            {!isEmpty ? <Divider variant={"fullWidth"} flexItem/> : <React.Fragment/>}
-            <Row>
-                <Typography>
-                    合計
-                </Typography>
-                <Typography>
-                    ¥{total}
-                </Typography>
-            </Row>
-        </Container>
+                            <SubRow>
+                                <Typography variant={"body2"}>
+                                    {amount}点
+                                </Typography>
+                                <RightAlign>
+                                    <Typography variant={"body2"}>
+                                        ¥{product != null ? product.price * amount : 0}
+                                    </Typography>
+                                </RightAlign>
+                            </SubRow>
+                        </Row>
+                    </MotionListItem>
+                })}
+                {!isEmpty ? <MotionListItem key={"subtotal-divider"} spacing={1}>
+                    <Divider variant={"fullWidth"} flexItem/>
+                </MotionListItem> : <React.Fragment/>}
+                <MotionListItem key={"total"}>
+                    <Row>
+                        <Typography variant={"body1"}>
+                            合計
+                        </Typography>
+                        <Typography variant={"body1"}>
+                            ¥{total}
+                        </Typography>
+                    </Row>
+                </MotionListItem>
+                <MotionListItem key={"subtotal-button"}>
+                    <Button variant={"contained"}
+                            disabled={props.disabledButton}
+                            onClick={props.onClickButton}
+                            style={{marginTop: theme.spacing(2), width: "100%"}}>
+                        注文
+                    </Button>
+                </MotionListItem>
+            </AnimatePresence>
+
+        </MotionList>
     );
 }
 

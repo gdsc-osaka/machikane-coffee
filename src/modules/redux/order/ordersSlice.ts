@@ -1,5 +1,5 @@
 import {createAsyncThunk, createSlice, PayloadAction} from "@reduxjs/toolkit";
-import {AsyncState} from "../stateType";
+import {AsyncState, Unsubscribe} from "../stateType";
 import {CargoOrder, Order, OrderStatuses, RawOrder} from "./types";
 import {db} from "../../firebase/firebase";
 import {orderConverter} from "../../firebase/converters";
@@ -8,6 +8,7 @@ import {RootState} from "../store";
 import {
     addDoc,
     collection,
+    deleteDoc,
     doc,
     getDoc,
     getDocs,
@@ -22,7 +23,6 @@ import {
 } from "firebase/firestore";
 import {getToday} from "../../util/dateUtils";
 import {QueryConstraint} from "@firebase/firestore";
-import {xor} from "../../util/boolUtils";
 
 const ordersQuery = (shopId: string, ...queryConstraints: QueryConstraint[]) => {
     const today = Timestamp.fromDate(getToday());
@@ -42,14 +42,19 @@ export const fetchOrders = createAsyncThunk("orders/fetchOrders",
  * order をリアルタイム更新する. ユーザー側で使用されることを想定
  */
 export const streamOrders = createAsyncThunk('orders/streamOrders',
-    (shopId: string, {dispatch}) => {
+    (shopId: string, {dispatch, getState}) => {
         const _query = ordersQuery(shopId);
         const unsubscribe = onSnapshot(_query,(snapshot) => {
+                const state: RootState = getState() as RootState;
+
                 snapshot.docChanges().forEach((change) => {
 
                    if (change.type == "added") {
                        const order = change.doc.data();
-                       dispatch(orderAdded(order));
+
+                       if (state.order.data.findIndex(e => e.id == order.id) == -1) {
+                           dispatch(orderAdded(order));
+                       }
                    }
                    if (change.type == "modified") {
                        const order = change.doc.data();
@@ -72,16 +77,13 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
         let waitingSec = 0;
         // 提供状況
         const orderStatuses: OrderStatuses = {};
-        console.log(rawOrder);
 
         for (const productId of Object.keys(rawOrder.product_amount)) {
             const amount = rawOrder.product_amount[productId];
             const product = selectProductById(getState(), productId);
 
-            console.log(productId);
             // Product が登録されているまたはフェッチされているとき
             if (product != null) {
-                console.log(product.span);
                 waitingSec += product.span * amount;
             }
 
@@ -137,12 +139,12 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, raw
     });
 
 /**
- * order_statuses の status が全て completed のとき, ルートの status も completed に設定する
+ * order_statuses の status が全て completed かつ status が idle のとき, ルートの status も completed に設定する
  */
 const switchOrderStatus = (newOrder: Order) => {
     const statusKeys = Object.keys(newOrder.order_statuses);
 
-    if (statusKeys.findIndex(k => newOrder.order_statuses[k].status != "completed") == -1) {
+    if (statusKeys.findIndex(k => newOrder.order_statuses[k].status != "completed") == -1 && newOrder.status == "idle") {
         // order_statuses の status が全て completed のとき
         newOrder.status = "completed";
     }
@@ -160,6 +162,13 @@ export const updateOrder = createAsyncThunk<Order, {shopId: string, newOrder: Or
         return newOrder;
     });
 
+export const deleteOrder = createAsyncThunk<Order, {shopId: string, order: Order}, {}>('orders/deleteOrder',
+    async ({shopId, order}) => {
+        const docRef = doc(db, `shops/${shopId}/orders/${order.id}`);
+        await deleteDoc(docRef);
+        return order;
+    })
+
 const ordersSlice = createSlice({
     name: "orders",
     initialState: {
@@ -168,10 +177,10 @@ const ordersSlice = createSlice({
         error: null,
         // リアルタイムリッスンの Stream を unsubscribe する
         unsubscribe: null,
-    } as AsyncState<Order[]> & {unsubscribe: (() => void) | null},
+    } as AsyncState<Order[]> & Unsubscribe,
     reducers: {
         orderAdded(state, action: PayloadAction<Order>) {
-            state.data.unshift(action.payload);
+            state.data.push(action.payload);
         },
         orderUpdated(state, action: PayloadAction<Order>) {
             const order = action.payload;
@@ -185,7 +194,7 @@ const ordersSlice = createSlice({
         orderRemoved(state, action: PayloadAction<string>) {
             const id = action.payload;
             state.data.remove(e => e.id == id);
-        }
+        },
     },
     extraReducers: builder => {
         builder
@@ -208,8 +217,9 @@ const ordersSlice = createSlice({
 
         builder.addCase(addOrder.fulfilled, (state, action) => {
             const order = action.payload;
-            if (order != undefined) {
-                state.data.unshift(order);
+            // 重複するデータが存在しないとき
+            if (order != undefined && state.data.findIndex(e => e.id == order.id) == -1) {
+                state.data.push(order);
             }
         })
 
@@ -217,17 +227,52 @@ const ordersSlice = createSlice({
            const newOrder = action.payload;
            state.data.update(e => e.id == newOrder.id, newOrder);
         });
+
+        builder.addCase(deleteOrder.fulfilled, (state, action) => {
+            state.data.remove(e => e.id == action.payload.id);
+        })
     },
 });
 
 const orderReducer = ordersSlice.reducer;
 export default orderReducer;
 export const {orderAdded, orderUpdated, orderRemoved} = ordersSlice.actions;
-export const selectAllOrders = (state: RootState) => state.order.data;
+
+/**
+ * createdが新しい方が先にソートする
+ * @param a
+ * @param b
+ */
+function sortByCreated(a: Order, b: Order) {
+    return b.created_at.toDate().getTime() - a.created_at.toDate().getTime()
+}
+
+/**
+ * completedを前に、それ以外を後に、created_at順でソートする
+ * @param a
+ * @param b
+ */
+function sortByCompletedThenCreated(a: Order, b: Order) {
+    if (a.status != b.status) {
+        if (a.status == "completed") {
+            // aを先に
+            return -1;
+        } else if (b.status == "completed") {
+            // bを先に
+            return 1;
+        }
+    }
+
+    return sortByCreated(a, b);
+}
+
+export const selectAllOrders = (state: RootState) => state.order.data.slice().sort(sortByCreated);
+export const selectAllOrdersByCompleted = (state: RootState) => state.order.data.slice().sort(sortByCompletedThenCreated);
+export const selectAllOrdersInverse = (state: RootState) => state.order.data.slice().sort((a, b) => sortByCreated(b, a));
 export const selectOrderStatus = (state: RootState) => state.order.status;
 export const selectOrderById = (state: RootState, id: string) => state.order.data.find(e => e.id == id);
-export const selectReceivedOrder = (state: RootState) => state.order.data.filter(e => e.received);
-export const selectUnreceivedOrder = (state: RootState) => state.order.data.filter(e => !e.received);
+export const selectReceivedOrder = (state: RootState) => selectAllOrders(state).filter(e => e.status == "received");
+export const selectUnreceivedOrder = (state: RootState) => selectAllOrdersByCompleted(state).filter(e => e.status != "received");
 /**
  * 商品の遅延時間を含め、最大の完成する時刻を返します
  * 注文がない場合, 現在時刻を返します
@@ -242,3 +287,7 @@ export const selectMaxCompleteAt = (state: RootState): Date => {
     orders.sort((a, b) => getTrueCompleteAt(a).getTime() - getTrueCompleteAt(b).getTime());
     return getTrueCompleteAt(orders[0]);
 }
+/**
+ * streamOrdersのunsubscribeを取得
+ */
+export const selectOrderUnsubscribe = (state: RootState) => state.order.unsubscribe;
