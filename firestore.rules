@@ -7,12 +7,12 @@ service cloud.firestore {
       return token != null && token.admin;
     }
 
-    match /shop/{shopId} {
-    	allow read: if true;
+    match /shops/{shopId} {
+      allow read: if true;
       allow write: if isAdmin();
     }
 
-    match /shop/{shopId}/{document=**} {
+    match /shops/{shopId}/{document=**} {
       allow read: if true;
       allow write: if isAdmin();
     }
