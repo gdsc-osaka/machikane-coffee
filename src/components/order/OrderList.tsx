@@ -1,14 +1,13 @@
 import {Order} from "../../modules/redux/order/types";
 import {Button, Chip, IconButton, Stack, Typography, useTheme} from "@mui/material";
 import {Product} from "../../modules/redux/product/types";
-import {Column} from "../layout/Column";
 import {Flex} from "../layout/Flex";
 import IndexIcon from "./IndexIcon";
 import StickyNote from "../StickyNote";
 import React from "react";
 import {Row} from "../layout/Row";
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
-import {AnimatePresence, motion} from "framer-motion";
+import {AnimatePresence} from "framer-motion";
 import {MotionList, MotionListItem} from "../motion/motionList";
 import {getSortedObjectKey} from "../../modules/util/objUtils";
 
@@ -22,7 +21,6 @@ type OrderListProps = {
 const OrderList = (props: OrderListProps) => {
     const orders = props.orders;
     const products = props.products;
-    const theme = useTheme();
 
     return (
         <Stack spacing={3}>
