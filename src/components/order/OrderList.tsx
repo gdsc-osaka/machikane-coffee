@@ -4,7 +4,6 @@ import {Product} from "../../modules/redux/product/types";
 import {Column} from "../layout/Column";
 import {Flex} from "../layout/Flex";
 import IndexIcon from "./IndexIcon";
-import {getOrderLabel} from "../../modules/util/orderUtils";
 import StickyNote from "../StickyNote";
 import React from "react";
 import {Row} from "../layout/Row";

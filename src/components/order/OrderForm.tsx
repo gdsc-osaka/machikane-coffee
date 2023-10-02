@@ -32,12 +32,10 @@ const OrderForm = (props: OrderFormProps) => {
                 </Stack>
             </Grid>
             <Grid item md={5} sx={{paddingLeft: "10px"}}>
-                <Stack spacing={2}>
-                    <SubTotal productAmount={productAmount} products={products}/>
-                    <Button variant={"contained"} disabled={isNoAmount} onClick={props.onOrderAddClicked}>
-                        注文
-                    </Button>
-                </Stack>
+                <SubTotal productAmount={productAmount}
+                          products={products}
+                          disabledButton={isNoAmount}
+                          onClickButton={props.onOrderAddClicked}/>
             </Grid>
         </Grid>
     </Stack>

@@ -237,11 +237,42 @@ const ordersSlice = createSlice({
 const orderReducer = ordersSlice.reducer;
 export default orderReducer;
 export const {orderAdded, orderUpdated, orderRemoved} = ordersSlice.actions;
-export const selectAllOrders = (state: RootState) => state.order.data.slice().sort((a, b) => b.created_at.toDate().getTime() - a.created_at.toDate().getTime());
+
+/**
+ * createdが新しい方が先にソートする
+ * @param a
+ * @param b
+ */
+function sortByCreated(a: Order, b: Order) {
+    return b.created_at.toDate().getTime() - a.created_at.toDate().getTime()
+}
+
+/**
+ * completedを前に、それ以外を後に、created_at順でソートする
+ * @param a
+ * @param b
+ */
+function sortByCompletedThenCreated(a: Order, b: Order) {
+    if (a.status != b.status) {
+        if (a.status == "completed") {
+            // aを先に
+            return -1;
+        } else if (b.status == "completed") {
+            // bを先に
+            return 1;
+        }
+    }
+
+    return sortByCreated(a, b);
+}
+
+export const selectAllOrders = (state: RootState) => state.order.data.slice().sort(sortByCreated);
+export const selectAllOrdersByCompleted = (state: RootState) => state.order.data.slice().sort(sortByCompletedThenCreated);
+export const selectAllOrdersInverse = (state: RootState) => state.order.data.slice().sort((a, b) => sortByCreated(b, a));
 export const selectOrderStatus = (state: RootState) => state.order.status;
 export const selectOrderById = (state: RootState, id: string) => state.order.data.find(e => e.id == id);
 export const selectReceivedOrder = (state: RootState) => selectAllOrders(state).filter(e => e.status == "received");
-export const selectUnreceivedOrder = (state: RootState) => selectAllOrders(state).filter(e => e.status != "received");
+export const selectUnreceivedOrder = (state: RootState) => selectAllOrdersByCompleted(state).filter(e => e.status != "received");
 /**
  * 商品の遅延時間を含め、最大の完成する時刻を返します
  * 注文がない場合, 現在時刻を返します

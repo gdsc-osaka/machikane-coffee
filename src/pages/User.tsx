@@ -9,7 +9,6 @@ import { useEffect, useState } from "react";
 import {
   selectOrderStatus,
 } from "../modules/redux/order/ordersSlice";
-import { Timestamp } from "firebase/firestore";
 import OrderRow from "../components/User/OrderRow";
 import WaitForReceive from "../components/User/waitForReceive";
 import DelayContainer from "../components/User/delayContainer";

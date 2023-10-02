@@ -18,7 +18,7 @@ const ProductCounter = (props: ProductCounterType) => {
     }
     const onIncrease = () => onChangeAmount(amount + 1);
 
-    return <Card>
+    return <Card sx={{boxShadow: 'none'}}>
         <Stack direction={"row"} alignItems={"center"} justifyContent={"flex-start"} spacing={1} sx={{padding: "10px"}}>
             <RoundedImage src={product.thumbnail_url}/>
             <ContentContainer>
