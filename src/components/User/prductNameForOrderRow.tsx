@@ -19,10 +19,6 @@ const ProductNameForOrderRow: VFC<Props> = (props) => {
     useEffect(() => {
         if(product?.shorter_name)setProductShorterName(product?.shorter_name);
     }, [product]);
-
-    console.log(props.productId);
-    console.log(product);
-
     return(
         <div>
             {product ? product.shorter_name + "×" + "2": ""}

@@ -1,12 +1,12 @@
 import { VFC } from "react";
 import React from "react";
-import { Order } from "../../modules/redux/order/types";
+
 
 type Props = {
-    orders: Array<Order>
+    delayMinutes: number
 }
 
-const DelayContainer = () => {
+const DelayContainer:  VFC<Props> = (props) => {
     const delayContainerStyle = {
         display: 'flex',
         padding: '24px',
@@ -36,7 +36,7 @@ const DelayContainer = () => {
     return(
         <div style={delayContainerStyle}>
             <div style={headLineStyle}>
-                提供が5分遅延しています
+                提供が{props.delayMinutes}分遅延しています
             </div>
             <div style={supportingTextStyle}>
                 材料不足やその他の原因で提供を一時停止しております。復旧の目処が立ち次第、提供を開始させていただきますので何卒よろしくお願いいたします。

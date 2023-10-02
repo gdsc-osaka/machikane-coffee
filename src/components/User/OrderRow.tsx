@@ -1,10 +1,8 @@
 import { VFC, useEffect } from "react";
 import { Order } from "../../modules/redux/order/types";
 import { TableRow, TableCell, Divider } from "@mui/material";
-import { selectAllProduct, selectProductStatus, fetchProducts, selectProductById, selectProductByIds } from "../../modules/redux/product/productsSlice";
-import { RootState } from "../../modules/redux/store";
+import { selectAllProduct, selectProductStatus, fetchProducts } from "../../modules/redux/product/productsSlice";
 import { useSelector } from "react-redux";
-import ProductNameForOrderRow from "./prductNameForOrderRow";
 import { useAppDispatch } from "../../modules/redux/store";
 import { useParams } from "react-router-dom";
 
@@ -93,12 +91,6 @@ const OrderRow: VFC<Props> = (props) => {
         flex: '1 0 0',
         alignSelf: 'stretch',
     }
-    // const verticalFullWidth = {
-    //     display: 'flex',
-    //     flexDirection: 'column' as 'column',
-    //     alignItems: 'center',
-    //     alignSelf: 'stretch',
-    // }
     const verticalBar = {
         // height: '60px',
         backGroundColor: 'black',
