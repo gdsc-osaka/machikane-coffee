@@ -1,11 +1,11 @@
 import React from "react";
-import { Table, TableBody } from "@mui/material";
+import { Table, TableBody, CircularProgress } from "@mui/material";
 import { streamOrders } from "../modules/redux/order/ordersSlice";
 import { useParams } from "react-router-dom";
 import { useAppDispatch } from "../modules/redux/store";
 import { selectAllOrders } from "../modules/redux/order/ordersSlice";
 import { useSelector } from "react-redux";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   selectOrderStatus,
 } from "../modules/redux/order/ordersSlice";
@@ -27,8 +27,7 @@ const User = () => {
   const shop = useSelector<RootState, Shop | undefined>((state) =>
       selectShopById(state, shopId)
   );
-  // const shopStatus = shop.status
-  // const [status, setStatus] = useState<string>("active");
+  
   const status = shop?.status;
 
   useEffect(() => {
@@ -36,10 +35,6 @@ const User = () => {
         dispatch(streamShop(shopId));
     }
   }, [dispatch, shopStatus]);
-
-  // useEffect(() => {
-  //   if(shop)setStatus(shop.status);
-  // }, [shop]);
 
   const orders = useSelector(selectAllOrders);
   const orderStatus = useSelector(selectOrderStatus);
@@ -70,7 +65,7 @@ const User = () => {
   }, [dispatch, orderStatus]);
 
 
-  return (
+  return shop !== undefined ? (
     <div style={userPageStyle}>
     {status == "pause_ordering" ?  <DelayContainer delayMinutes={delayMinutes} emg_message={shop?.emg_message} /> : <></>}
     <WaitForReceive orders={WaitForReceiveOrders} />
@@ -84,6 +79,8 @@ const User = () => {
       </TableBody>
     </Table>
     </div>
+  ) : (
+    <CircularProgress/>
   );
 };
 
