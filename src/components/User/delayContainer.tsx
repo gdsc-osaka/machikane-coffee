@@ -3,7 +3,8 @@ import React from "react";
 
 
 type Props = {
-    delayMinutes: number
+    delayMinutes: number,
+    emg_message: string | undefined,
 }
 
 const DelayContainer:  VFC<Props> = (props) => {
@@ -39,7 +40,7 @@ const DelayContainer:  VFC<Props> = (props) => {
                 提供が{props.delayMinutes}分遅延しています
             </div>
             <div style={supportingTextStyle}>
-                材料不足やその他の原因で提供を一時停止しております。復旧の目処が立ち次第、提供を開始させていただきますので何卒よろしくお願いいたします。
+                {props.emg_message ?? ""}
             </div>
         </div>
     );

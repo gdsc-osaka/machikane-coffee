@@ -23,10 +23,13 @@ const User = () => {
   const shopId = params.shopId ?? '';
   const dispatch = useAppDispatch();
   const shopStatus = useSelector(selectShopStatus);
+  
   const shop = useSelector<RootState, Shop | undefined>((state) =>
       selectShopById(state, shopId)
   );
-  const [status, setStatus] = useState<string>("active");
+  // const shopStatus = shop.status
+  // const [status, setStatus] = useState<string>("active");
+  const status = shop?.status;
 
   useEffect(() => {
     if (shopStatus == "idle" || shopStatus == "failed") {
@@ -34,26 +37,26 @@ const User = () => {
     }
   }, [dispatch, shopStatus]);
 
-  useEffect(() => {
-    if(shop)setStatus(shop.status);
-  }, [shop]);
+  // useEffect(() => {
+  //   if(shop)setStatus(shop.status);
+  // }, [shop]);
 
   const orders = useSelector(selectAllOrders);
   const orderStatus = useSelector(selectOrderStatus);
   const delayMinutes = Math.floor(useSelector((state: RootState) => selectShopDelaySeconds(state, shopId)) / 60);
 
   const WaitForReceiveOrders = orders.filter((order) => {
-    const completeAt = order.complete_at.seconds as unknown as number;
+    const completeAt = order.complete_at.seconds;
     const currentTime = new Date().getTime() / 1000;
     const waitTime = Math.floor((completeAt - currentTime + order.delay_seconds) / 60);
-    return waitTime < -2; //TODOここがn分経過の分岐点
+    return waitTime < -3; //ここがn分経過の分岐点
   });
 
   const orderItems = orders.filter((order) => {
     const completeAt = order.complete_at.seconds as unknown as number;
     const currentTime = new Date().getTime() / 1000;
     const waitTime = Math.floor((completeAt - currentTime + order.delay_seconds) / 60);
-    return waitTime >= -2; //TODOここがn分経過の分岐点
+    return waitTime >= -3; //ここがn分経過の分岐点
   });
   
   const userPageStyle = {
@@ -65,9 +68,11 @@ const User = () => {
           dispatch(streamOrders(shopId));
       }
   }, [dispatch, orderStatus]);
+
+
   return (
     <div style={userPageStyle}>
-    {status == "pause_ordering" ?  <DelayContainer delayMinutes={delayMinutes} /> : <></>}
+    {status == "pause_ordering" ?  <DelayContainer delayMinutes={delayMinutes} emg_message={shop?.emg_message} /> : <></>}
     <WaitForReceive orders={WaitForReceiveOrders} />
     <Table>
       <TableBody>
