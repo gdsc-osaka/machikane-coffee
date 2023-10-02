@@ -10,6 +10,7 @@ import {Row} from "../layout/Row";
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import {AnimatePresence, motion} from "framer-motion";
 import {MotionList, MotionListItem} from "../motion/motionList";
+import {getSortedObjectKey} from "../../modules/util/objUtils";
 
 type OrderListProps = {
     orders: Order[],
@@ -60,7 +61,7 @@ const OrderList = (props: OrderListProps) => {
                                         </IconButton>
                                     </Row>
                                 </Flex>
-                                {Object.keys(order.order_statuses).map(orderStatusId => {
+                                {getSortedObjectKey(order.order_statuses).map(orderStatusId => {
                                     const orderStatus = order.order_statuses[orderStatusId];
                                     const product = products.find(prod => prod.id == orderStatus.product_id);
                                     const isCompleted = orderStatus.status == "completed";
