@@ -29,7 +29,7 @@ const ProductCounter = (props: ProductCounterType) => {
                     ¥{product.price}
                 </Typography>
                 <AmountSelectorContainer>
-                    <IconButton onClick={onDecrease}>
+                    <IconButton onClick={onDecrease} disabled={amount === 0}>
                         <Remove/>
                     </IconButton>
                     <Typography variant={"h4"}>
