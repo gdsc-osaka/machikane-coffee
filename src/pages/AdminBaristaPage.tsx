@@ -29,6 +29,7 @@ import {Order, Status} from "../modules/redux/order/types";
 import {Flex} from "../components/layout/Flex";
 import {MotionList, MotionListItem} from "src/components/motion/motionList";
 import {AnimatePresence} from "framer-motion";
+import {getSortedObjectKey} from "../modules/util/objUtils";
 
 const Column = styled.div`
   display: flex;
@@ -199,7 +200,7 @@ const AdminBaristaPage = () => {
                                         </Typography>
                                     </Row>
                                 </Flex>
-                                {Object.keys(order.order_statuses).map(orderStatusId => {
+                                {getSortedObjectKey(order.order_statuses).map(orderStatusId => {
                                     const orderStatus = order.order_statuses[orderStatusId];
                                     const product = products.find(prod => prod.id == orderStatus.product_id);
                                     const isWorkingOnThis = working != undefined && working.orderId == order.id && working.orderStatusId == orderStatusId;
