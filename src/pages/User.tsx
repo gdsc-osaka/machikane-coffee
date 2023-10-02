@@ -67,7 +67,7 @@ const User = () => {
 
   return shop !== undefined ? (
     <div style={userPageStyle}>
-    {status == "pause_ordering" ?  <DelayContainer delayMinutes={delayMinutes} emg_message={shop?.emg_message} /> : <></>}
+    {status == "pause_ordering" ?  <DelayContainer delayMinutes={delayMinutes} emg_message={shop.emg_message} /> : <></>}
     <WaitForReceive orders={WaitForReceiveOrders} />
     <Table>
       <TableBody>
