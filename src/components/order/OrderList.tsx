@@ -30,7 +30,7 @@ const OrderList = (props: OrderListProps) => {
             <MotionList layoutId={"order-list"}>
                 <AnimatePresence>
                     {orders.map(order => {
-                        const canReceive = Object.values(order.order_statuses).findIndex(orderStatus => orderStatus.status != "completed") == -1;
+                        const canReceive = order.status === "completed";
 
                         return <MotionListItem key={order.id}>
                             <StickyNote>
