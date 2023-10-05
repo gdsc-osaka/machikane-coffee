@@ -1,5 +1,5 @@
 import {Order} from "../../modules/redux/order/types";
-import {Button, Chip, IconButton, Stack, Typography} from "@mui/material";
+import {Button, Chip, IconButton, Stack, Typography, useTheme} from "@mui/material";
 import {Product} from "../../modules/redux/product/types";
 import {Flex} from "../layout/Flex";
 import IndexIcon from "./IndexIcon";
@@ -9,6 +9,7 @@ import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import {AnimatePresence} from "framer-motion";
 import {MotionList, MotionListItem} from "../motion/motionList";
 import {getSortedObjectKey} from "../../modules/util/objUtils";
+import {getOrderLabel} from "../../modules/util/orderUtils";
 
 type OrderListProps = {
     orders: Order[],
@@ -51,6 +52,7 @@ const OrderItem = (props: {
     const order = props.order;
     const isCompleted = order.status === "completed";
     const products = props.products;
+    const theme = useTheme();
 
     return <StickyNote>
         <Flex>
@@ -59,17 +61,21 @@ const OrderItem = (props: {
                     {order.index}
                 </IndexIcon>
                 <Typography variant={"body1"}>
-                    {Intl.DateTimeFormat("ja-jp", {
-                        year: "numeric",
-                        month: "2-digit",
-                        day: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit",
-                    }).format(order.created_at.toDate())}
+                    {/*{Intl.DateTimeFormat("ja-jp", {*/}
+                    {/*    year: "numeric",*/}
+                    {/*    month: "2-digit",*/}
+                    {/*    day: "2-digit",*/}
+                    {/*    hour: "2-digit",*/}
+                    {/*    minute: "2-digit",*/}
+                    {/*    second: "2-digit",*/}
+                    {/*}).format(order.created_at.toDate())}*/}
+                    {getOrderLabel(order, products)}
                 </Typography>
             </Stack>
             <Stack direction={"row"} alignItems={"center"}>
+                {isCompleted && <Chip label={"完成済み"}
+                                      color={"primary"}
+                                      style={{marginRight: theme.spacing(1)}}/>}
                 <Button variant={"contained"} disabled={!isCompleted} onClick={_ => props.onClickReceive(order)}>
                     受取
                 </Button>
@@ -78,7 +84,7 @@ const OrderItem = (props: {
                 </IconButton>
             </Stack>
         </Flex>
-        {getSortedObjectKey(order.order_statuses).map(orderStatusId => {
+        {!isCompleted && getSortedObjectKey(order.order_statuses).map(orderStatusId => {
             const orderStatus = order.order_statuses[orderStatusId];
             const product = products.find(prod => prod.id === orderStatus.product_id);
             const isCompleted = orderStatus.status === "completed";
