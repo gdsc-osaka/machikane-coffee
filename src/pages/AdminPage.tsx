@@ -3,7 +3,6 @@ import {useSelector} from "react-redux";
 import {fetchProducts, selectAllProduct, selectProductStatus,} from "../modules/redux/product/productsSlice";
 import {useAppDispatch} from "../modules/redux/store";
 import {useNavigate, useParams} from "react-router-dom";
-import {getAuth} from "firebase/auth";
 import {Order, ProductAmount} from "../modules/redux/order/types";
 import OrderForm from "../components/order/OrderForm";
 import {
