@@ -31,6 +31,7 @@ import {MotionList, MotionListItem} from "src/components/motion/motionList";
 import {AnimatePresence} from "framer-motion";
 import {getSortedObjectKey} from "../modules/util/objUtils";
 import {Product} from "../modules/redux/product/types";
+import {auth} from "../modules/firebase/firebase";
 
 /**
  * Order.orderedStatusesの要素を識別する
@@ -99,6 +100,15 @@ const AdminBaristaPage = () => {
             }
         })
     }, [shopUnsubscribe, orderUnsubscribe])
+
+    useEffect(() => {
+        auth.onAuthStateChanged(user => {
+           console.log(user);
+           user?.getIdTokenResult().then(result => {
+               console.log(result)
+           })
+        });
+    }, [])
 
     // バリスタIDの変更
     const handleBaristaId = (

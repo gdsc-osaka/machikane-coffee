@@ -30,6 +30,7 @@ import OrderList from "../components/order/OrderList";
 import ShopManager from "../components/order/ShopManager";
 import ReceivedOrderList from "../components/order/ReceivedOrderList";
 import {selectShopUnsubscribe} from "../modules/redux/shop/shopsSlice";
+import {auth} from "../modules/firebase/firebase";
 
 const AdminPage = () => {
     const [openDelete, setOpenDelete] = useState(false);
@@ -54,7 +55,6 @@ const AdminPage = () => {
     };
 
     useEffect(() => {
-        const auth = getAuth();
         auth.onAuthStateChanged((user) => {
             if (user) {
                 user.getIdTokenResult(true).then((result) => {
