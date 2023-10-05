@@ -61,7 +61,7 @@ const AdminPage = () => {
                     setLoading(false);
                     console.log(user);
 
-                    if (result.claims.admin == false) {
+                    if (result.claims.admin === false) {
                         // admin claim がない場合、userに遷移する
                         // TODO: 同一階層での遷移 '../' が機能しない. もっと綺麗な書き方に変える(shopIdに依存しない)
                         navigate(`/${shopId}/user`);
@@ -72,31 +72,31 @@ const AdminPage = () => {
                 navigate(`/${shopId}/user`);
             }
         });
-    }, []);
+    }, [shopId]);
 
     useEffect(() => {
-        if (productStatus == "idle" || productStatus == "failed") {
+        if (productStatus === "idle" || productStatus === "failed") {
             dispatch(fetchProducts(shopId));
         }
-    }, [dispatch, productStatus]);
+    }, [dispatch, productStatus, shopId]);
 
     useEffect(() => {
-        if (orderStatus == "idle" || orderStatus == "failed") {
+        if (orderStatus === "idle" || orderStatus === "failed") {
             dispatch(streamOrders(shopId));
         }
-    }, [dispatch, orderStatus]);
+    }, [dispatch, orderStatus, shopId]);
 
     useEffect(() => {
-        if (shopUnsubscribe != null) {
+        if (shopUnsubscribe !== null) {
             shopUnsubscribe();
         }
-    }, []);
+    }, [shopUnsubscribe]);
 
     const onOrderAddClicked = async () => {
         const trueProductAmount = Object.assign({}, productAmount);
         // 量がゼロの要素は排除する
         for (const id in trueProductAmount) {
-            if (trueProductAmount[id] == 0) {
+            if (trueProductAmount[id] === 0) {
                 delete trueProductAmount[id];
             }
         }
@@ -132,14 +132,14 @@ const AdminPage = () => {
     }
 
     const handleDelete = () => {
-        if (orderToDelete != null) {
+        if (orderToDelete !== null) {
             dispatch(deleteOrder({shopId, order: orderToDelete}));
             setOpenDelete(false);
         }
     }
 
     return(
-        productStatus == "succeeded" && !loading ?
+        productStatus === "succeeded" && !loading ?
             <React.Fragment>
                 <Grid container spacing={4} sx={{padding: "30px 30px"}}>
                     <Grid item xs={12} sm={6} lg={5}>
