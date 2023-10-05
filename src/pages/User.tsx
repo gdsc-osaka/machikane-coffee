@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Table, TableBody, CircularProgress } from "@mui/material";
 import { streamOrders } from "../modules/redux/order/ordersSlice";
 import { useParams } from "react-router-dom";
@@ -16,6 +16,7 @@ import { selectShopStatus, streamShop, selectShopById } from "../modules/redux/s
 import { RootState } from "../modules/redux/store";
 import { Shop } from "src/modules/redux/shop/types";
 import { selectShopDelaySeconds } from "src/modules/redux/shop/shopsSlice";
+import { useCookies } from "react-cookie"; 
 
 const User = () => {
 
@@ -58,16 +59,25 @@ const User = () => {
     padding: '10px 10px 0px 10px',
   }
 
+  const [cookies, setCookie] = useCookies(["last_active_time"]);
+
+  const buttonClicked = () => {
+    setCookie("last_active_time", shop?.last_active_time.seconds);
+  }
+
   useEffect(() => {
       if (orderStatus == "idle" || orderStatus == "failed") {
           dispatch(streamOrders(shopId));
       }
   }, [dispatch, orderStatus]);
 
-
   return shop !== undefined ? (
     <div style={userPageStyle}>
-    {status == "pause_ordering" ?  <DelayContainer delayMinutes={delayMinutes} emg_message={shop.emg_message} /> : <></>}
+    {/* pause_orderingでも、shop.last_active_timeがCookieと一致すればダイアログを表示しない */}
+    {(status == "pause_ordering" && shop.last_active_time.seconds != cookies.last_active_time) ? 
+      <DelayContainer delayMinutes={delayMinutes} emg_message={shop.emg_message} buttonClicked={buttonClicked} />
+       : <></>
+    }
     <WaitForReceive orders={WaitForReceiveOrders} />
     <Table>
       <TableBody>
