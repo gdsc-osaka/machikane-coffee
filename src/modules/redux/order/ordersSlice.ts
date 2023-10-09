@@ -30,6 +30,12 @@ const ordersQuery = (shopId: string, ...queryConstraints: QueryConstraint[]) => 
         where("created_at", ">=", today), orderBy("created_at", "desc"), ...queryConstraints);
 }
 
+const orderQuery = (shopId: string, orderIndex: number, ...queryConstraints: QueryConstraint[]) => {
+    const today = Timestamp.fromDate(getToday());
+    return  query(collection(db, `shops/${shopId}/orders`).withConverter(orderConverter),
+        where("created_at", ">=", today), where("index", "==", orderIndex), ...queryConstraints);
+}
+
 export const fetchOrders = createAsyncThunk("orders/fetchOrders",
     async (shopId: string) => {
         const _query = ordersQuery(shopId);
@@ -42,19 +48,14 @@ export const fetchOrders = createAsyncThunk("orders/fetchOrders",
  * order をリアルタイム更新する. ユーザー側で使用されることを想定
  */
 export const streamOrders = createAsyncThunk('orders/streamOrders',
-    (shopId: string, {dispatch, getState}) => {
+    (shopId: string, {dispatch}) => {
         const _query = ordersQuery(shopId);
         const unsubscribe = onSnapshot(_query,(snapshot) => {
-                const state: RootState = getState() as RootState;
-
                 snapshot.docChanges().forEach((change) => {
 
                    if (change.type == "added") {
                        const order = change.doc.data();
-
-                       if (state.order.data.findIndex(e => e.id == order.id) == -1) {
-                           dispatch(orderAdded(order));
-                       }
+                       dispatch(orderAdded(order));
                    }
                    if (change.type == "modified") {
                        const order = change.doc.data();
@@ -69,6 +70,42 @@ export const streamOrders = createAsyncThunk('orders/streamOrders',
 
         return unsubscribe;
 })
+
+export const streamOrder = createAsyncThunk('orders/streamOrder',
+    async ({shopId, orderIndex}: {shopId: string, orderIndex: number}, {dispatch, getState, rejectWithValue}) => {
+        const _query = orderQuery(shopId, orderIndex);
+
+        try {
+            const snapshot = await getDocs(_query);
+
+            if (snapshot.empty) {
+                // TODO: throw Error 以外で例外処理する
+                throw new Error(`Order not found.`);
+            }
+
+            const doc = snapshot.docs[0];
+
+            const unsubscribe = onSnapshot(doc.ref,(doc) => {
+                const state = getState() as RootState;
+                const data = doc.data();
+
+                if (data == undefined) return;
+
+                // 同じIDのOrderがないとき
+                if (state.order.data.findIndex(e => e.id == data.id) == -1) {
+                    dispatch(orderAdded(data));
+                } else {
+                    dispatch(orderUpdated(data));
+                }
+            });
+
+            return unsubscribe;
+
+        } catch (e) {
+            console.error(e);
+            return rejectWithValue(e);
+        }
+    })
 
 export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, rawOrder: RawOrder}, {state: RootState}>("orders/addOrder",
     async ({shopId, rawOrder}, {getState, rejectWithValue}): Promise<Order | undefined> => {
@@ -180,7 +217,11 @@ const ordersSlice = createSlice({
     } as AsyncState<Order[]> & Unsubscribe,
     reducers: {
         orderAdded(state, action: PayloadAction<Order>) {
-            state.data.push(action.payload);
+            const payload = action.payload;
+            // 同じIDのOrderが存在しなければ
+            if (state.data.findIndex(e => e.id == payload.id) == -1) {
+                state.data.push(action.payload);
+            }
         },
         orderUpdated(state, action: PayloadAction<Order>) {
             const order = action.payload;
@@ -212,6 +253,10 @@ const ordersSlice = createSlice({
             })
 
         builder.addCase(streamOrders.fulfilled, (state, action) => {
+            state.unsubscribe = action.payload;
+        });
+
+        builder.addCase(streamOrder.fulfilled, (state, action) => {
             state.unsubscribe = action.payload;
         });
 
@@ -291,3 +336,8 @@ export const selectMaxCompleteAt = (state: RootState): Date => {
  * streamOrdersのunsubscribeを取得
  */
 export const selectOrderUnsubscribe = (state: RootState) => state.order.unsubscribe;
+/**
+ * 注文番号と一致する注文を返す
+ * WARN: 日時の条件が入ってない
+  */
+export const selectOrderByIndex = (state: RootState, index: number) => state.order.data.find(e => e.index == index);
