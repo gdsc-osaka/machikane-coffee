@@ -1,12 +1,16 @@
-import {Button, Divider, Stack, Switch, TextField, Typography} from "@mui/material";
+import {Button, Dialog, DialogActions, DialogTitle, Divider, Stack, TextField, Typography} from "@mui/material";
 import React, {useEffect, useState} from "react";
 import {RootState, useAppDispatch} from "../modules/redux/store";
-import {selectOrderByIndex, selectOrderUnsubscribe, streamOrder} from "../modules/redux/order/ordersSlice";
-import {useParams} from "react-router-dom";
+import {
+    selectAllOrders, selectOrderById,
+    selectOrderByIndex,
+    selectOrderUnsubscribe,
+    streamOrder
+} from "../modules/redux/order/ordersSlice";
+import {useLocation, useNavigate, useParams} from "react-router-dom";
 import {useSelector} from "react-redux";
 import {Order} from "../modules/redux/order/types";
 import StickyNote from "../components/StickyNote";
-import {Flex} from "../components/layout/Flex";
 import {Product} from "../modules/redux/product/types";
 import {fetchProducts, selectAllProduct, selectProductStatus} from "../modules/redux/product/productsSlice";
 import {M3Switch} from "../components/M3Switch";
@@ -14,11 +18,16 @@ import {useCountDownInterval} from "../modules/hooks/useCountDownInterval";
 
 const OrderPage = () => {
     const [orderIndex, setOrderIndex] = useState<string>("");
+    const [orderId, setOrderId] = useState("");
+    const [openDialog, setOpenDialog] = useState(false);
 
     const dispatch = useAppDispatch();
+    const navi = useNavigate();
+    const location = useLocation();
     const params = useParams();
     const shopId = params.shopId ?? '';
-    const order = useSelector((state: RootState) => selectOrderByIndex(state, Number(orderIndex)));
+    const paramOrderIndex = params.orderIndex ?? '';
+    const order = useSelector((state: RootState) => selectOrderById(state, orderId));
     const unsubscribe = useSelector(selectOrderUnsubscribe);
 
     const products = useSelector(selectAllProduct);
@@ -30,6 +39,16 @@ const OrderPage = () => {
         }
     }, [dispatch, productStatus]);
 
+    useEffect(() => {
+        const oIndex = Number(paramOrderIndex);
+
+        if (!isNaN(oIndex) && oIndex != 0) {
+            const strOIndex = oIndex.toString();
+            setOrderIndex(strOIndex);
+            handleSubmit(strOIndex);
+        }
+    }, [paramOrderIndex])
+
     const handleOrderIndex = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const num = Number(e.target.value);
         if (!isNaN(num) && num != 0) {
@@ -40,7 +59,7 @@ const OrderPage = () => {
         }
     }
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (orderIndex: string) => {
         if (unsubscribe != null) {
             unsubscribe();
         }
@@ -48,15 +67,26 @@ const OrderPage = () => {
         const num = Number(orderIndex);
 
         if (!isNaN(num)) {
-            try {
-                await dispatch(streamOrder({shopId: shopId, orderIndex: num}));
-            } catch (e) {
-                // TODO: ちゃんとエラーハンドリングする
-                if (e == 'Order not found.') {
+            await dispatch(streamOrder({shopId: shopId, orderIndex: num}))
+                .unwrap()
+                .then((payload) => {
+                    setOrderId(payload.order.id);
 
-                }
-            }
+                    if (location.pathname.endsWith("order") || location.pathname.endsWith("order/")) {
+                        navi(`${orderIndex}`);
+                    } else {
+                        navi(`/${shopId}/order/${orderIndex}`)
+                    }
+                })
+                .catch((e) => {
+                    setOpenDialog(true);
+                });
+
         }
+    }
+
+    const handleClose = () => {
+        setOpenDialog(false);
     }
 
     return <Stack spacing={2} padding={"1rem"}>
@@ -69,11 +99,21 @@ const OrderPage = () => {
                        type={"number"} required
                        value={orderIndex} onChange={handleOrderIndex} sx={{minWidth: "17rem"}}/>
             <Button variant={"contained"} sx={{width: "100%"}}
-                    disabled={orderIndex == undefined} onClick={() => handleSubmit()}>
+                    disabled={orderIndex == undefined} onClick={() => handleSubmit(orderIndex)}>
                 確認
             </Button>
         </Stack>
         {order !== undefined && <OrderCard order={order} products={products}/>}
+        <Dialog open={openDialog} onClose={handleClose}>
+            <DialogTitle>
+                該当する番号の注文が見つかりません
+            </DialogTitle>
+            <DialogActions>
+                <Button onClick={handleClose}>
+                    OK
+                </Button>
+            </DialogActions>
+        </Dialog>
     </Stack>
 }
 

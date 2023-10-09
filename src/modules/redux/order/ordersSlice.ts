@@ -79,7 +79,6 @@ export const streamOrder = createAsyncThunk('orders/streamOrder',
             const snapshot = await getDocs(_query);
 
             if (snapshot.empty) {
-                // TODO: throw Error 以外で例外処理する
                 throw new Error(`Order not found.`);
             }
 
@@ -99,7 +98,7 @@ export const streamOrder = createAsyncThunk('orders/streamOrder',
                 }
             });
 
-            return unsubscribe;
+            return {unsubscribe: unsubscribe, order: doc.data()};
 
         } catch (e) {
             console.error(e);
@@ -256,9 +255,14 @@ const ordersSlice = createSlice({
             state.unsubscribe = action.payload;
         });
 
-        builder.addCase(streamOrder.fulfilled, (state, action) => {
-            state.unsubscribe = action.payload;
-        });
+        builder
+            .addCase(streamOrder.fulfilled, (state, action) => {
+                state.unsubscribe = action.payload.unsubscribe;
+            })
+            .addCase(streamOrder.rejected, (state, action) => {
+                state.status = "failed";
+                state.error = action.error.message ?? '';
+            });
 
         builder.addCase(addOrder.fulfilled, (state, action) => {
             const order = action.payload;

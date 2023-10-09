@@ -32,6 +32,7 @@ const App = () => {
                         <Route path="/:shopId/test" Component={TestPage}/>
                         <Route path="/:shopId/login" Component={LogInPage}/>
                         <Route path="/:shopId/order" Component={OrderPage}/>
+                        <Route path="/:shopId/order/:orderIndex" Component={OrderPage}/>
                     </Routes>
                 </BrowserRouter>
                 <Footer/>
