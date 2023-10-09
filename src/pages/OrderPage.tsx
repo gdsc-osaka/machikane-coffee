@@ -1,12 +1,7 @@
 import {Button, Dialog, DialogActions, DialogTitle, Divider, Stack, TextField, Typography} from "@mui/material";
 import React, {useEffect, useState} from "react";
 import {RootState, useAppDispatch} from "../modules/redux/store";
-import {
-    selectAllOrders, selectOrderById,
-    selectOrderByIndex,
-    selectOrderUnsubscribe,
-    streamOrder
-} from "../modules/redux/order/ordersSlice";
+import {selectOrderById, selectOrderUnsubscribe, streamOrder} from "../modules/redux/order/ordersSlice";
 import {useLocation, useNavigate, useParams} from "react-router-dom";
 import {useSelector} from "react-redux";
 import {Order} from "../modules/redux/order/types";
@@ -15,6 +10,8 @@ import {Product} from "../modules/redux/product/types";
 import {fetchProducts, selectAllProduct, selectProductStatus} from "../modules/redux/product/productsSlice";
 import {M3Switch} from "../components/M3Switch";
 import {useCountDownInterval} from "../modules/hooks/useCountDownInterval";
+import {ShopStatus} from "../modules/redux/shop/types";
+import {selectShopById, selectShopStatus, streamShop} from "../modules/redux/shop/shopsSlice";
 
 const OrderPage = () => {
     const [orderIndex, setOrderIndex] = useState<string>("");
@@ -32,12 +29,20 @@ const OrderPage = () => {
 
     const products = useSelector(selectAllProduct);
     const productStatus = useSelector(selectProductStatus);
+    const shop = useSelector((state: RootState) => selectShopById(state, shopId));
+    const shopStatus = useSelector(selectShopStatus);
 
     useEffect(() => {
         if (productStatus == "idle" || productStatus == "failed") {
             dispatch(fetchProducts(shopId));
         }
-    }, [dispatch, productStatus]);
+    }, [dispatch, productStatus, shopId]);
+
+    useEffect(() => {
+        if (shopStatus == "idle" || shopStatus == "failed") {
+            dispatch(streamShop(shopId));
+        }
+    }, [dispatch, shopStatus, shopId]);
 
     useEffect(() => {
         const oIndex = Number(paramOrderIndex);
@@ -103,7 +108,7 @@ const OrderPage = () => {
                 確認
             </Button>
         </Stack>
-        {order !== undefined && <OrderCard order={order} products={products}/>}
+        {(order !== undefined && shop != undefined) && <OrderCard order={order} products={products} shopStatus={shop.status} delaySec={0}/>}
         <Dialog open={openDialog} onClose={handleClose}>
             <DialogTitle>
                 該当する番号の注文が見つかりません
@@ -117,17 +122,17 @@ const OrderPage = () => {
     </Stack>
 }
 
-const OrderCard = (props: {order: Order, products: Product[]}) => {
+const OrderCard = (props: {order: Order, products: Product[], shopStatus: ShopStatus, delaySec: number}) => {
     const [untilCount, setUntilCount] = useState(0);
 
-    const order = props.order;
+    const {order, products, shopStatus, delaySec} = props;
     const untilTime = order.complete_at.toDate().getTime() - new Date().getTime();
     const until = new Date(untilTime);
     const untilMin = Math.floor(untilCount / 60);
     const untilSec = untilCount - (untilMin * 60);
     const completeRate = untilTime / (order.complete_at.toDate().getTime() - order.created_at.toDate().getTime());
-    const products = props.products;
     const productTexts = Object.keys(order.product_amount).map(key => `${products.find(e => e.id == key)?.display_name ?? '???'} × ${order.product_amount[key]}`);
+    const fontColor = shopStatus === "pause_ordering" ? "#410002" : "#201B16";
 
     useEffect(() => {
         setUntilCount(Math.floor(until.getTime() / 1000));
@@ -146,19 +151,19 @@ const OrderCard = (props: {order: Order, products: Product[]}) => {
                         <Stack direction={"row"} spacing={0.7} alignItems={"flex-end"}>
                             {untilMin > 0 &&
                                 <React.Fragment>
-                                    <Typography variant={"h3"} sx={{fontWeight: "bold"}}>
+                                    <Typography variant={"h3"} sx={{fontWeight: "bold"}} color={fontColor}>
                                         {untilMin}
                                     </Typography>
-                                    <Typography variant={"h4"} sx={{paddingBottom: "0.25rem", fontWeight: "800"}}>
+                                    <Typography variant={"h4"} sx={{paddingBottom: "0.25rem", fontWeight: "800"}} color={fontColor}>
                                         分
                                     </Typography>
                                 </React.Fragment>}
                             {untilSec > 0 &&
                                 <React.Fragment>
-                                    <Typography variant={"h3"} sx={{paddingLeft: "0.2rem", fontWeight: "bold"}}>
+                                    <Typography variant={"h3"} sx={{paddingLeft: "0.2rem", fontWeight: "bold"}} color={fontColor}>
                                         {untilSec}
                                     </Typography>
-                                    <Typography variant={"h4"} sx={{paddingBottom: "0.25rem", fontWeight: "800"}}>
+                                    <Typography variant={"h4"} sx={{paddingBottom: "0.25rem", fontWeight: "800"}} color={fontColor}>
                                         秒
                                     </Typography>
                                 </React.Fragment>}
