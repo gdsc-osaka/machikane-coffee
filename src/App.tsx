@@ -12,6 +12,7 @@ import { createTheme, CssBaseline, ThemeProvider } from "@mui/material";
 import { themeOptions } from "./themeOptions";
 import AdminBaristaPage from "./pages/AdminBaristaPage";
 import LogInPage from "./pages/LogInPage";
+import AuthGuard from "./AuthGuard";
 
 const App = () => {
     const theme = createTheme(themeOptions);
@@ -24,8 +25,8 @@ const App = () => {
                 <BrowserRouter>
                     <Header/>
                     <Routes>
-                        <Route path="/:shopId/admin" Component={AdminPage}/>
-                        <Route path="/:shopId/admin-barista" Component={AdminBaristaPage}/>
+                        <Route path="/:shopId/admin" element={<AuthGuard><AdminPage/></AuthGuard>}/>
+                        <Route path="/:shopId/admin-barista" element={<AuthGuard><AdminBaristaPage/></AuthGuard>}/>
                         <Route path="/:shopId/user" Component={User}/>
                         <Route path="/:shopId/timer" Component={Timer}/>
                         <Route path="/:shopId/test" Component={TestPage}/>

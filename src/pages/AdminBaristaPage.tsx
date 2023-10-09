@@ -30,14 +30,7 @@ import {Flex} from "../components/layout/Flex";
 import {MotionList, MotionListItem} from "src/components/motion/motionList";
 import {AnimatePresence} from "framer-motion";
 import {getSortedObjectKey} from "../modules/util/objUtils";
-
-const Column = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
-  padding: 0.6rem 0.8rem;
-`
+import {useAuth} from "../AuthGuard";
 
 const Row = styled.div`
   display: flex;
@@ -63,6 +56,7 @@ const AdminBaristaPage = () => {
     const [baristas, setBaristas] = useState<BaristaMap>({});
 
     const dispatch = useAppDispatch();
+    const auth = useAuth();
     const params = useParams();
     const shopId = params.shopId ?? '';
     const shopStatus = useSelector(selectShopStatus);
@@ -82,17 +76,17 @@ const AdminBaristaPage = () => {
         if (shopStatus == "idle" || shopStatus == "failed") {
             dispatch(streamShop(shopId));
         }
-    }, [dispatch, shopStatus]);
+    }, [shopId, dispatch, shopStatus]);
     useEffect(() => {
         if (orderStatus == "idle" || orderStatus == "failed") {
             dispatch(streamOrders(shopId));
         }
-    }, [dispatch, orderStatus]);
+    }, [shopId, dispatch, orderStatus]);
     useEffect(() => {
         if (productStatus == "idle" || productStatus == "failed") {
             dispatch(fetchProducts(shopId));
         }
-    }, [dispatch, productStatus]);
+    }, [shopId, dispatch, productStatus]);
 
     // shopが取得された後にbaristaIdとselectedIdを初期化
     useEffect(() => {
@@ -161,7 +155,7 @@ const AdminBaristaPage = () => {
         setWorking(type == "working" ? {orderId: order.id, orderStatusId: orderStatusId} : undefined);
     }
 
-    if (shop == undefined) {
+    if (shop == undefined || auth.loading) {
         return <CircularProgress/>
     } else {
         return <Stack spacing={2} sx={{padding: "25px 10px"}}>
