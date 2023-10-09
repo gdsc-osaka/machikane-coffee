@@ -146,7 +146,7 @@ const OrderCard = (props: {order: Order, products: Product[]}) => {
                         <Stack direction={"row"} spacing={0.7} alignItems={"flex-end"}>
                             {untilMin > 0 &&
                                 <React.Fragment>
-                                    <Typography variant={"h3"}>
+                                    <Typography variant={"h3"} sx={{fontWeight: "bold"}}>
                                         {untilMin}
                                     </Typography>
                                     <Typography variant={"h4"} sx={{paddingBottom: "0.25rem", fontWeight: "800"}}>
@@ -155,7 +155,7 @@ const OrderCard = (props: {order: Order, products: Product[]}) => {
                                 </React.Fragment>}
                             {untilSec > 0 &&
                                 <React.Fragment>
-                                    <Typography variant={"h3"} sx={{paddingLeft: "0.2rem"}}>
+                                    <Typography variant={"h3"} sx={{paddingLeft: "0.2rem", fontWeight: "bold"}}>
                                         {untilSec}
                                     </Typography>
                                     <Typography variant={"h4"} sx={{paddingBottom: "0.25rem", fontWeight: "800"}}>
@@ -173,7 +173,7 @@ const OrderCard = (props: {order: Order, products: Product[]}) => {
                     <Typography variant={"caption"}>
                         注文番号
                     </Typography>
-                    <Typography variant={"h3"} textAlign={"right"}>
+                    <Typography variant={"h3"} textAlign={"right"} fontWeight={"bold"}>
                         {order.index}
                     </Typography>
                 </Stack>

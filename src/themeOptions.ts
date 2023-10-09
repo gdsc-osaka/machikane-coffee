@@ -12,23 +12,8 @@ export const themeOptions: ThemeOptions = {
     },
     typography: {
         fontFamily: 'Noto Sans JP',
-        h1: {
-            fontWeight: "bold",
-        },
-        h2: {
-            fontWeight: "bold",
-        },
-        h3: {
-            fontWeight: "bold",
-        },
         h4: {
             fontSize: "1.8rem",
-            fontWeight: "bold",
-        },
-        h5: {
-            fontWeight: "bold",
-        },
-        h6: {
             fontWeight: "bold",
         },
         caption: {
