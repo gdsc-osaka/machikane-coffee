@@ -14,6 +14,7 @@ import AdminBaristaPage from "./pages/AdminBaristaPage";
 import LogInPage from "./pages/LogInPage";
 import AuthGuard from "./AuthGuard";
 import RootPage from "./pages/RootPage";
+import AdminPage from "./pages/AdminPage";
 
 const App = () => {
     const theme = createTheme(themeOptions);
@@ -27,6 +28,7 @@ const App = () => {
                     <Header/>
                     <Routes>
                         <Route path="/" Component={RootPage}/>
+                        <Route path="/:shopId/admin" element={<AuthGuard><AdminPage/></AuthGuard>}/>
                         <Route path="/:shopId/admin/cashier" element={<AuthGuard><AdminCashierPage/></AuthGuard>}/>
                         <Route path="/:shopId/admin/barista" element={<AuthGuard><AdminBaristaPage/></AuthGuard>}/>
                         <Route path="/:shopId/user" Component={User}/>

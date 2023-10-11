@@ -1,7 +1,7 @@
 import {FirestoreDataConverter, QueryDocumentSnapshot, WithFieldValue, SnapshotOptions, PartialWithFieldValue, DocumentData, SetOptions} from "firebase/firestore"
 import {assertProduct, Product} from "../redux/product/types";
 import {assertShop, Shop} from "../redux/shop/types";
-import {assertOrder, CargoOrder, Order} from "../redux/order/types";
+import {assertOrder, Order} from "../redux/order/types";
 import {Weaken} from "../util/typeUtils";
 
 export const productConverter: FirestoreDataConverter<Product> = {
@@ -16,6 +16,7 @@ export const productConverter: FirestoreDataConverter<Product> = {
         const weakenModel: Weaken<WithFieldValue<Product> | PartialWithFieldValue<Product>, "id" | "thumbnail_url"> = modelObject;
         delete weakenModel.id;
         delete weakenModel.thumbnail_url;
+        console.log(weakenModel)
         return weakenModel;
     }
 }

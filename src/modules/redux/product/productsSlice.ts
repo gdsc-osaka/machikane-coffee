@@ -58,13 +58,13 @@ export const updateProduct = createAsyncThunk<Product | undefined, {shopId: stri
             if (oldProduct != null) {
                 const newProduct: Product = {...oldProduct, ...rawProduct};
                 const docRef = productRef(shopId, rawProduct.id);
-                if (thumbnailFile != undefined) {
+                if (thumbnailFile !== undefined) {
                     // サムネアップロード
                     const thumbnailPath = getThumbnailPath(shopId, rawProduct.id);
                     const thumbnailRef = ref(storage, thumbnailPath);
                     await uploadBytes(thumbnailRef, thumbnailFile);
                 }
-                await updateDoc(docRef, newProduct);
+                await updateDoc(docRef, productConverter.toFirestore(newProduct));
                 return newProduct;
             }
 
