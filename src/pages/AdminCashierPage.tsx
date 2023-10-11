@@ -31,7 +31,7 @@ import ReceivedOrderList from "../components/order/ReceivedOrderList";
 import {selectShopUnsubscribe} from "../modules/redux/shop/shopsSlice";
 import {useAuth} from "../AuthGuard";
 
-const AdminPage = () => {
+const AdminCashierPage = () => {
     const [openDelete, setOpenDelete] = useState(false);
     const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
     const [productAmount, setProductAmount] = useState<ProductAmount>({});
@@ -159,4 +159,4 @@ const AdminPage = () => {
     )
 }
 
-export default AdminPage;
+export default AdminCashierPage;

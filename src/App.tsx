@@ -1,7 +1,7 @@
 import store from "./modules/redux/store";
 import Header from "./components/Header/Header";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import AdminPage from "./pages/AdminPage";
+import AdminCashierPage from "./pages/AdminCashierPage";
 import User from "./pages/User";
 import Timer from "./pages/Timer";
 import { TestPage } from "./pages/Test";
@@ -27,8 +27,8 @@ const App = () => {
                     <Header/>
                     <Routes>
                         <Route path="/" Component={RootPage}/>
-                        <Route path="/:shopId/admin" element={<AuthGuard><AdminPage/></AuthGuard>}/>
-                        <Route path="/:shopId/admin-barista" element={<AuthGuard><AdminBaristaPage/></AuthGuard>}/>
+                        <Route path="/:shopId/admin/cashier" element={<AuthGuard><AdminCashierPage/></AuthGuard>}/>
+                        <Route path="/:shopId/admin/barista" element={<AuthGuard><AdminBaristaPage/></AuthGuard>}/>
                         <Route path="/:shopId/user" Component={User}/>
                         <Route path="/:shopId/timer" Component={Timer}/>
                         <Route path="/:shopId/test" Component={TestPage}/>
