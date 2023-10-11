@@ -94,7 +94,6 @@ const AdminPage = () => {
         if (shops.length !== 0) {
             const shop = shops[0];
             setSelectedShopId(shop.id);
-            setShopForm({...shop});
         }
     }, [shops]);
 
@@ -102,9 +101,20 @@ const AdminPage = () => {
         if (products.length !== 0) {
             const product = products[0];
             setSelectedProductId(product.id);
-            setProductForm({...product});
         }
     }, [products]);
+
+    useEffect(() => {
+        if (selectedShop !== undefined) {
+            setShopForm({...selectedShop});
+        }
+    }, [selectedShop])
+
+    useEffect(() => {
+        if (selectedProduct !== undefined) {
+            setProductForm({...selectedProduct});
+        }
+    }, [selectedProduct])
 
     const handleAddShop = () => {
 
@@ -296,7 +306,7 @@ const ProductDataView = (props: {
                                      src={thumbnailUrl}
                                      alt={`thumbnail of ${selectedProduct.display_name}`}/>
                                 <Stack spacing={1} width={"100%"} alignItems={"flex-start"}>
-                                    <Button variant={"outlined"} onClick={e => fileInputRef.current?.click()}>
+                                    <Button variant={"outlined"} onClick={_ => fileInputRef.current?.click()}>
                                         ファイルを選択
                                     </Button>
                                     <input
