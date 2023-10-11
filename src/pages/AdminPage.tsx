@@ -139,7 +139,12 @@ const AdminPage = () => {
         setSelectedProductId(productId);
     }
 
-    const handleSetThumbnail = (file: File) => {
+    const handleSetThumbnail = (file: File | undefined) => {
+        if (file === undefined) {
+            // キャンセルを押したとき
+            return;
+        }
+
         if (['png', 'jpg'].includes(getFileExt(file))) {
             // 拡張子が合法なら
             // TODO: 正方形制限
@@ -231,7 +236,7 @@ const ProductDataView = (props: {
     selectedProduct: Product | undefined,
     isProductFormChanged: boolean,
     thumbnailFile: File | undefined,
-    setThumbnail: (file: File) => void,
+    setThumbnail: (file: File | undefined) => void,
     onUpdateProduct: () => void,
 }) => {
     const {
