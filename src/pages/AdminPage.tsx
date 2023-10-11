@@ -1,5 +1,5 @@
 import {ReactNode, useEffect, useRef, useState} from "react";
-import {Button, ButtonBase, Card, Divider, Stack, Typography} from "@mui/material";
+import {Button, ButtonBase, Card, Divider, InputAdornment, Stack, Typography} from "@mui/material";
 import {useAppDispatch} from "../modules/redux/store";
 import {useSelector} from "react-redux";
 import {fetchShops, selectAllShops, selectShopStatus, updateShop} from "../modules/redux/shop/shopsSlice";
@@ -33,6 +33,11 @@ type ProductFormType = {
 
 type ShopFormType = {
     display_name: string;
+}
+
+function getFileExt(file: File) {
+    const name = file.name;
+    return name.split('.').pop() ?? '';
 }
 
 const AdminPage = () => {
@@ -135,7 +140,14 @@ const AdminPage = () => {
     }
 
     const handleSetThumbnail = (file: File) => {
-        setThumbnailFile(file);
+        if (['png', 'jpg'].includes(getFileExt(file))) {
+            // 拡張子が合法なら
+            // TODO: 正方形制限
+            setThumbnailFile(file);
+            setIsThumbnailError(false);
+        } else {
+            setIsThumbnailError(true);
+        }
     }
 
     const handleProductForm = (newProdForm: ProductFormType) => {
@@ -289,11 +301,21 @@ const ProductDataView = (props: {
                                 </Stack>
                                 <Stack spacing={2}>
                                     <TextField label={"値段"} value={productForm.price} type={"number"}
+                                               InputProps={{
+                                                   startAdornment: <InputAdornment position="start">¥</InputAdornment>,
+                                               }}
                                                onChange={e => setProductForm({
                                                    ...productForm,
                                                    price: Number(e.target.value)
                                                })}/>
-                                    <TextField label={"販売時間"} value={productForm.span}/>
+                                    <TextField label={"販売時間"} value={productForm.span} type={"number"}
+                                               InputProps={{
+                                                   endAdornment: <InputAdornment position="end">秒</InputAdornment>,
+                                               }}
+                                               onChange={e => setProductForm({
+                                                   ...productForm,
+                                                   span: Number(e.target.value)
+                                               })}/>
                                 </Stack>
                             </Stack>
                         </Stack>
