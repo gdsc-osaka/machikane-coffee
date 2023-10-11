@@ -175,6 +175,7 @@ const AdminPage = () => {
                 rawProduct: {...selectedProduct, ...productForm},
                 thumbnailFile: thumbnailFile
             })).then(() => {
+                // TODO: 更新したProductだけ更新. ローカルでreducer回すだけでいいかも?
                 dispatch(fetchProducts(selectedShop.id));
             });
             setThumbnailFile(undefined);
