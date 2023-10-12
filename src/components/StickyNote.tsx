@@ -1,5 +1,6 @@
 import {ReactNode} from "react";
 import styled from "styled-components";
+import {Stack} from "@mui/material";
 
 const Container = styled.div<{ color: string }>`
   display: flex;
@@ -8,15 +9,8 @@ const Container = styled.div<{ color: string }>`
   background-color: ${(props) => props.color};
 `
 
-const Column = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  flex: 1 0 0;
-`
-
 const FoldIcon = (props: {color: string}) => {
-    return <div style={{width: "3rem", height: "3rem", marginLeft: "-2rem", zIndex: 2}}>
+    return <div style={{width: "2rem", height: "2rem", marginLeft: "-1.8rem", zIndex: 2}}>
         <svg viewBox="-4 4 33 33" fill="none">
             <g filter="url(#filter0_d_54558_1552)">
                 <path d="M5 3V28H30L5 3Z" fill={props.color}/>
@@ -46,9 +40,9 @@ type StickyNoteContainerProps = {
 const StickyNote = (props: StickyNoteContainerProps) => {
     const color = props.variant == "surface-variant" ? "#F7ECE5" : "#FFF8F5";
     return <Container color={color}>
-        <Column>
+        <Stack sx={{width: "100%"}}>
             {props.children}
-        </Column>
+        </Stack>
         <FoldIcon color={color}/>
     </Container>
 }
