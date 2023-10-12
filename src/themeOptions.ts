@@ -22,6 +22,9 @@ export const themeOptions: ThemeOptions = {
         caption: {
             color: "#837468"
         },
+        button: {
+            textTransform: 'none',
+        }
     },
     components: {
         MuiDivider: {

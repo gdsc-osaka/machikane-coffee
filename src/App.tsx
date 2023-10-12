@@ -1,7 +1,7 @@
 import store from "./modules/redux/store";
 import Header from "./components/Header/Header";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import AdminPage from "./pages/AdminPage";
+import AdminCashierPage from "./pages/AdminCashierPage";
 import User from "./pages/User";
 import Timer from "./pages/Timer";
 import { TestPage } from "./pages/Test";
@@ -14,6 +14,8 @@ import AdminBaristaPage from "./pages/AdminBaristaPage";
 import LogInPage from "./pages/LogInPage";
 import OrderPage from "./pages/OrderPage";
 import AuthGuard from "./AuthGuard";
+import RootPage from "./pages/RootPage";
+import AdminPage from "./pages/AdminPage";
 
 const App = () => {
     const theme = createTheme(themeOptions);
@@ -27,14 +29,14 @@ const App = () => {
                     <main style={{flexGrow: 1}}>
                         <BrowserRouter>
                             <Routes>
-                                <Route path="/:shopId/admin" element={<AuthGuard><AdminPage/></AuthGuard>}/>
-                                <Route path="/:shopId/admin-barista" element={<AuthGuard><AdminBaristaPage/></AuthGuard>}/>
+                                <Route path="/" Component={RootPage}/>
+                                <Route path="/admin" element={<AuthGuard><AdminPage/></AuthGuard>}/>
+                                <Route path="/:shopId/admin/cashier" element={<AuthGuard><AdminCashierPage/></AuthGuard>}/>
+                                <Route path="/:shopId/admin/barista" element={<AuthGuard><AdminBaristaPage/></AuthGuard>}/>
                                 <Route path="/:shopId/user" Component={User}/>
                                 <Route path="/:shopId/timer" Component={Timer}/>
                                 <Route path="/:shopId/test" Component={TestPage}/>
                                 <Route path="/:shopId/login" Component={LogInPage}/>
-                                <Route path="/:shopId/order" Component={OrderPage}/>
-                                <Route path="/:shopId/order/:orderIndex" Component={OrderPage}/>
                             </Routes>
                         </BrowserRouter>
                     </main>
