@@ -8,8 +8,9 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
 import {createTheme, ThemeProvider} from "@mui/material/styles";
-import {getAuth, signInWithEmailAndPassword} from "firebase/auth";
+import {signInWithEmailAndPassword} from "firebase/auth";
 import {useNavigate, useParams} from "react-router-dom";
+import {auth} from "../modules/firebase/firebase";
 
 const defaultTheme = createTheme();
 
@@ -21,12 +22,11 @@ export default function LogInPage() {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
 
-    var email = (data.get("email") ?? "") as string;
-    var password = (data.get("password") ?? "") as string;
+    const email = (data.get("email") ?? "") as string;
+    const password = (data.get("password") ?? "") as string;
 
     console.log({ email, password });
 
-    const auth = getAuth();
     signInWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
         // Signed in

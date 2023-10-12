@@ -12,6 +12,7 @@ import { createTheme, CssBaseline, ThemeProvider } from "@mui/material";
 import { themeOptions } from "./themeOptions";
 import AdminBaristaPage from "./pages/AdminBaristaPage";
 import LogInPage from "./pages/LogInPage";
+import OrderPage from "./pages/OrderPage";
 import AuthGuard from "./AuthGuard";
 import RootPage from "./pages/RootPage";
 import AdminPage from "./pages/AdminPage";
@@ -23,21 +24,24 @@ const App = () => {
         <Provider store={store}>
             <ThemeProvider theme={theme}>
                 <CssBaseline/>
-
-                <BrowserRouter>
+                <div style={{display: 'flex', minHeight: '100vh', flexDirection: "column"}}>
                     <Header/>
-                    <Routes>
-                        <Route path="/" Component={RootPage}/>
-                        <Route path="/admin" element={<AuthGuard><AdminPage/></AuthGuard>}/>
-                        <Route path="/:shopId/admin/cashier" element={<AuthGuard><AdminCashierPage/></AuthGuard>}/>
-                        <Route path="/:shopId/admin/barista" element={<AuthGuard><AdminBaristaPage/></AuthGuard>}/>
-                        <Route path="/:shopId/user" Component={User}/>
-                        <Route path="/:shopId/timer" Component={Timer}/>
-                        <Route path="/:shopId/test" Component={TestPage}/>
-                        <Route path="/:shopId/login" Component={LogInPage}/>
-                    </Routes>
-                </BrowserRouter>
-                <Footer/>
+                    <main style={{flexGrow: 1}}>
+                        <BrowserRouter>
+                            <Routes>
+                                <Route path="/" Component={RootPage}/>
+                                <Route path="/admin" element={<AuthGuard><AdminPage/></AuthGuard>}/>
+                                <Route path="/:shopId/admin/cashier" element={<AuthGuard><AdminCashierPage/></AuthGuard>}/>
+                                <Route path="/:shopId/admin/barista" element={<AuthGuard><AdminBaristaPage/></AuthGuard>}/>
+                                <Route path="/:shopId/user" Component={User}/>
+                                <Route path="/:shopId/timer" Component={Timer}/>
+                                <Route path="/:shopId/test" Component={TestPage}/>
+                                <Route path="/:shopId/login" Component={LogInPage}/>
+                            </Routes>
+                        </BrowserRouter>
+                    </main>
+                    <Footer/>
+                </div>
             </ThemeProvider>
         </Provider>
     );
