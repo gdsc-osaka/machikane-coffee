@@ -31,16 +31,7 @@ import {MotionList, MotionListItem} from "src/components/motion/motionList";
 import {AnimatePresence} from "framer-motion";
 import {getSortedObjectKey} from "../modules/util/objUtils";
 import {Product} from "../modules/redux/product/types";
-import {auth} from "../modules/firebase/firebase";
 import {useAuth} from "../AuthGuard";
-
-const Row = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  align-self: stretch;
-  gap: 0.375rem;
-`
 
 /**
  * Order.orderedStatusesの要素を識別する
@@ -81,26 +72,19 @@ const AdminBaristaPage = () => {
             dispatch(streamShop(shopId));
         }
     }, [dispatch, shopStatus, shopId]);
-  
+
     useEffect(() => {
         if (orderStatus === "idle" || orderStatus === "failed") {
             dispatch(streamOrders(shopId));
         }
     }, [dispatch, orderStatus, shopId]);
-  
+
     useEffect(() => {
         if (productStatus === "idle" || productStatus === "failed") {
             dispatch(fetchProducts(shopId));
         }
     }, [dispatch, productStatus, shopId]);
 
-    // shopが取得された後にbaristaIdとselectedIdを初期化
-    useEffect(() => {
-        if (shop != undefined) {
-            setBaristas(shop.baristas);
-        }
-    }, [shop])
-  
     // windowが閉じられたとき or refreshされたとき, selectedIdをinactiveに戻す & unsubscribe
     useEffect(() => {
         window.addEventListener("beforeunload", (_) => {
@@ -119,15 +103,6 @@ const AdminBaristaPage = () => {
             }
         })
     }, [shopUnsubscribe, orderUnsubscribe])
-
-    useEffect(() => {
-        auth.onAuthStateChanged(user => {
-           console.log(user);
-           user?.getIdTokenResult().then(result => {
-               console.log(result)
-           })
-        });
-    }, [])
 
     // バリスタIDの変更
     const handleBaristaId = (
@@ -173,7 +148,7 @@ const AdminBaristaPage = () => {
         setWorkingOrderStatusId(type === "working" ? {orderId: order.id, orderStatusKey: orderStatusId} : undefined);
     }
 
-    
+
     if (shop == undefined || auth.loading) {
         return <CircularProgress/>
     } else {

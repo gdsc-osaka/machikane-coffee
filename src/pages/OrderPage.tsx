@@ -77,10 +77,10 @@ const OrderPage = () => {
                 .then((payload) => {
                     setOrderId(payload.order.id);
 
-                    if (location.pathname.endsWith("order") || location.pathname.endsWith("order/")) {
+                    if (location.pathname.endsWith(`${shopId}/`)) {
                         navi(`${orderIndex}`);
                     } else {
-                        navi(`/${shopId}/order/${orderIndex}`)
+                        navi(`/${shopId}/${orderIndex}`);
                     }
                 })
                 .catch((e) => {

@@ -1,15 +1,13 @@
 import store from "./modules/redux/store";
 import Header from "./components/Header/Header";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import {BrowserRouter, Route, Routes} from "react-router-dom";
 import AdminCashierPage from "./pages/AdminCashierPage";
-import User from "./pages/User";
 import Timer from "./pages/Timer";
-import { TestPage } from "./pages/Test";
 import Footer from "./components/Footer/Footer";
-import { Provider } from "react-redux";
+import {Provider} from "react-redux";
 import React from "react";
-import { createTheme, CssBaseline, ThemeProvider } from "@mui/material";
-import { themeOptions } from "./themeOptions";
+import {createTheme, CssBaseline, ThemeProvider} from "@mui/material";
+import {themeOptions} from "./themeOptions";
 import AdminBaristaPage from "./pages/AdminBaristaPage";
 import LogInPage from "./pages/LogInPage";
 import OrderPage from "./pages/OrderPage";
@@ -30,13 +28,13 @@ const App = () => {
                         <BrowserRouter>
                             <Routes>
                                 <Route path="/" Component={RootPage}/>
+                                <Route path="/:shopId/" Component={OrderPage}/>
+                                <Route path="/:shopId/:orderIndex" Component={OrderPage}/>
+                                <Route path="/:shopId/timer" Component={Timer}/>
+                                <Route path="/:shopId/login" Component={LogInPage}/>
                                 <Route path="/admin" element={<AuthGuard><AdminPage/></AuthGuard>}/>
                                 <Route path="/:shopId/admin/cashier" element={<AuthGuard><AdminCashierPage/></AuthGuard>}/>
                                 <Route path="/:shopId/admin/barista" element={<AuthGuard><AdminBaristaPage/></AuthGuard>}/>
-                                <Route path="/:shopId/user" Component={User}/>
-                                <Route path="/:shopId/timer" Component={Timer}/>
-                                <Route path="/:shopId/test" Component={TestPage}/>
-                                <Route path="/:shopId/login" Component={LogInPage}/>
                             </Routes>
                         </BrowserRouter>
                     </main>
