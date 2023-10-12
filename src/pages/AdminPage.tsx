@@ -235,7 +235,7 @@ const AdminPage = () => {
                     {selectedShop !== undefined &&
                         <React.Fragment>
                             <Stack padding={"1.5rem"} spacing={2} alignItems={"flex-start"}>
-                                <TextField label={"名前"} value={shopForm.display_name}
+                                <TextField label={"名前"} value={shopForm.display_name} id={"shop-display-name"}
                                            onChange={e => setShopForm({...shopForm, display_name: e.target.value})}/>
                                 <Button variant={"contained"} disabled={!isShopChanged(shopForm)}
                                         onClick={handleUpdateShop}>
@@ -309,16 +309,18 @@ const AddShopDialog = (props: {
             店舗を追加する
         </DialogTitle>
         <DialogContent>
-            <Stack spacing={1}>
+            <Stack spacing={0.5}>
                 <TextField variant={"filled"}
                            label={"id"}
+                           id={"shop-id"}
                            helperText={clickedSubmit && id === '' ? "IDを入力してください" :
                                clickedSubmit && isIdDuplicated ? "IDが重複しています" : "一度決めたIDは変更できません"}
                            value={id} onChange={e => setId(e.target.value)}
                            required error={clickedSubmit && !isValidId}/>
                 <TextField variant={"filled"}
                            label={"店名"}
-                           helperText={clickedSubmit && !isValidDisplayName ? "店名を入力してください" : ""}
+                           id={"shop-display-name"}
+                           helperText={clickedSubmit && !isValidDisplayName ? "店名を入力してください" : " "}
                            value={displayName} onChange={e => setDisplayName(e.target.value)}
                            required error={clickedSubmit && !isValidDisplayName}/>
             </Stack>
@@ -371,7 +373,6 @@ const AddProductDialog = (props: {
             onClose()
         } else {
             setStep("product_info")
-            setThumbnailUrl('')
             setIsClickedSubmit(false)
         }
     }
@@ -411,26 +412,32 @@ const AddProductDialog = (props: {
         </DialogTitle>
         <DialogContent>
             {step === "product_info" &&
-                <Stack spacing={1}>
+                <Stack spacing={0.5}>
                     <TextField variant={"filled"}
                                label={"id"}
+                               id={"product-id"}
                                helperText={isClickedNext && id === '' ? "IDを入力してください" :
                                    isClickedNext && isIdDuplicated ? "IDが重複しています" : "一度決めたIDは変更できません"}
                                value={id} onChange={e => setId(e.target.value)}
                                required error={isClickedNext && !isValidId}/>
                     <TextField variant={"filled"}
                                label={"商品名"}
-                               helperText={isClickedNext && !isValidDisplayName ? "商品名を入力してください" : ""}
+                               id={"product-display-name"}
+                               helperText={isClickedNext && !isValidDisplayName ? "商品名を入力してください" : " "}
                                value={display_name} onChange={e => setDisplayName(e.target.value)}
                                required error={isClickedNext && !isValidDisplayName}/>
                     <TextField variant={"filled"}
                                label={"略称"}
-                               helperText={isClickedNext && !isValidShorterName ? "略称を入力してください" : ""}
+                               id={"product-shorter-name"}
+                               helperText={isClickedNext && !isValidShorterName ? "略称を入力してください" : " "}
                                value={shorter_name} onChange={e => setShorterName(e.target.value)}
                                required error={isClickedNext && !isValidShorterName}/>
                     <TextField variant={"filled"}
                                label={"値段"}
+                               helperText={" "}
+                               id={"product-price"}
                                type={"number"}
+                               aria-valuemin={0}
                                InputProps={{
                                    startAdornment: <InputAdornment position="start">¥</InputAdornment>,
                                }}
@@ -439,7 +446,10 @@ const AddProductDialog = (props: {
                                required/>
                     <TextField variant={"filled"}
                                label={"制作時間"}
+                               helperText={" "}
+                               id={"product-span"}
                                type={"number"}
+                               aria-valuemin={0}
                                InputProps={{
                                    endAdornment: <InputAdornment position="end">秒</InputAdornment>,
                                }}
@@ -454,9 +464,11 @@ const AddProductDialog = (props: {
                         正方形のPNGまたはJPG画像を選択してください
                     </DialogContentText>
                     <FileInputButton onFileChanged={handleSelectThumbnail}/>
-                    <img style={{width: 120, height: 120, borderRadius: 10}}
-                         src={thumbnailUrl}
-                         alt={`thumbnail`}/>
+                    {thumbnail !== undefined &&
+                        <img style={{width: 120, height: 120, borderRadius: 10}}
+                             src={thumbnailUrl}
+                             alt={`thumbnail`}/>
+                    }
                     {isClickedSubmit && thumbnail === undefined &&
                         <DialogContentText color={'#BA1A1A'}>
                             サムネイルを設定してください
@@ -542,19 +554,19 @@ const ProductDataView = (props: {
                             </Typography>
                             <Stack direction={"row"} spacing={2}>
                                 <Stack spacing={2}>
-                                    <TextField label={"名前"} value={productForm.display_name}
+                                    <TextField label={"名前"} value={productForm.display_name} id={"product-display-name"}
                                                onChange={e => setProductForm({
                                                    ...productForm,
                                                    display_name: e.target.value
                                                })}/>
-                                    <TextField label={"略称"} value={productForm.shorter_name}
+                                    <TextField label={"略称"} value={productForm.shorter_name} id={"product-shorter-name"}
                                                onChange={e => setProductForm({
                                                    ...productForm,
                                                    shorter_name: e.target.value
                                                })}/>
                                 </Stack>
                                 <Stack spacing={2}>
-                                    <TextField label={"値段"} value={productForm.price} type={"number"}
+                                    <TextField label={"値段"} value={productForm.price} type={"number"} id={"product-price"}
                                                InputProps={{
                                                    startAdornment: <InputAdornment position="start">¥</InputAdornment>,
                                                }}
@@ -562,7 +574,7 @@ const ProductDataView = (props: {
                                                    ...productForm,
                                                    price: Number(e.target.value)
                                                })}/>
-                                    <TextField label={"制作時間"} value={productForm.span} type={"number"}
+                                    <TextField label={"制作時間"} value={productForm.span} type={"number"} id={"product-span"}
                                                InputProps={{
                                                    endAdornment: <InputAdornment position="end">秒</InputAdornment>,
                                                }}

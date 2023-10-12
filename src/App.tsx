@@ -28,7 +28,7 @@ const App = () => {
                     <Header/>
                     <Routes>
                         <Route path="/" Component={RootPage}/>
-                        <Route path="/:shopId/admin" element={<AuthGuard><AdminPage/></AuthGuard>}/>
+                        <Route path="/admin" element={<AuthGuard><AdminPage/></AuthGuard>}/>
                         <Route path="/:shopId/admin/cashier" element={<AuthGuard><AdminCashierPage/></AuthGuard>}/>
                         <Route path="/:shopId/admin/barista" element={<AuthGuard><AdminBaristaPage/></AuthGuard>}/>
                         <Route path="/:shopId/user" Component={User}/>
