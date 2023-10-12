@@ -15,6 +15,9 @@ export const themeOptions: ThemeOptions = {
         h4: {
             fontSize: "1.8rem"
         },
+        h6: {
+            fontWeight: "bold"
+        },
     },
     components: {
         MuiDivider: {
