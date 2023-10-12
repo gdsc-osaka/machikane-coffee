@@ -1,14 +1,24 @@
-import React from "react";
-import { selectMaxCompleteAt } from "../modules/redux/order/ordersSlice";
+import React, { useEffect } from "react";
+import { selectMaxCompleteAt, selectOrderStatus, streamOrders } from "../modules/redux/order/ordersSlice";
 import { useSelector } from "react-redux";
-import { RootState } from "../modules/redux/store";
+import { RootState, useAppDispatch } from "../modules/redux/store";
 import TimeDisplay from "../components/Timer/TimeDisplay";
 import "../components/Timer/timer.css";
+import { useParams } from "react-router-dom";
+import { selectShopStatus, streamShop } from "src/modules/redux/shop/shopsSlice";
+import { fetchProducts, selectProductStatus } from "src/modules/redux/product/productsSlice";
 
 const Timer = () => {
   const selector = useSelector((state: RootState) => state);
   const expectedEndTime: Date = selectMaxCompleteAt(selector);
-  // const expectedEndTime: Date = new Date(2023, 8, 12, 19);
+  
+  const dispatch = useAppDispatch();
+  const params = useParams();
+  const shopId = params.shopId ?? '';
+  const shopStatus = useSelector(selectShopStatus);
+  const orderStatus = useSelector(selectOrderStatus);
+  const productStatus = useSelector(selectProductStatus);
+
   const now: Date = new Date();
   const orderWaitTime: number = expectedEndTime.getTime() - now.getTime();
   let orderWaitHour: number, orderWaitMinute: number;
@@ -19,6 +29,24 @@ const Timer = () => {
     orderWaitHour = 0;
     orderWaitMinute = 0;
   }
+
+  // データを取得
+  useEffect(() => {
+      if (shopStatus === "idle" || shopStatus === "failed") {
+          dispatch(streamShop(shopId));
+      }
+  }, [dispatch, shopStatus]);
+  useEffect(() => {
+      if (orderStatus === "idle" || orderStatus === "failed") {
+          dispatch(streamOrders(shopId));
+      }
+  }, [dispatch, orderStatus]);
+  useEffect(() => {
+      if (productStatus === "idle" || productStatus === "failed") {
+          dispatch(fetchProducts(shopId));
+      }
+  }, [dispatch, productStatus]);
+
   return (
     <div>
       <br />
