@@ -19,6 +19,8 @@ import {
     updateProduct
 } from "../modules/redux/product/productsSlice";
 import React from "react";
+import {SxProps} from "@mui/system";
+import {Theme} from "@mui/material/styles/createTheme";
 
 const DataDivider = styled(Divider)`
   border-color: #D5C3B5;
@@ -186,7 +188,7 @@ const AdminPage = () => {
     return <Card sx={{border: "1px solid #837468", boxShadow: "none", margin: "1rem"}}>
         <Stack direction={"row"} minHeight={"600px"}>
             <Stack width={"250px"}>
-                <ViewLabel icon={<StorefrontOutlinedIcon/>} label={"店舗"}/>
+                <ViewLabel icon={StorefrontOutlinedIcon} label={"店舗"}/>
                 <AddTextButton addLabel={"店舗を追加する"} onClickAdd={handleAddShop}/>
                 {shops.map(shop => <SelectionItem label={shop.id}
                                                   selected={shop.id === selectedShopId}
@@ -194,7 +196,7 @@ const AdminPage = () => {
             </Stack>
             <DataDivider orientation={"vertical"} flexItem/>
             <Stack width={"100%"}>
-                <ViewLabel icon={<EditOutlinedIcon/>} label={selectedShop?.id ?? ''}/>
+                <ViewLabel icon={EditOutlinedIcon} label={selectedShop?.id ?? ''}/>
                 {selectedShop !== undefined &&
                     <React.Fragment>
                         <Stack padding={"1.5rem"} spacing={2} alignItems={"flex-start"}>
@@ -276,7 +278,7 @@ const ProductDataView = (props: {
 
     return <Stack direction={"row"} height={"100%"}>
         <Stack width={"400px"}>
-            <ViewLabel icon={<CoffeeOutlinedIcon/>} label={"商品"}/>
+            <ViewLabel icon={CoffeeOutlinedIcon} label={"商品"}/>
             <AddTextButton addLabel={"商品を追加する"} onClickAdd={() => onAddProduct(shop.id)}/>
             {products.map(prod => <SelectionItem label={prod.id}
                                                  selected={prod.id === selectedProductId}
@@ -284,7 +286,7 @@ const ProductDataView = (props: {
         </Stack>
         <DataDivider orientation={"vertical"} flexItem/>
         <Stack width={"100%"}>
-            <ViewLabel icon={<EditOutlinedIcon/>} label={selectedProduct?.id ?? ''}/>
+            <ViewLabel icon={EditOutlinedIcon} label={selectedProduct?.id ?? ''}/>
             {selectedProduct !== undefined &&
                 <Stack padding={"1rem 1.5rem"} spacing={3} alignItems={"flex-start"}>
                     <Stack direction={"row"} spacing={3}>
@@ -362,11 +364,11 @@ const ProductDataView = (props: {
     </Stack>
 }
 
-const ViewLabel = (props: { icon: ReactNode, label: string }) => {
+const ViewLabel = (props: { icon: React.FunctionComponent<{sx: SxProps<Theme>}>, label: string }) => {
     return <Stack direction={"row"} spacing={1} padding={"0.75rem"} alignItems={"center"} justifyContent={"flex-start"}
                   sx={{backgroundColor: '#F2DFD1'}}>
-        {props.icon}
-        <Typography variant={"body1"}>
+        <props.icon sx={{color: '#51453A'}}/>
+        <Typography variant={"body1"} color={'#51453A'}>
             {props.label}
         </Typography>
     </Stack>
