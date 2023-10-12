@@ -16,9 +16,12 @@ export const themeOptions: ThemeOptions = {
             fontSize: "1.8rem",
             fontWeight: "bold",
         },
+        h6: {
+            fontWeight: "bold"
+        },
         caption: {
             color: "#837468"
-        }
+        },
     },
     components: {
         MuiDivider: {

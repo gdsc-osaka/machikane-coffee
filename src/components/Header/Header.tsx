@@ -8,23 +8,23 @@ const Header = () => {
   const params = useParams();
   const shopId = params.shopId ?? 'toyonaka';
   
-  let titleText = "";
-  const routerPath = useLocation().pathname;
-
-  
-  switch(routerPath) {
-    case "/"+shopId+"/admin/cashier":
-      titleText = 'レジ';
-      break;
-
-    case "/"+shopId+"/admin-barista":
-      titleText = 'ドリップ';
-      break;
-
-    default:
-      titleText = 'コーヒー愛好会';
-      break;
-  }
+  let titleText = "コーヒー愛好会";
+  // const routerPath = useLocation().pathname;
+  //
+  //
+  // switch(routerPath) {
+  //   case "/"+shopId+"/admin/cashier":
+  //     titleText = 'レジ';
+  //     break;
+  //
+  //   case "/"+shopId+"/admin-barista":
+  //     titleText = 'ドリップ';
+  //     break;
+  //
+  //   default:
+  //     titleText = 'コーヒー愛好会';
+  //     break;
+  // }
 
   const imageStyle = {
     width: '45px',

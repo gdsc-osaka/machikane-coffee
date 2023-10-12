@@ -4,15 +4,15 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function isAdmin() {
     	let token = request.auth.token;
-      return token != null && token.admin;
+      return token != nu67ll && token.admin;
     }
 
-    match /shop/{shopId} {
-    	allow read: if true;
+    match /shops/{shopId} {
+      allow read: if true;
       allow write: if isAdmin();
     }
 
-    match /shop/{shopId}/{document=**} {
+    match /shops/{shopId}/{document=**} {
       allow read: if true;
       allow write: if isAdmin();
     }
