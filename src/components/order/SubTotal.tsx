@@ -1,6 +1,6 @@
 import {ProductAmount} from "../../modules/redux/order/types";
 import styled from "styled-components";
-import {Button, Divider, Stack, Typography, useTheme} from "@mui/material";
+import {Button, Divider, Typography, useTheme} from "@mui/material";
 import {Product} from "../../modules/redux/product/types";
 import React from "react";
 import {MotionList, MotionListItem} from "../motion/motionList";
@@ -38,14 +38,9 @@ const SubTotal = (props: SubTotalProps) => {
             <AnimatePresence>
                 {ids.map(id => {
                     const amount = productAmount[id];
-
-                    if (amount <= 0) {
-                        return <React.Fragment/>
-                    }
-
                     const product = products.find((product) => product.id == id);
 
-                    return <MotionListItem key={id} spacing={1}>
+                    return amount <= 0 && <MotionListItem key={id} spacing={1}>
                         <Row>
                             <Typography variant={"body2"}>
                                 {product?.shorter_name ?? ""}
@@ -63,9 +58,9 @@ const SubTotal = (props: SubTotalProps) => {
                         </Row>
                     </MotionListItem>
                 })}
-                {!isEmpty ? <MotionListItem key={"subtotal-divider"} spacing={1}>
+                {!isEmpty && <MotionListItem key={"subtotal-divider"} spacing={1}>
                     <Divider variant={"fullWidth"} flexItem/>
-                </MotionListItem> : <React.Fragment/>}
+                </MotionListItem>}
                 <MotionListItem key={"total"}>
                     <Row>
                         <Typography variant={"body1"}>

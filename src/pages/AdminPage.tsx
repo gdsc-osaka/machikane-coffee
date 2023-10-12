@@ -59,13 +59,13 @@ const AdminPage = () => {
     }, [shopId, dispatch, productStatus]);
 
     useEffect(() => {
-        if (orderStatus == "idle" || orderStatus == "failed") {
+        if (orderStatus === "idle" || orderStatus === "failed") {
             dispatch(streamOrders(shopId));
         }
-    }, [shopId, dispatch, orderStatus]);
+    }, [dispatch, orderStatus, shopId]);
 
     useEffect(() => {
-        if (shopUnsubscribe != null) {
+        if (shopUnsubscribe !== null) {
             shopUnsubscribe();
         }
     }, [shopUnsubscribe]);
@@ -74,7 +74,7 @@ const AdminPage = () => {
         const trueProductAmount = Object.assign({}, productAmount);
         // 量がゼロの要素は排除する
         for (const id in trueProductAmount) {
-            if (trueProductAmount[id] == 0) {
+            if (trueProductAmount[id] === 0) {
                 delete trueProductAmount[id];
             }
         }
@@ -110,7 +110,7 @@ const AdminPage = () => {
     }
 
     const handleDelete = () => {
-        if (orderToDelete != null) {
+        if (orderToDelete !== null) {
             dispatch(deleteOrder({shopId, order: orderToDelete}));
             setOpenDelete(false);
         }
