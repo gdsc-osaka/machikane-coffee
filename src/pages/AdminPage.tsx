@@ -1,8 +1,20 @@
-import {ReactNode, useEffect, useRef, useState} from "react";
-import {Button, ButtonBase, Card, Divider, InputAdornment, Stack, Typography} from "@mui/material";
+import React, {useEffect, useRef, useState} from "react";
+import {
+    Button,
+    ButtonBase,
+    Card,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Divider,
+    InputAdornment,
+    Stack,
+    Typography
+} from "@mui/material";
 import {useAppDispatch} from "../modules/redux/store";
 import {useSelector} from "react-redux";
-import {fetchShops, selectAllShops, selectShopStatus, updateShop} from "../modules/redux/shop/shopsSlice";
+import {addShop, fetchShops, selectAllShops, selectShopStatus, updateShop} from "../modules/redux/shop/shopsSlice";
 import styled from "styled-components";
 import TextField from "@mui/material/TextField";
 import {Shop} from "../modules/redux/shop/types";
@@ -18,7 +30,6 @@ import {
     selectProductStatus,
     updateProduct
 } from "../modules/redux/product/productsSlice";
-import React from "react";
 import {SxProps} from "@mui/system";
 import {Theme} from "@mui/material/styles/createTheme";
 
@@ -56,6 +67,8 @@ const AdminPage = () => {
         span: 0
     });
     const [thumbnailFile, setThumbnailFile] = useState<File | undefined>(undefined);
+    const [openAddShopDialog, setOpenAddShopDialog] = useState(false);
+    const [openAddProductDialog, setOpenAddProductDialog] = useState(false);
 
     const dispatch = useAppDispatch();
     const shopStatus = useSelector(selectShopStatus);
@@ -92,10 +105,11 @@ const AdminPage = () => {
     }, [dispatch, shopStatus]);
 
     useEffect(() => {
-        if (productStatus === "idle" && selectedShop !== undefined) {
+        // status == idle じゃなくても実行する
+        if (productStatus === "idle" && selectedShop?.id !== undefined) {
             dispatch(fetchProducts(selectedShop.id));
         }
-    }, [selectedShop, dispatch, productStatus]);
+    }, [selectedShop?.id, dispatch, productStatus]);
 
     useEffect(() => {
         if (shops.length !== 0) {
@@ -124,15 +138,16 @@ const AdminPage = () => {
     }, [selectedProduct])
 
     const handleAddShop = () => {
-
+        setOpenAddShopDialog(true);
     }
 
-    const handleAddProduct = (shopId: string) => {
-
+    const handleAddProduct = () => {
+        setOpenAddProductDialog(true);
     }
 
     const handleClickShop = (shopId: string) => {
         setSelectedShopId(shopId);
+        dispatch(fetchProducts(shopId));
     }
 
 
@@ -182,55 +197,134 @@ const AdminPage = () => {
             });
             setThumbnailFile(undefined);
         }
-
     }
 
-    return <Card sx={{border: "1px solid #837468", boxShadow: "none", margin: "1rem"}}>
-        <Stack direction={"row"} minHeight={"600px"}>
-            <Stack width={"250px"}>
-                <ViewLabel icon={StorefrontOutlinedIcon} label={"店舗"}/>
-                <AddTextButton addLabel={"店舗を追加する"} onClickAdd={handleAddShop}/>
-                {shops.map(shop => <SelectionItem label={shop.id}
-                                                  selected={shop.id === selectedShopId}
-                                                  onClick={() => handleClickShop(shop.id)}/>)}
+    const handleSubmitShop = (formData: AddShopFormType) => {
+        setOpenAddShopDialog(false);
+        dispatch(addShop({
+            shopId: formData.id,
+            rawShop: {
+                display_name: formData.displayName,
+                emg_message: "",
+                baristas: {1: "active"}
+            }
+        }));
+    }
+
+    return <React.Fragment>
+        <Card sx={{border: "1px solid #837468", boxShadow: "none", margin: "1rem"}}>
+            <Stack direction={"row"} minHeight={"600px"}>
+                <Stack width={"250px"}>
+                    <ViewLabel icon={StorefrontOutlinedIcon} label={"店舗"}/>
+                    <AddTextButton addLabel={"店舗を追加する"} onClickAdd={handleAddShop}/>
+                    {shops.map(shop => <SelectionItem label={shop.id}
+                                                      selected={shop.id === selectedShopId}
+                                                      onClick={() => handleClickShop(shop.id)}/>)}
+                </Stack>
+                <DataDivider orientation={"vertical"} flexItem/>
+                <Stack width={"100%"}>
+                    <ViewLabel icon={EditOutlinedIcon} label={selectedShop?.id ?? ''}/>
+                    {selectedShop !== undefined &&
+                        <React.Fragment>
+                            <Stack padding={"1.5rem"} spacing={2} alignItems={"flex-start"}>
+                                <TextField label={"名前"} value={shopForm.display_name}
+                                           onChange={e => setShopForm({...shopForm, display_name: e.target.value})}/>
+                                <Button variant={"contained"} disabled={!isShopChanged(shopForm)}
+                                        onClick={handleUpdateShop}>
+                                    保存
+                                </Button>
+                            </Stack>
+                            <ProductDataView products={products}
+                                             onAddProduct={handleAddProduct}
+                                             selectedProductId={selectedProductId}
+                                             onClickProduct={handleClickProduct}
+                                             isThumbnailError={isThumbnailError}
+                                             productForm={productForm}
+                                             setProductForm={handleProductForm}
+                                             selectedProduct={selectedProduct}
+                                             isProductFormChanged={isProductChanged(productForm)}
+                                             thumbnailFile={thumbnailFile}
+                                             setThumbnail={handleSetThumbnail}
+                                             onUpdateProduct={handleUpdateProduct}/>
+                        </React.Fragment>
+                    }
+                </Stack>
             </Stack>
-            <DataDivider orientation={"vertical"} flexItem/>
-            <Stack width={"100%"}>
-                <ViewLabel icon={EditOutlinedIcon} label={selectedShop?.id ?? ''}/>
-                {selectedShop !== undefined &&
-                    <React.Fragment>
-                        <Stack padding={"1.5rem"} spacing={2} alignItems={"flex-start"}>
-                            <TextField label={"名前"} value={shopForm.display_name}
-                                       onChange={e => setShopForm({...shopForm, display_name: e.target.value})}/>
-                            <Button variant={"contained"} disabled={!isShopChanged(shopForm)}
-                                    onClick={handleUpdateShop}>
-                                保存
-                            </Button>
-                        </Stack>
-                        <ProductDataView shop={selectedShop}
-                                         products={products}
-                                         onAddProduct={handleAddProduct}
-                                         selectedProductId={selectedProductId}
-                                         onClickProduct={handleClickProduct}
-                                         isThumbnailError={isThumbnailError}
-                                         productForm={productForm}
-                                         setProductForm={handleProductForm}
-                                         selectedProduct={selectedProduct}
-                                         isProductFormChanged={isProductChanged(productForm)}
-                                         thumbnailFile={thumbnailFile}
-                                         setThumbnail={handleSetThumbnail}
-                                         onUpdateProduct={handleUpdateProduct}/>
-                    </React.Fragment>
-                }
+        </Card>
+        <AddShopDialog open={openAddShopDialog}
+                       onClose={() => setOpenAddShopDialog(false)}
+                       onSubmit={handleSubmitShop}
+                       shops={shops}/>
+    </React.Fragment>
+}
+
+type AddShopFormType = { id: string, displayName: string };
+
+const AddShopDialog = (props: {
+    open: boolean,
+    onClose: () => void,
+    onSubmit: (shop: AddShopFormType) => void,
+    shops: Shop[]
+}) => {
+    const [id, setId] = useState('');
+    const [displayName, setDisplayName] = useState('');
+    const [clickSubmitted, setClickSubmitted] = useState(false);
+
+    const {open, onClose, onSubmit, shops} = props;
+
+    const isIdDuplicated = shops.map(s => s.id).includes(id);
+    const isValidId = id !== '' && !isIdDuplicated;
+    const isValidDisplayName = displayName !== '';
+
+    useEffect(() => {
+        if (!open) {
+            // 初期化
+            setId('');
+            setDisplayName('');
+        }
+    }, [open]);
+
+    const handleSubmit = () => {
+        if (isValidId && isValidDisplayName) {
+            onSubmit({id, displayName});
+        } else {
+            setClickSubmitted(true);
+        }
+    }
+
+    return <Dialog open={open} onClose={onClose}>
+        <DialogTitle>
+            店舗を追加する
+        </DialogTitle>
+        <DialogContent>
+            <Stack spacing={1}>
+                <TextField variant={"filled"}
+                           label={"id"}
+                           helperText={clickSubmitted && id === '' ? "IDを入力してください" :
+                               clickSubmitted && isIdDuplicated ? "IDが重複しています" : "一度決めたIDは変更できません"}
+                           value={id} onChange={e => setId(e.target.value)}
+                           required error={clickSubmitted && !isValidId}/>
+                <TextField variant={"filled"}
+                           label={"店名"}
+                           helperText={clickSubmitted && !isValidDisplayName ? "店名を入力してください" : ""}
+                           value={displayName} onChange={e => setDisplayName(e.target.value)}
+                           required error={clickSubmitted && !isValidDisplayName}/>
             </Stack>
-        </Stack>
-    </Card>
+        </DialogContent>
+        <DialogActions>
+            <Button onClick={onClose}>
+                キャンセル
+            </Button>
+            <Button onClick={handleSubmit}>
+                追加
+            </Button>
+        </DialogActions>
+    </Dialog>
 }
 
 const ProductDataView = (props: {
-    shop: Shop,
     products: Product[],
-    onAddProduct: (shopId: string) => void,
+    onAddProduct: () => void,
     selectedProductId: string,
     onClickProduct: (productId: string) => void,
     isThumbnailError: boolean,
@@ -243,7 +337,6 @@ const ProductDataView = (props: {
     onUpdateProduct: () => void,
 }) => {
     const {
-        shop,
         products,
         onAddProduct,
         selectedProductId,
@@ -279,7 +372,7 @@ const ProductDataView = (props: {
     return <Stack direction={"row"} height={"100%"}>
         <Stack width={"400px"}>
             <ViewLabel icon={CoffeeOutlinedIcon} label={"商品"}/>
-            <AddTextButton addLabel={"商品を追加する"} onClickAdd={() => onAddProduct(shop.id)}/>
+            <AddTextButton addLabel={"商品を追加する"} onClickAdd={() => onAddProduct()}/>
             {products.map(prod => <SelectionItem label={prod.id}
                                                  selected={prod.id === selectedProductId}
                                                  onClick={() => onClickProduct(prod.id)}/>)}
@@ -364,7 +457,7 @@ const ProductDataView = (props: {
     </Stack>
 }
 
-const ViewLabel = (props: { icon: React.FunctionComponent<{sx: SxProps<Theme>}>, label: string }) => {
+const ViewLabel = (props: { icon: React.FunctionComponent<{ sx: SxProps<Theme> }>, label: string }) => {
     return <Stack direction={"row"} spacing={1} padding={"0.75rem"} alignItems={"center"} justifyContent={"flex-start"}
                   sx={{backgroundColor: '#F2DFD1'}}>
         <props.icon sx={{color: '#51453A'}}/>
@@ -377,9 +470,12 @@ const ViewLabel = (props: { icon: React.FunctionComponent<{sx: SxProps<Theme>}>,
 type VoidFunction = () => void;
 
 const AddTextButton = (props: { addLabel: string, onClickAdd: VoidFunction }) => {
-    return <Button variant={"text"} startIcon={<AddRoundedIcon/>}
+    const {addLabel, onClickAdd} = props;
+    return <Button variant={"text"}
+                   startIcon={<AddRoundedIcon/>}
+                   onClick={onClickAdd}
                    sx={{borderRadius: 0, justifyContent: "flex-start", height: "2.5rem", paddingLeft: "1.2rem"}}>
-        {props.addLabel}
+        {addLabel}
     </Button>
 }
 
