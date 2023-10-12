@@ -33,7 +33,7 @@ export default function LogInPage() {
         const user = userCredential.user;
         console.log(user);
         // navigate("/:shopId/admin");
-        navigate("/" + shopId + "/admin");
+        navigate("/" + shopId + "/admin/cashier");
         // ...
       })
       .catch((error) => {

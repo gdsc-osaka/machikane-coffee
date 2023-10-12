@@ -40,7 +40,7 @@ const SubTotal = (props: SubTotalProps) => {
                     const amount = productAmount[id];
                     const product = products.find((product) => product.id == id);
 
-                    return amount <= 0 && <MotionListItem key={id} spacing={1}>
+                    return amount >= 0 && <MotionListItem key={id} spacing={1}>
                         <Row>
                             <Typography variant={"body2"}>
                                 {product?.shorter_name ?? ""}

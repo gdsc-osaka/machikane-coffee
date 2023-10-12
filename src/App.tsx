@@ -31,7 +31,7 @@ const App = () => {
                                 <Route path="/:shopId/" Component={OrderPage}/>
                                 <Route path="/:shopId/:orderIndex" Component={OrderPage}/>
                                 <Route path="/:shopId/timer" Component={Timer}/>
-                                <Route path="/:shopId/login" Component={LogInPage}/>
+                                <Route path="/login" Component={LogInPage}/>
                                 <Route path="/admin" element={<AuthGuard><AdminPage/></AuthGuard>}/>
                                 <Route path="/:shopId/admin/cashier" element={<AuthGuard><AdminCashierPage/></AuthGuard>}/>
                                 <Route path="/:shopId/admin/barista" element={<AuthGuard><AdminBaristaPage/></AuthGuard>}/>
