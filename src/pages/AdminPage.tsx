@@ -1,11 +1,11 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {
     Button,
     ButtonBase,
     Card,
     Dialog,
     DialogActions,
-    DialogContent,
+    DialogContent, DialogContentText,
     DialogTitle,
     Divider,
     InputAdornment,
@@ -25,6 +25,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import CoffeeOutlinedIcon from '@mui/icons-material/CoffeeOutlined';
 import {Product} from "../modules/redux/product/types";
 import {
+    addProduct,
     fetchProducts,
     selectAllProduct,
     selectProductStatus,
@@ -32,6 +33,7 @@ import {
 } from "../modules/redux/product/productsSlice";
 import {SxProps} from "@mui/system";
 import {Theme} from "@mui/material/styles/createTheme";
+import FileInputButton from "../components/Admin/FileInputButton";
 
 const DataDivider = styled(Divider)`
   border-color: #D5C3B5;
@@ -211,6 +213,12 @@ const AdminPage = () => {
         }));
     }
 
+    const handleSubmitProduct = async (id: string, formData: ProductFormType, file: File) => {
+        setOpenAddProductDialog(false);
+        await dispatch(addProduct({shopId: selectedShopId, rawProduct: {...formData, id}, thumbnailFile: file})).unwrap();
+        return;
+    }
+
     return <React.Fragment>
         <Card sx={{border: "1px solid #837468", boxShadow: "none", margin: "1rem"}}>
             <Stack direction={"row"} minHeight={"600px"}>
@@ -255,6 +263,10 @@ const AdminPage = () => {
                        onClose={() => setOpenAddShopDialog(false)}
                        onSubmit={handleSubmitShop}
                        shops={shops}/>
+        <AddProductDialog open={openAddProductDialog}
+                          onClose={() => setOpenAddProductDialog(false)}
+                          products={products}
+                          onSubmit={handleSubmitProduct}/>
     </React.Fragment>
 }
 
@@ -268,7 +280,7 @@ const AddShopDialog = (props: {
 }) => {
     const [id, setId] = useState('');
     const [displayName, setDisplayName] = useState('');
-    const [clickSubmitted, setClickSubmitted] = useState(false);
+    const [clickedSubmit, setClickedSubmit] = useState(false);
 
     const {open, onClose, onSubmit, shops} = props;
 
@@ -288,7 +300,7 @@ const AddShopDialog = (props: {
         if (isValidId && isValidDisplayName) {
             onSubmit({id, displayName});
         } else {
-            setClickSubmitted(true);
+            setClickedSubmit(true);
         }
     }
 
@@ -300,15 +312,15 @@ const AddShopDialog = (props: {
             <Stack spacing={1}>
                 <TextField variant={"filled"}
                            label={"id"}
-                           helperText={clickSubmitted && id === '' ? "IDを入力してください" :
-                               clickSubmitted && isIdDuplicated ? "IDが重複しています" : "一度決めたIDは変更できません"}
+                           helperText={clickedSubmit && id === '' ? "IDを入力してください" :
+                               clickedSubmit && isIdDuplicated ? "IDが重複しています" : "一度決めたIDは変更できません"}
                            value={id} onChange={e => setId(e.target.value)}
-                           required error={clickSubmitted && !isValidId}/>
+                           required error={clickedSubmit && !isValidId}/>
                 <TextField variant={"filled"}
                            label={"店名"}
-                           helperText={clickSubmitted && !isValidDisplayName ? "店名を入力してください" : ""}
+                           helperText={clickedSubmit && !isValidDisplayName ? "店名を入力してください" : ""}
                            value={displayName} onChange={e => setDisplayName(e.target.value)}
-                           required error={clickSubmitted && !isValidDisplayName}/>
+                           required error={clickedSubmit && !isValidDisplayName}/>
             </Stack>
         </DialogContent>
         <DialogActions>
@@ -317,6 +329,148 @@ const AddShopDialog = (props: {
             </Button>
             <Button onClick={handleSubmit}>
                 追加
+            </Button>
+        </DialogActions>
+    </Dialog>
+}
+
+const AddProductDialog = (props: {
+    open: boolean,
+    onClose: () => void,
+    products: Product[],
+    onSubmit: (id: string, formData: ProductFormType, file: File) => Promise<void>;
+}) => {
+    const {open, onClose, products, onSubmit} = props;
+
+    const [step, setStep] = useState<"product_info" | "set_thumbnail">("product_info");
+    const [id, setId] = useState('');
+    const [display_name, setDisplayName] = useState('');
+    const [shorter_name, setShorterName] = useState('');
+    const [price, setPrice] = useState(0);
+    const [span, setSpan] = useState(0);
+    const [thumbnail, setThumbnail] = useState<File | undefined>(undefined);
+    const [thumbnailUrl, setThumbnailUrl] = useState('');
+    const [isClickedNext, setIsClickedNext] = useState(false);
+    const [isClickedSubmit, setIsClickedSubmit] = useState(false);
+
+    const isIdDuplicated = products.map(s => s.id).includes(id);
+    const isValidId = id !== '' && !isIdDuplicated;
+    const isValidDisplayName = display_name !== '';
+    const isValidShorterName = shorter_name !== '';
+
+    const handleSelectThumbnail = (files: FileList | null) => {
+        if (files !== null) {
+            const file = files[0];
+            setThumbnail(file);
+            setThumbnailUrl(window.URL.createObjectURL(file));
+        }
+    }
+
+    const handleCancel = () => {
+        if (step === "product_info") {
+            onClose()
+        } else {
+            setStep("product_info")
+            setThumbnailUrl('')
+            setIsClickedSubmit(false)
+        }
+    }
+
+    const handleNext = async () => {
+        if (step === "product_info") {
+            setIsClickedNext(true);
+            if (isValidId && isValidDisplayName) {
+                setStep("set_thumbnail");
+            }
+        } else {
+            if (thumbnail !== undefined) {
+                await onSubmit(id, {display_name, price, span, shorter_name}, thumbnail)
+                onClose();
+
+                // state を初期化
+                setIsClickedSubmit(false);
+                setIsClickedNext(false);
+                setStep('product_info');
+                setId('');
+                setDisplayName('')
+                setShorterName('')
+                setSpan(0)
+                setPrice(0)
+                setThumbnail(undefined)
+                setThumbnailUrl('')
+
+            } else {
+                setIsClickedSubmit(true);
+            }
+        }
+    }
+
+    return <Dialog open={open} onClose={onClose}>
+        <DialogTitle>
+            {step === "product_info" ? "商品情報を入力する" : "サムネイルを設定する"}
+        </DialogTitle>
+        <DialogContent>
+            {step === "product_info" &&
+                <Stack spacing={1}>
+                    <TextField variant={"filled"}
+                               label={"id"}
+                               helperText={isClickedNext && id === '' ? "IDを入力してください" :
+                                   isClickedNext && isIdDuplicated ? "IDが重複しています" : "一度決めたIDは変更できません"}
+                               value={id} onChange={e => setId(e.target.value)}
+                               required error={isClickedNext && !isValidId}/>
+                    <TextField variant={"filled"}
+                               label={"商品名"}
+                               helperText={isClickedNext && !isValidDisplayName ? "商品名を入力してください" : ""}
+                               value={display_name} onChange={e => setDisplayName(e.target.value)}
+                               required error={isClickedNext && !isValidDisplayName}/>
+                    <TextField variant={"filled"}
+                               label={"略称"}
+                               helperText={isClickedNext && !isValidShorterName ? "略称を入力してください" : ""}
+                               value={shorter_name} onChange={e => setShorterName(e.target.value)}
+                               required error={isClickedNext && !isValidShorterName}/>
+                    <TextField variant={"filled"}
+                               label={"値段"}
+                               type={"number"}
+                               InputProps={{
+                                   startAdornment: <InputAdornment position="start">¥</InputAdornment>,
+                               }}
+                               value={price}
+                               onChange={e => setPrice(Number(e.target.value))}
+                               required/>
+                    <TextField variant={"filled"}
+                               label={"制作時間"}
+                               type={"number"}
+                               InputProps={{
+                                   endAdornment: <InputAdornment position="end">秒</InputAdornment>,
+                               }}
+                               value={span}
+                               onChange={e => setSpan(Number(e.target.value))}
+                               required/>
+                </Stack>
+            }
+            {step === "set_thumbnail" &&
+                <Stack spacing={1}>
+                    <DialogContentText>
+                        正方形のPNGまたはJPG画像を選択してください
+                    </DialogContentText>
+                    <FileInputButton onFileChanged={handleSelectThumbnail}/>
+                    <img style={{width: 120, height: 120, borderRadius: 10}}
+                         src={thumbnailUrl}
+                         alt={`thumbnail`}/>
+                    {isClickedSubmit && thumbnail === undefined &&
+                        <DialogContentText color={'#BA1A1A'}>
+                            サムネイルを設定してください
+                        </DialogContentText>
+                    }
+                </Stack>
+            }
+        </DialogContent>
+        <DialogActions>
+            <Button onClick={handleCancel}>
+                {step === "product_info" ? "キャンセル" : "もどる"}
+            </Button>
+            <Button onClick={handleNext}>
+                {step === "product_info" ? "次へ" : "追加"}
             </Button>
         </DialogActions>
     </Dialog>
@@ -352,7 +506,6 @@ const ProductDataView = (props: {
     } = props;
 
     const [thumbnailUrl, setThumbnailUrl] = useState('');
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (thumbnailFile === undefined && selectedProduct !== undefined) {
@@ -363,9 +516,9 @@ const ProductDataView = (props: {
 
     }, [thumbnailFile, selectedProduct]);
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.files) {
-            setThumbnail(event.target.files[0]);
+    const handleFileChange = (files: FileList | null) => {
+        if (files) {
+            setThumbnail(files[0]);
         }
     }
 
@@ -409,7 +562,7 @@ const ProductDataView = (props: {
                                                    ...productForm,
                                                    price: Number(e.target.value)
                                                })}/>
-                                    <TextField label={"販売時間"} value={productForm.span} type={"number"}
+                                    <TextField label={"制作時間"} value={productForm.span} type={"number"}
                                                InputProps={{
                                                    endAdornment: <InputAdornment position="end">秒</InputAdornment>,
                                                }}
@@ -427,19 +580,9 @@ const ProductDataView = (props: {
                             <Stack direction={"row"} spacing={1}>
                                 <img style={{width: 120, height: 120, borderRadius: 10}}
                                      src={thumbnailUrl}
-                                     alt={`thumbnail of ${selectedProduct.display_name}`}/>
+                                     alt={`thumbnail`}/>
                                 <Stack spacing={1} width={"100%"} alignItems={"flex-start"}>
-                                    <Button variant={"outlined"} onClick={_ => fileInputRef.current?.click()}>
-                                        ファイルを選択
-                                    </Button>
-                                    <input
-                                        hidden
-                                        name="thumbnail"
-                                        type="file"
-                                        accept=".png,.jpg"
-                                        ref={fileInputRef}
-                                        onChange={handleFileChange}
-                                    />
+                                    <FileInputButton onFileChanged={handleFileChange}/>
                                     {isThumbnailError &&
                                         <Typography variant={"caption"} color={'#BA1A1A'}>
                                             サムネイルは正方形のPNGまたはJPG画像を選択してください
