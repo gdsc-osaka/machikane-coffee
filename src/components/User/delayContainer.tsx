@@ -1,15 +1,17 @@
-import { Button } from "@mui/material";
-import { VFC } from "react";
+import {Button, Card, Stack, Typography} from "@mui/material";
 import React from "react";
+import {useCookies} from "react-cookie";
+import {Shop} from "../../modules/redux/shop/types";
+import {selectShopDelaySeconds} from "../../modules/redux/shop/shopsSlice";
+import {RootState} from "../../modules/redux/store";
+import {useSelector} from "react-redux";
 
 
 type Props = {
-    delayMinutes: number,
-    emg_message: string | undefined,
-    buttonClicked: () => void
+    shop: Shop,
 }
 
-const DelayContainer:  VFC<Props> = (props) => {
+const DelayContainer = (props: Props) => {
     const delayContainerStyle = {
         display: 'flex',
         padding: '24px',
@@ -29,7 +31,6 @@ const DelayContainer:  VFC<Props> = (props) => {
     }
     const supportingTextStyle = {
         color: 'var(--m-3-sys-light-on-surface-variant, #51453A)',
-        fontFamily: 'Roboto',
         fontSize: '14px',
         fontStyle: 'normal',
         fontWeight: '400',
@@ -46,34 +47,49 @@ const DelayContainer:  VFC<Props> = (props) => {
     }
     const buttonFontStyle = {
         color: 'var(--m-3-sys-light-on-error-container, #410002)',
-        textAlign: 'center' as 'center', 
-        fontFamily: 'Roboto',
+        textAlign: 'center' as 'center',
         fontSize: '14px',
         fontStyle: 'normal',
         fontWeight: '500',
         lineHeight: '20px', /* 142.857% */
         letterSpacing: '0.1px',
     }
- 
-    return(
-        <div style={delayContainerStyle}>
-            <div style={headLineStyle}>
-                提供が{props.delayMinutes}分遅延しています
-            </div>
-            <div style={supportingTextStyle}>
-                {props.emg_message ?? ""}
-            </div>
-            {/* <button style={buttonStyle} onClick={props.buttonClicked}>今後表示しない</button> */}
-            <div style={buttonStyle}>
-                <Button
-                    onClick={props.buttonClicked}
-                    variant="outlined"
-                >
-                    <div style={buttonFontStyle}>今後表示しない</div>
-                </Button>
-            </div>
-        </div>
-    );
+
+    const {shop} = props;
+
+    const [cookies, setCookie] = useCookies(["last_active_time"]);
+
+    const handleNeverShow = () => {
+        setCookie("last_active_time", shop?.last_active_time.seconds);
+    }
+
+    const delaySec = useSelector((state: RootState) => selectShopDelaySeconds(state, shop.id));
+    const delayMin = Math.floor(delaySec / 60);
+
+    // pause_orderingでも、shop.last_active_timeがCookieと一致すればダイアログを表示しない
+    return shop.status === "pause_ordering" && shop.last_active_time.seconds !== cookies.last_active_time
+        ? <Card sx={{backgroundColor: '#FFDAD6', boxShadow: "none"}}>
+            <Stack padding={"1rem"} spacing={1}>
+                <Typography variant={"h6"} color={'#410002'}>
+                    {delayMin > 0 ? `提供が${delayMin}分遅延しています` : "提供が遅延しています"}
+                </Typography>
+                <Typography variant={"body1"} color={'#51453A'}>
+                    {shop.emg_message}
+                </Typography>
+                {/* <button style={buttonStyle} onClick={props.buttonClicked}>今後表示しない</button> */}
+                <Stack alignItems={"flex-end"}>
+                    <Button
+                        onClick={handleNeverShow}
+                        variant="outlined"
+                    >
+                        <Typography variant={"button"} color={'#410002'}>
+                            今後表示しない
+                        </Typography>
+                    </Button>
+                </Stack>
+            </Stack>
+        </Card>
+        : <></>
 }
 
 export default DelayContainer;

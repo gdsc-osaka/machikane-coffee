@@ -12,6 +12,7 @@ import {M3Switch} from "../components/M3Switch";
 import {useCountDownInterval} from "../modules/hooks/useCountDownInterval";
 import {ShopStatus} from "../modules/redux/shop/types";
 import {selectShopById, selectShopStatus, streamShop} from "../modules/redux/shop/shopsSlice";
+import DelayContainer from "../components/User/delayContainer";
 
 const OrderPage = () => {
     const [orderIndex, setOrderIndex] = useState<string>("");
@@ -95,6 +96,7 @@ const OrderPage = () => {
     }
 
     return <Stack spacing={2} padding={"1rem"}>
+        {shop !== undefined && <DelayContainer shop={shop}/>}
         <Typography variant={"h4"}>
             注文照会
         </Typography>
