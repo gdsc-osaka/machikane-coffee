@@ -2,27 +2,43 @@ import {Button, Dialog, DialogActions, DialogTitle, Divider, Stack, TextField, T
 import React, {useEffect, useState} from "react";
 import {RootState, useAppDispatch} from "../modules/redux/store";
 import {selectOrderById, selectOrderUnsubscribe, streamOrder} from "../modules/redux/order/ordersSlice";
-import {useParams, useSearchParams} from "react-router-dom";
+import {useNavigate, useParams, useSearchParams} from "react-router-dom";
 import {useSelector} from "react-redux";
 import {Order} from "../modules/redux/order/types";
 import StickyNote from "../components/StickyNote";
 import {Product} from "../modules/redux/product/types";
 import {fetchProducts, selectAllProduct, selectProductStatus} from "../modules/redux/product/productsSlice";
-import {M3Switch} from "../components/M3Switch";
 import {useCountDownInterval} from "../modules/hooks/useCountDownInterval";
 import {ShopStatus} from "../modules/redux/shop/types";
-import {selectShopById, selectShopStatus, streamShop} from "../modules/redux/shop/shopsSlice";
+import {
+    fetchShops,
+    selectAllShops,
+    selectShopById,
+    selectShopStatus,
+    streamShop
+} from "../modules/redux/shop/shopsSlice";
 import DelayContainer from "../components/User/delayContainer";
 
 // queryParamで使うキー
 const orderIndexParamKey = 'order';
 
+type DialogState = {
+    open: boolean,
+    title: string,
+    onOk: () => void,
+}
+
 const OrderPage = () => {
     const [orderIndex, setOrderIndex] = useState<string>("");
     const [orderId, setOrderId] = useState("");
-    const [openDialog, setOpenDialog] = useState(false);
+    const [dialogState, setDialogState] = useState<DialogState>({
+        open: false,
+        title: "",
+        onOk: () => {}
+    });
 
     const dispatch = useAppDispatch();
+    const navigate = useNavigate();
     const params = useParams();
     const shopId = params.shopId ?? '';
     const [searchParams, setSearchParams] = useSearchParams();
@@ -33,6 +49,7 @@ const OrderPage = () => {
     const products = useSelector(selectAllProduct);
     const productStatus = useSelector(selectProductStatus);
     const shop = useSelector((state: RootState) => selectShopById(state, shopId));
+    const allShops = useSelector(selectAllShops);
     const shopStatus = useSelector(selectShopStatus);
 
     useEffect(() => {
@@ -43,9 +60,25 @@ const OrderPage = () => {
 
     useEffect(() => {
         if (shopStatus == "idle" || shopStatus == "failed") {
+            dispatch(fetchShops());
             dispatch(streamShop(shopId));
         }
     }, [dispatch, shopStatus, shopId]);
+
+    useEffect(() => {
+        if (shopId !== undefined && allShops.length !== 0 &&
+            !allShops.map(s => s.id).includes(shopId)) {
+            // 存在しないshop id なら
+            setDialogState({
+                open: true,
+                title: "該当するIDの店舗が見つかりません",
+                onOk: () => {
+                    handleClose();
+                    navigate('/');
+                }
+            })
+        }
+    }, [shopId, allShops]);
 
     useEffect(() => {
         const oIndex = Number(paramOrderIndex);
@@ -83,14 +116,20 @@ const OrderPage = () => {
                     setSearchParams({[orderIndexParamKey]: orderIndex});
                 })
                 .catch((e) => {
-                    setOpenDialog(true);
+                    setDialogState({
+                        open: true,
+                        title: "該当する番号の注文が見つかりません",
+                        onOk: () => handleClose()
+                    });
                 });
 
         }
     }
 
     const handleClose = () => {
-        setOpenDialog(false);
+        setDialogState({
+            ...dialogState, open: false,
+        });
     }
 
     return <Stack spacing={2} padding={"1rem"}>
@@ -109,12 +148,12 @@ const OrderPage = () => {
             </Button>
         </Stack>
         {(order !== undefined && shop != undefined) && <OrderCard order={order} products={products} shopStatus={shop.status} delaySec={0}/>}
-        <Dialog open={openDialog} onClose={handleClose}>
+        <Dialog open={dialogState.open} onClose={handleClose}>
             <DialogTitle>
-                該当する番号の注文が見つかりません
+                {dialogState.title}
             </DialogTitle>
             <DialogActions>
-                <Button onClick={handleClose}>
+                <Button onClick={dialogState.onOk}>
                     OK
                 </Button>
             </DialogActions>
