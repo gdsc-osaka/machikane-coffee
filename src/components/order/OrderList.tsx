@@ -4,12 +4,13 @@ import {Product} from "../../modules/redux/product/types";
 import {Flex} from "../layout/Flex";
 import IndexIcon from "./IndexIcon";
 import StickyNote from "../StickyNote";
-import React from "react";
+import React, {useEffect, useState} from "react";
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import {AnimatePresence} from "framer-motion";
 import {MotionList, MotionListItem} from "../motion/motionList";
 import {getSortedObjectKey} from "../../modules/util/objUtils";
 import {getOrderLabel} from "../../modules/util/orderUtils";
+import {useCountDownInterval} from "../../modules/hooks/useCountDownInterval";
 
 type OrderListProps = {
     orders: Order[],
@@ -54,6 +55,15 @@ const OrderItem = (props: {
     const products = props.products;
     const theme = useTheme();
 
+    const [untilSec, setUntilSec] = useState(0);
+    useCountDownInterval(untilSec, setUntilSec);
+    const untilMin = Math.floor(untilSec / 60);
+
+    useEffect(() => {
+        const untilSec = Math.floor((order.complete_at.toDate().getTime() - new Date().getTime()) / 1000);
+        setUntilSec(untilSec)
+    }, [order])
+
     return <StickyNote>
         <Flex>
             <Stack direction={"row"} alignItems={"center"} spacing={1}>
@@ -71,6 +81,16 @@ const OrderItem = (props: {
                     {/*}).format(order.created_at.toDate())}*/}
                     {getOrderLabel(order, products)}
                 </Typography>
+                {!isCompleted &&
+                    (untilSec > 0 ?
+                    <Typography variant={"caption"}>
+                        あと {('00' + untilMin.toString()).slice(-2)}:{('00' + (untilSec % 60).toString()).slice(-2)}
+                    </Typography>
+                    :
+                    <Typography variant={"caption"}>
+                        完成時刻を過ぎました
+                    </Typography>)
+                }
             </Stack>
             <Stack direction={"row"} alignItems={"center"}>
                 {isCompleted && <Chip label={"完成済み"}
