@@ -184,6 +184,8 @@ const OrderCard = (props: {order: Order, products: Product[], shopStatus: ShopSt
     const productTexts = Object.keys(order.product_amount).map(key => `${products.find(e => e.id == key)?.display_name ?? '???'} × ${order.product_amount[key]}`);
     const fontColor = shopStatus === "pause_ordering" ? "#410002" : "#201B16";
 
+    const isCompleted = order.status === "completed";
+
     useEffect(() => {
         setUntilCount(Math.floor(until.getTime() / 1000));
     }, [until]);
@@ -197,7 +199,7 @@ const OrderCard = (props: {order: Order, products: Product[], shopStatus: ShopSt
                     <Typography variant={"caption"}>
                         完成予定まで
                     </Typography>
-                    {untilCount > 0 ?
+                    {!isCompleted && (untilCount > 0  ?
                         <Stack direction={"row"} spacing={0.7} alignItems={"flex-end"}>
                             {untilHou > 0 &&
                                 <React.Fragment>
@@ -230,7 +232,14 @@ const OrderCard = (props: {order: Order, products: Product[], shopStatus: ShopSt
                         :
                         <Typography sx={{fontWeight: "bold"}}>
                             まもなく完成します･･･
+                        </Typography>)
+                    }
+                    {isCompleted &&
+                        <Typography sx={{fontWeight: "bold"}}>
+                            完成済みです
+                            <br/>受け取りをお待ちしております
                         </Typography>
+
                     }
                 </Stack>
                 <Stack spacing={1}>
