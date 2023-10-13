@@ -32,7 +32,6 @@ const Header = () => {
 
     const paths = pathname.split('/');
     const shopId = paths[1];
-    console.log(paths);
 
     let titleText = "コーヒー愛好会";
     // const routerPath = useLocation().pathname;

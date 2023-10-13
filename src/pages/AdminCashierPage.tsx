@@ -53,10 +53,9 @@ const AdminCashierPage = () => {
     };
 
     useEffect(() => {
-        if (productStatus == "idle" || productStatus == "failed") {
-            dispatch(fetchProducts(shopId));
-        }
-    }, [shopId, dispatch, productStatus]);
+        // 最初にフェッチ
+        dispatch(fetchProducts(shopId));
+    }, [])
 
     useEffect(() => {
         if (orderStatus == "idle" || orderStatus == "failed") {
@@ -117,7 +116,7 @@ const AdminCashierPage = () => {
     }
 
     return(
-        productStatus == "succeeded" && !auth.loading ?
+        !auth.loading ?
             <React.Fragment>
                 <Grid container spacing={4} sx={{padding: "30px 30px"}}>
                     <Grid item xs={12} sm={6} lg={5}>

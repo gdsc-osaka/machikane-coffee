@@ -1,6 +1,6 @@
 import React, {ReactNode, useContext, useEffect, useState} from "react";
 import {auth} from "./modules/firebase/firebase";
-import {useNavigate, useParams} from "react-router-dom";
+import {useLocation, useNavigate, useParams} from "react-router-dom";
 
 export const AuthContext = React.createContext<AuthState>({loading: true, role: "unknown"});
 
@@ -15,6 +15,7 @@ export const AuthProvider = (props: {children?: ReactNode}) => {
     const [authState, setAuthState] = useState<AuthState>({loading: true, role: "unknown"});
 
     const navigate = useNavigate();
+    const {pathname} = useLocation();
     const params = useParams();
     const shopId = params.shopId;
     
@@ -40,7 +41,7 @@ export const AuthProvider = (props: {children?: ReactNode}) => {
                 role: role
             });
 
-            if (role === "admin") {
+            if (role === "admin" && pathname === "/") {
                 navigate("/admin");
             }
         });
