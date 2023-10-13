@@ -32,6 +32,7 @@ import {AnimatePresence} from "framer-motion";
 import {getSortedObjectKey} from "../modules/util/objUtils";
 import {Product} from "../modules/redux/product/types";
 import {useAuth} from "../AuthGuard";
+import toast from "react-hot-toast";
 
 /**
  * Order.orderedStatusesの要素を識別する
@@ -110,6 +111,13 @@ const AdminBaristaPage = () => {
     ) => {
         const oldId = selectedId;
 
+        if (newId !== null && newId !== undefined &&
+            baristas[newId] === "active" && selectedId !== newId) {
+            toast(`${newId}番は他に担当者がいます`, {
+                icon: '\u26A0'
+            });
+        }
+
         if (shop !== undefined && oldId !== newId) {
             let newBaristas: BaristaMap;
 
@@ -157,7 +165,8 @@ const AdminBaristaPage = () => {
                 <ToggleButtonGroup color={"primary"} fullWidth={true} value={selectedId} exclusive
                                    onChange={(e, id) => handleBaristaId(id)}>
                     {baristaIds.map(id =>
-                        <ToggleButton value={id} disabled={baristas[id] === "active" && selectedId !== id}>
+                        // TODO disabled条件を付けるか否か? <ToggleButton value={id} disabled={baristas[id] === "active" && selectedId !== id}>
+                        <ToggleButton value={id}>
                             {selectedId === id ? <CheckIcon style={{marginRight: "0.5rem"}}/> : <React.Fragment/>}
                             {id}番
                         </ToggleButton>)}
