@@ -60,8 +60,6 @@ const AdminBaristaPage = () => {
 
     const orderStatus = useSelector(selectOrderStatus);
     const orders = useSelector(selectAllOrdersInverse);
-
-    const productStatus = useSelector(selectProductStatus);
     const products = useSelector(selectAllProduct);
 
     const shopUnsubscribe = useSelector(selectShopUnsubscribe);
@@ -81,10 +79,8 @@ const AdminBaristaPage = () => {
     }, [dispatch, orderStatus, shopId]);
 
     useEffect(() => {
-        if (productStatus === "idle" || productStatus === "failed") {
-            dispatch(fetchProducts(shopId));
-        }
-    }, [dispatch, productStatus, shopId]);
+        dispatch(fetchProducts(shopId));
+    }, []);
 
     // windowが閉じられたとき or refreshされたとき, selectedIdをinactiveに戻す & unsubscribe
     useEffect(() => {

@@ -105,6 +105,16 @@ const OrderPage = () => {
             unsubscribe();
         }
 
+        if (orderIndex === '') {
+            setDialogState({
+                open: true,
+                title: "注文番号を入力してください",
+                onOk: handleClose
+            })
+
+            return;
+        }
+
         const num = Number(orderIndex);
 
         if (!isNaN(num)) {
