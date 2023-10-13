@@ -28,7 +28,6 @@ import {getOrderLabel} from "../modules/util/orderUtils";
 import {Order, Status} from "../modules/redux/order/types";
 import {Flex} from "../components/layout/Flex";
 import {MotionList, MotionListItem} from "src/components/motion/motionList";
-import {AnimatePresence} from "framer-motion";
 import {getSortedObjectKey} from "../modules/util/objUtils";
 import {Product} from "../modules/redux/product/types";
 import {useAuth} from "../AuthGuard";
@@ -175,7 +174,6 @@ const AdminBaristaPage = () => {
                 未完成の注文一覧
             </Typography>
             <MotionList layoutId={"barista-order-list"}>
-                <AnimatePresence>
                     {orders.map(order => {
                         // 全て完了した場合
                         if (Object.values(order.order_statuses).findIndex(orderStatus => orderStatus.status !== "completed") === -1) {
@@ -190,7 +188,6 @@ const AdminBaristaPage = () => {
                                               handleOrderStatus={handleOrderStatus}/>
                         </MotionListItem>
                     })}
-                </AnimatePresence>
             </MotionList>
         </Stack>
     }

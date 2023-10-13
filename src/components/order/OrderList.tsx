@@ -6,7 +6,6 @@ import IndexIcon from "./IndexIcon";
 import StickyNote from "../StickyNote";
 import React, {useEffect, useState} from "react";
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
-import {AnimatePresence} from "framer-motion";
 import {MotionList, MotionListItem} from "../motion/motionList";
 import {getSortedObjectKey} from "../../modules/util/objUtils";
 import {getOrderLabel} from "../../modules/util/orderUtils";
@@ -29,16 +28,14 @@ const OrderList = (props: OrderListProps) => {
                 注文一覧
             </Typography>
             <MotionList layoutId={"order-list"}>
-                <AnimatePresence>
-                    {orders.map(order => {
-                        return <MotionListItem key={order.id}>
-                            <OrderItem order={order}
-                                       products={products}
-                                       onClickDelete={props.onClickDelete}
-                                       onClickReceive={props.onClickReceive}/>
-                        </MotionListItem>
-                    })}
-                </AnimatePresence>
+                {orders.map(order => {
+                    return <MotionListItem key={order.id}>
+                        <OrderItem order={order}
+                                   products={products}
+                                   onClickDelete={props.onClickDelete}
+                                   onClickReceive={props.onClickReceive}/>
+                    </MotionListItem>
+                })}
             </MotionList>
         </Stack>
     );

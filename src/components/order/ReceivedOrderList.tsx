@@ -1,5 +1,4 @@
 import {Order} from "../../modules/redux/order/types";
-import {Column} from "../layout/Column";
 import {Button, Stack, Typography} from "@mui/material";
 import StickyNote from "../StickyNote";
 import IndexIcon from "./IndexIcon";
@@ -9,7 +8,6 @@ import {Product} from "../../modules/redux/product/types";
 import {Flex} from "../layout/Flex";
 import {Row} from "../layout/Row";
 import {MotionList, MotionListItem} from "../motion/motionList";
-import {AnimatePresence} from "framer-motion";
 
 type ReceivedOrderListProps = {
     receivedOrders: Order[],
@@ -24,7 +22,6 @@ const ReceivedOrderList = (props: ReceivedOrderListProps) => {
             受け取り済み注文一覧
         </Typography>
         <MotionList layoutId={"received-order-list"}>
-            <AnimatePresence>
                 {props.receivedOrders.map(order =>
                     <MotionListItem key={order.id}>
                         <StickyNote variant={"surface-variant"}>
@@ -44,7 +41,6 @@ const ReceivedOrderList = (props: ReceivedOrderListProps) => {
                         </StickyNote>
                     </MotionListItem>
                 )}
-            </AnimatePresence>
         </MotionList>
     </Stack>
 }

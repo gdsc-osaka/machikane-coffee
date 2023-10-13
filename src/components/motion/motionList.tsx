@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import {useTheme} from "@mui/material";
-import {motion, useIsPresent} from "framer-motion";
+import {AnimatePresence, motion, useIsPresent} from "framer-motion";
 
 export const MotionList = (props: {children: ReactNode, layoutId: string}) => {
     // return <ul>
@@ -29,6 +29,8 @@ export const MotionListItem = (props: {children: ReactNode, key: string, spacing
         key={props.key}
         style={{marginBottom: theme.spacing(props.spacing ?? 2), position: isPresent ? "static" : "absolute"}}
     >
-        {props.children}
+        <AnimatePresence>
+            {props.children}
+        </AnimatePresence>
     </motion.li>
 };

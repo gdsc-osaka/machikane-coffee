@@ -4,7 +4,6 @@ import {Button, Divider, Typography, useTheme} from "@mui/material";
 import {Product} from "../../modules/redux/product/types";
 import React from "react";
 import {MotionList, MotionListItem} from "../motion/motionList";
-import {AnimatePresence} from "framer-motion";
 
 type SubTotalProps = {
     productAmount: ProductAmount;
@@ -35,7 +34,6 @@ const SubTotal = (props: SubTotalProps) => {
 
     return (
         <MotionList layoutId={"sub-total"}>
-            <AnimatePresence>
                 {ids.map(id => {
                     const amount = productAmount[id];
                     const product = products.find((product) => product.id == id);
@@ -79,7 +77,6 @@ const SubTotal = (props: SubTotalProps) => {
                         注文
                     </Button>
                 </MotionListItem>
-            </AnimatePresence>
 
         </MotionList>
     );
