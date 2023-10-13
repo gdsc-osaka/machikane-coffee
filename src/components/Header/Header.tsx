@@ -79,7 +79,7 @@ const Header = () => {
       <div style={headerStyle}>
         <ButtonBase onClick={handleLogoClick} sx={{borderRadius: "10px"}}>
           <div style={logoStyle}>
-            <img style={imageStyle} src="/images/logo.png" />
+            <img style={imageStyle} src="/images/logo.png"  alt={"logo"}/>
             <div style={fontStyle}>{titleText}</div>
           </div>
         </ButtonBase>
