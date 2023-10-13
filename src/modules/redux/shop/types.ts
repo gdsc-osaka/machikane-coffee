@@ -12,6 +12,7 @@ export type BaristaMap = {
 /**
  * 店情報
  * @property emg_message 緊急時のメッセージ
+ * @property message OrderPageの下部に表示されるやつ
  * @property last_active_time 最後に営業中だった時間
  * @property baristas BaristaMap
  */
@@ -19,6 +20,7 @@ export type Shop = {
     id: string;
     status: ShopStatus;
     emg_message: string;
+    message: string;
     last_active_time: Timestamp;
     display_name: string;
     baristas: BaristaMap;

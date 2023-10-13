@@ -5,13 +5,14 @@ import {
     Card,
     Dialog,
     DialogActions,
-    DialogContent, DialogContentText,
+    DialogContent,
+    DialogContentText,
     DialogTitle,
     Divider,
     InputAdornment,
+    Link as LinkText,
     Stack,
-    Typography,
-    Link as LinkText
+    Typography
 } from "@mui/material";
 import {useAppDispatch} from "../modules/redux/store";
 import {useSelector} from "react-redux";
@@ -50,6 +51,7 @@ type ProductFormType = {
 
 type ShopFormType = {
     display_name: string;
+    message: string;
 }
 
 function getFileExt(file: File) {
@@ -62,7 +64,8 @@ const AdminPage = () => {
     const [selectedProductId, setSelectedProductId] = useState('');
     const [isThumbnailError, setIsThumbnailError] = useState(false);
     const [shopForm, setShopForm] = useState<ShopFormType>({
-        display_name: ""
+        display_name: "",
+        message: "",
     });
     const [productForm, setProductForm] = useState<ProductFormType>({
         display_name: "",
@@ -99,7 +102,8 @@ const AdminPage = () => {
 
         const defaultShopForm: ShopFormType = {...selectedShop};
 
-        return defaultShopForm.display_name !== newShopForm.display_name;
+        return defaultShopForm.display_name !== newShopForm.display_name ||
+            defaultShopForm.message !== newShopForm.message;
     }
 
     useEffect(() => {
@@ -209,7 +213,8 @@ const AdminPage = () => {
             rawShop: {
                 display_name: formData.displayName,
                 emg_message: "",
-                baristas: {1: "active"}
+                baristas: {1: "active"},
+                message: ""
             }
         }));
     }
@@ -236,8 +241,8 @@ const AdminPage = () => {
                     <ViewLabel icon={EditOutlinedIcon} label={selectedShop?.id ?? ''}/>
                     {selectedShop !== undefined &&
                         <React.Fragment>
-                            <Stack padding={"1.5rem"} spacing={2} alignItems={"flex-start"}>
-                                <Stack direction={"row"} spacing={2} paddingBottom={"1rem"}>
+                            <Stack padding={"1.5rem"} spacing={3} alignItems={"flex-start"}>
+                                <Stack direction={"row"} spacing={2}>
                                     <LinkText>
                                         <Link to={`/${selectedShop.id}/admin`}>
                                             レジ
@@ -254,8 +259,17 @@ const AdminPage = () => {
                                         </Link>
                                     </LinkText>
                                 </Stack>
-                                <TextField label={"名前"} value={shopForm.display_name} id={"shop-display-name"}
-                                           onChange={e => setShopForm({...shopForm, display_name: e.target.value})}/>
+                                <Typography variant={"h6"}>
+                                    店舗詳細
+                                </Typography>
+                                <Stack spacing={2} width={"100%"}>
+                                    <TextField label={"名前"} value={shopForm.display_name} id={"shop-display-name"}
+                                               onChange={e => setShopForm({...shopForm, display_name: e.target.value})}
+                                               sx={{width: "231px"}}/>
+                                    <TextField label={"メッセージ"} value={shopForm.message} helperText={"Markdownが使用可能です"} id={"shop-message"}
+                                               onChange={e => setShopForm({...shopForm, message: e.target.value})}
+                                               fullWidth multiline inputProps={{style: {fontFamily: "Consolas, monaco, monospace", fontSize: "0.8rem", lineHeight: "180%"}}}/>
+                                </Stack>
                                 <Button variant={"contained"} disabled={!isShopChanged(shopForm)}
                                         onClick={handleUpdateShop}>
                                     保存

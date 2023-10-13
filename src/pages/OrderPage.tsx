@@ -1,4 +1,4 @@
-import {Button, Dialog, DialogActions, DialogTitle, Divider, Stack, TextField, Typography} from "@mui/material";
+import {Button, Card, Dialog, DialogActions, DialogTitle, Divider, Stack, TextField, Typography} from "@mui/material";
 import React, {useEffect, useState} from "react";
 import {RootState, useAppDispatch} from "../modules/redux/store";
 import {selectOrderById, selectOrderUnsubscribe, streamOrder} from "../modules/redux/order/ordersSlice";
@@ -18,6 +18,7 @@ import {
     streamShop
 } from "../modules/redux/shop/shopsSlice";
 import DelayContainer from "../components/User/delayContainer";
+import MyMarkdown from "src/components/MyMarkdown";
 
 // queryParamで使うキー
 const orderIndexParamKey = 'order';
@@ -142,22 +143,25 @@ const OrderPage = () => {
         });
     }
 
-    return <Stack spacing={2} padding={"1rem"}>
+    return <Stack spacing={3} padding={"1rem"}>
         {shop !== undefined && <DelayContainer shop={shop}/>}
-        <Typography variant={"h4"}>
+        <Typography variant={"h4"} fontWeight={"bold"}>
             注文照会
         </Typography>
-        <Stack direction={"row"} spacing={1}>
+        <Stack direction={"row"} spacing={1} paddingBottom={"1rem"}>
             <TextField id={"order-index"} variant={"filled"}
                        label={"注文番号"} // helperText={"番号札に記入された数字を入力してください"}
                        type={"number"} required
                        value={orderIndex} onChange={handleOrderIndex} sx={{minWidth: "17rem"}}/>
             <Button variant={"contained"} sx={{width: "100%"}}
-                    disabled={orderIndex == undefined} onClick={() => handleSubmit(orderIndex)}>
+                    disabled={orderIndex === undefined} onClick={() => handleSubmit(orderIndex)}>
                 確認
             </Button>
         </Stack>
-        {(order !== undefined && shop != undefined) && <OrderCard order={order} products={products} shopStatus={shop.status} delaySec={0}/>}
+        {(order !== undefined && shop !== undefined) && <OrderCard order={order} products={products} shopStatus={shop.status} delaySec={0}/>}
+        {shop !== undefined && shop.message !== '' &&
+            <ShopMessage message={shop.message}/>
+        }
         <Dialog open={dialogState.open} onClose={handleClose}>
             <DialogTitle>
                 {dialogState.title}
@@ -168,6 +172,14 @@ const OrderPage = () => {
                 </Button>
             </DialogActions>
         </Dialog>
+    </Stack>
+}
+
+const ShopMessage = (props: {message: string}) => {
+    return <Stack sx={{boxShadow: "none", padding: "1rem 0.5rem", paddingBottom: "2rem"}}>
+        <MyMarkdown>
+            {props.message}
+        </MyMarkdown>
     </Stack>
 }
 

@@ -14,10 +14,6 @@ export const themeOptions: ThemeOptions = {
         fontFamily: 'Noto Sans JP',
         h4: {
             fontSize: "1.8rem",
-            fontWeight: "bold",
-        },
-        h6: {
-            fontWeight: "bold"
         },
         caption: {
             color: "#837468"
