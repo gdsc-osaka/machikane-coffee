@@ -1,10 +1,4 @@
-import {
-    CircularProgress,
-    IconButton, Stack,
-    Switch,
-    TextField,
-    Typography,
-} from "@mui/material";
+import {CircularProgress, IconButton, Stack, Switch, Typography,} from "@mui/material";
 import {Expanded} from "../layout/Expanded";
 import {useEffect, useState} from "react";
 import {Row} from "../layout/Row";
@@ -12,19 +6,16 @@ import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import RemoveRoundedIcon from "@mui/icons-material/RemoveRounded";
 import {
     changeShopStatus,
-    fetchShops,
     selectShopById,
-    selectShopStatus, streamShop,
+    selectShopStatus,
+    streamShop,
     updateShop,
 } from "../../modules/redux/shop/shopsSlice";
 import {useParams} from "react-router";
 import {useSelector} from "react-redux";
 import {RootState, useAppDispatch} from "../../modules/redux/store";
-import {
-    BaristaMap,
-    Shop,
-    ShopStatus,
-} from "../../modules/redux/shop/types";
+import {BaristaMap, Shop, ShopStatus,} from "../../modules/redux/shop/types";
+import MarkdownTextField from "../MarkdownTextField";
 
 const ShopManager = () => {
     const dispatch = useAppDispatch();
@@ -80,15 +71,15 @@ const ShopManager = () => {
             // active
             if (shop !== undefined) {
                 // emgMsg
-                await dispatch(
-                    updateShop({
-                        shopId: shopId,
-                        rawShop: {
-                            ...shop,
-                            emg_message: "",
-                        },
-                    })
-                );
+                // await dispatch(
+                //     updateShop({
+                //         shopId: shopId,
+                //         rawShop: {
+                //             ...shop,
+                //             emg_message: "",
+                //         },
+                //     })
+                // );
 
                 // status
                 await dispatch(
@@ -152,15 +143,14 @@ const ShopManager = () => {
                         onChange={(e) => handleEmergency(e.target.checked)}
                     />
                 </Expanded>
-                <TextField
+                <MarkdownTextField
                     id="emg-message"
                     label="メッセージ"
                     variant="outlined"
-                    helperText={"入力すると提供中止ボタンが押せます"}
+                    helperText={"入力すると提供中止ボタンが押せます(Markdownが使用可能です)"}
                     value={emgMsg}
                     onChange={(e) => setEmgMsg(e.target.value)}
                     sx={{width: "100%"}}
-                    multiline
                 />
                 <Expanded>
                     <Typography variant={"h5"} sx={{fontWeight: "bold"}}>

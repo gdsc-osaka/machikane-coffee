@@ -37,6 +37,7 @@ import {SxProps} from "@mui/system";
 import {Theme} from "@mui/material/styles/createTheme";
 import FileInputButton from "../components/Admin/FileInputButton";
 import {Link} from "react-router-dom";
+import MarkdownTextField from "../components/MarkdownTextField";
 
 const DataDivider = styled(Divider)`
   border-color: #D5C3B5;
@@ -266,9 +267,9 @@ const AdminPage = () => {
                                     <TextField label={"名前"} value={shopForm.display_name} id={"shop-display-name"}
                                                onChange={e => setShopForm({...shopForm, display_name: e.target.value})}
                                                sx={{width: "231px"}}/>
-                                    <TextField label={"メッセージ"} value={shopForm.message} helperText={"Markdownが使用可能です"} id={"shop-message"}
+                                    <MarkdownTextField label={"メッセージ"} value={shopForm.message} helperText={"Markdownが使用可能です"} id={"shop-message"}
                                                onChange={e => setShopForm({...shopForm, message: e.target.value})}
-                                               fullWidth multiline inputProps={{style: {fontFamily: "Consolas, monaco, monospace", fontSize: "0.8rem", lineHeight: "180%"}}}/>
+                                               fullWidth/>
                                 </Stack>
                                 <Button variant={"contained"} disabled={!isShopChanged(shopForm)}
                                         onClick={handleUpdateShop}>

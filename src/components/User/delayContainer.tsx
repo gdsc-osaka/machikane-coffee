@@ -2,6 +2,7 @@ import {Button, Card, Stack, Typography} from "@mui/material";
 import React from "react";
 import {useCookies} from "react-cookie";
 import {Shop} from "../../modules/redux/shop/types";
+import MyMarkdown from "../MyMarkdown";
 
 
 type Props = {
@@ -27,9 +28,9 @@ const DelayContainer = (props: Props) => {
                 <Typography variant={"h6"} color={'#410002'}>
                     {delayMin > 0 ? `提供が${delayMin}分遅延しています` : "提供が遅延しています"}
                 </Typography>
-                <Typography variant={"body1"} color={'#51453A'}>
+                <MyMarkdown>
                     {shop.emg_message}
-                </Typography>
+                </MyMarkdown>
                 {/* <button style={buttonStyle} onClick={props.buttonClicked}>今後表示しない</button> */}
                 <Stack alignItems={"flex-end"}>
                     <Button
