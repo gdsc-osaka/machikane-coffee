@@ -87,7 +87,7 @@ const Header = () => {
         {auth.role === "admin" && shopId === undefined &&
             <Button variant="text" onClick={() => navigate(`/admin`)}>管理</Button>
         }
-        {auth.role === "admin" && shopId !== undefined &&
+        {auth.role === "admin" && shopId !== undefined && !["admin", "login"].includes(shopId) &&
               <React.Fragment>
                 <Button variant="text" onClick={() => navigate(`/${shopId}/admin`)}>レジ</Button>
                 <Button variant="text" onClick={() => navigate(`/${shopId}/admin/barista`)}>ドリップ係</Button>

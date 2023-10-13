@@ -222,7 +222,7 @@ const AdminPage = () => {
     return <React.Fragment>
         <Card sx={{border: "1px solid #837468", boxShadow: "none", margin: "1rem"}}>
             <Stack direction={"row"} minHeight={"600px"}>
-                <Stack width={"250px"}>
+                <Stack minWidth={"230px"}>
                     <ViewLabel icon={StorefrontOutlinedIcon} label={"店舗"}/>
                     <AddTextButton addLabel={"店舗を追加する"} onClickAdd={handleAddShop}/>
                     {shops.map(shop => <SelectionItem label={shop.id}
