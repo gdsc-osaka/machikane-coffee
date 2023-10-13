@@ -25,37 +25,37 @@ const App = () => {
                 <AuthProvider>
                     <CssBaseline/>
                     <div style={{display: 'flex', minHeight: '100vh', flexDirection: "column"}}>
-                        <Header/>
-                        <main style={{flexGrow: 1}}>
                             <BrowserRouter>
-                                <Routes>
-                                    <Route path={"/"} Component={RootPage}/>
-                                    <Route path={"/login"} Component={LogInPage}/>
-                                    <Route path={"/admin"} element={
-                                        <AuthGuard role={"admin"}>
-                                            <AdminPage/>
-                                        </AuthGuard>
-                                    }/>
-                                    <Route path={"/:shopId"}>
-                                        <Route path={""} Component={OrderPage}/>
-                                        <Route path={":orderIndex"} Component={OrderPage}/>
-                                        <Route path={"timer"} Component={Timer}/>
-                                        <Route path={"admin"}>
-                                            <Route path={""} element={
-                                                <AuthGuard role={"admin"}>
-                                                    <AdminCashierPage/>
-                                                </AuthGuard>}/>
-                                            <Route path={"barista"} element={
-                                                <AuthGuard role={"admin"}>
-                                                    <AdminBaristaPage/>
-                                                </AuthGuard>}/>
+                                <Header/>
+                                <main style={{flexGrow: 1}}>
+                                    <Routes>
+                                        <Route path={"/"} Component={RootPage}/>
+                                        <Route path={"/login"} Component={LogInPage}/>
+                                        <Route path={"/admin"} element={
+                                            <AuthGuard role={"admin"}>
+                                                <AdminPage/>
+                                            </AuthGuard>
+                                        }/>
+                                        <Route path={"/:shopId"}>
+                                            <Route path={""} Component={OrderPage}/>
+                                            <Route path={":orderIndex"} Component={OrderPage}/>
+                                            <Route path={"timer"} Component={Timer}/>
+                                            <Route path={"admin"}>
+                                                <Route path={""} element={
+                                                    <AuthGuard role={"admin"}>
+                                                        <AdminCashierPage/>
+                                                    </AuthGuard>}/>
+                                                <Route path={"barista"} element={
+                                                    <AuthGuard role={"admin"}>
+                                                        <AdminBaristaPage/>
+                                                    </AuthGuard>}/>
+                                            </Route>
                                         </Route>
-                                    </Route>
-                                    <Route path={"*"} Component={NotFoundPage}/>
-                                </Routes>
+                                        <Route path={"*"} Component={NotFoundPage}/>
+                                    </Routes>
+                                </main>
+                                <Footer/>
                             </BrowserRouter>
-                        </main>
-                        <Footer/>
                     </div>
                 </AuthProvider>
             </ThemeProvider>

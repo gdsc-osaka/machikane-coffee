@@ -1,13 +1,15 @@
 import React from "react";
-import { Image } from "@mui/icons-material";
-import { useLocation } from "react-router-dom";
-import {useParams} from "react-router-dom";
-import { Button } from "@mui/material";
+import {matchPath, useLocation, useNavigate} from "react-router-dom";
+import {Button, ButtonBase} from "@mui/material";
+import {useAuth} from "../../AuthGuard";
 
 const Header = () => {
+  const { pathname } = useLocation()
+  const navigate = useNavigate();
+  const auth = useAuth();
 
-  const params = useParams();
-  const shopId = params.shopId ?? 'toyonaka';
+  const match =  matchPath({path: "/:shopId"}, pathname)
+  const shopId = match?.params.shopId;
   
   let titleText = "コーヒー愛好会";
   // const routerPath = useLocation().pathname;
@@ -26,8 +28,6 @@ const Header = () => {
   //     titleText = 'コーヒー愛好会';
   //     break;
   // }
-  const adminPath = "/" + shopId + "/admin/cashier"
-  const baristaPath = "/" + shopId + "/admin/barista"
 
   const imageStyle = {
     width: '45px',
@@ -71,17 +71,29 @@ const Header = () => {
   }
 
 
+  const handleLogoClick = () => {
+    navigate("/");
+  }
 
     return (
       <div style={headerStyle}>
-        <div style={logoStyle}>
-          <img style={imageStyle} src="/images/logo.png" />
-          <div style={fontStyle}>{titleText}</div>
-        </div>
+        <ButtonBase onClick={handleLogoClick} sx={{borderRadius: "10px"}}>
+          <div style={logoStyle}>
+            <img style={imageStyle} src="/images/logo.png" />
+            <div style={fontStyle}>{titleText}</div>
+          </div>
+        </ButtonBase>
         <div style={buttonsStyle}>
-          <Button variant="text" href={adminPath}>管理画面</Button>
-          <Button variant="text" href={baristaPath}>ドリップ係画面</Button>
-        </div>
+        {auth.role === "admin" && shopId === undefined &&
+            <Button variant="text" onClick={() => navigate(`/admin`)}>管理</Button>
+        }
+        {auth.role === "admin" && shopId !== undefined &&
+              <React.Fragment>
+                <Button variant="text" onClick={() => navigate(`/${shopId}/admin`)}>レジ</Button>
+                <Button variant="text" onClick={() => navigate(`/${shopId}/admin/barista`)}>ドリップ係</Button>
+              </React.Fragment>
+        }
+      </div>
       </div>
     );
   };
