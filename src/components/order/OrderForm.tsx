@@ -1,10 +1,9 @@
 import styled from "styled-components";
-import {Box, Button, Grid, Stack, Typography} from "@mui/material";
+import {Grid, Stack, Typography} from "@mui/material";
 import {Product} from "../../modules/redux/product/types";
 import ProductCounter from "./ProductCounter";
 import {ProductAmount} from "../../modules/redux/order/types";
 import SubTotal from "./SubTotal";
-import Container from "@mui/material/Container";
 
 type OrderFormProps = {
     products: Product[],

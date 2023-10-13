@@ -1,6 +1,16 @@
-import React from "react";
+import React, {useState} from "react";
 import {useLocation, useNavigate} from "react-router-dom";
-import {Button, ButtonBase, IconButton, Stack, useMediaQuery, useTheme} from "@mui/material";
+import {
+    Button,
+    ButtonBase,
+    Dialog,
+    DialogActions,
+    DialogTitle,
+    IconButton,
+    Stack,
+    useMediaQuery,
+    useTheme
+} from "@mui/material";
 import {useAuth} from "../../AuthGuard";
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import {auth} from "../../modules/firebase/firebase";
@@ -11,6 +21,8 @@ import CoffeeRoundedIcon from '@mui/icons-material/CoffeeRounded';
 import StorageRoundedIcon from '@mui/icons-material/StorageRounded';
 
 const Header = () => {
+    const [open, setOpen] = useState(false);
+
     const {pathname} = useLocation()
     const navigate = useNavigate();
     const authState = useAuth();
@@ -59,6 +71,7 @@ const Header = () => {
     }
 
     const handleSignOut = () => {
+        setOpen(false);
         signOut(auth)
             .then(() => {
                 toast('ログアウトしました')
@@ -78,6 +91,10 @@ const Header = () => {
 
     const naviBaristaPage = () => {
         navigate(`/${shopId}/admin/barista`)
+    }
+
+    const handleClose = () => {
+        setOpen(false);
     }
 
     return (
@@ -117,11 +134,24 @@ const Header = () => {
                             <Button variant="text" onClick={naviAdminPage}>管理</Button>)
                 }
                 {authState.role !== 'unknown' &&
-                    <IconButton onClick={handleSignOut}>
+                    <IconButton onClick={() => setOpen(true)}>
                         <LogoutRoundedIcon sx={{color: theme.palette.primary.main}}/>
                     </IconButton>
                 }
             </Stack>
+            <Dialog open={open} onClose={handleClose}>
+                <DialogTitle>
+                    ログアウトしますか？
+                </DialogTitle>
+                <DialogActions>
+                    <Button onClick={handleClose}>
+                        キャンセル
+                    </Button>
+                    <Button onClick={handleSignOut}>
+                        ログアウト
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Stack>
     );
 };
