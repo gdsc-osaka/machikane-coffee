@@ -80,7 +80,7 @@ const Header = () => {
         </div>
         <div style={buttonsStyle}>
           <Button variant="text" href={adminPath}>管理画面</Button>
-          <Button variant="text" href={baristaPath}>ドリップ</Button>
+          <Button variant="text" href={baristaPath}>ドリップ係画面</Button>
         </div>
       </div>
     );
