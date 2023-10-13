@@ -17,7 +17,7 @@ const RootPage = () => {
     }, [dispatch, shopStatus]);
 
     return <Stack spacing={2} sx={{padding: "1rem"}}>
-        <Typography variant={"h4"}>
+        <Typography variant={"h4"} fontWeight={"bold"}>
             店舗一覧
         </Typography>
         <Stack spacing={1}>

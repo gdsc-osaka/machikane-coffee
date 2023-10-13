@@ -13,7 +13,7 @@ const Footer = () => {
         <Container sx={{backgroundColor: '#FFF8F5', padding: '1.5rem', marginTop: 'auto'}}>
             <Stack spacing={1}>
                 <Stack direction={"row"} justifyContent={"space-between"}>
-                    <Typography variant={"h6"}>
+                    <Typography variant={"h6"} fontWeight={"bold"}>
                         コーヒー愛好会
                     </Typography>
                     <Stack direction={"row"}>

@@ -32,7 +32,7 @@ const ProductCounter = (props: ProductCounterType) => {
                     <IconButton onClick={onDecrease} disabled={amount === 0}>
                         <Remove/>
                     </IconButton>
-                    <Typography variant={"h4"}>
+                    <Typography variant={"h4"} fontWeight={"bold"}>
                         {amount}
                     </Typography>
                     <IconButton onClick={onIncrease}>
