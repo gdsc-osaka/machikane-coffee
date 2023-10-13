@@ -8,7 +8,7 @@ const useCountDownInterval = (
 ) => {
     useEffect(() => {
         const countDownInterval = setInterval(() => {
-            if (countTime === 0) {
+            if (countTime && countTime <= 0) {
                 clearInterval(countDownInterval)
             }
             if (countTime && countTime > 0) {
