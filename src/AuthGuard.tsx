@@ -11,10 +11,9 @@ type AuthState = {
     role: Role
 }
 
-const AuthGuard = (props: {children?: ReactNode}) => {
+export const AuthProvider = (props: {children?: ReactNode}) => {
     const [authState, setAuthState] = useState<AuthState>({loading: true, role: "unknown"});
 
-    const navigate = useNavigate();
     const params = useParams();
     const shopId = params.shopId;
     
@@ -39,17 +38,33 @@ const AuthGuard = (props: {children?: ReactNode}) => {
                 loading: false,
                 role: role
             });
-
-            if (role !== "admin") {
-                // TODO: 同一階層での遷移 '../' が機能しない. もっと綺麗な書き方に変える(shopIdに依存しない)
-                navigate(`/${shopId}/user`);
-            }
         });
-    }, [navigate, shopId])
+    }, [shopId])
 
     return <AuthContext.Provider value={authState}>
         {props.children}
     </AuthContext.Provider>
+}
+
+const AuthGuard = (props: {
+    role: Role,
+    children: ReactNode
+}) => {
+    const {role, children} = props;
+
+    const auth = useAuth();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (!auth.loading && auth.role !== role) {
+            // ルートにリダイレクト
+            navigate('/');
+        }
+    }, [role, auth, navigate]);
+
+    return <>
+        {children}
+    </>
 }
 
 export const useAuth = () => {
