@@ -2,7 +2,7 @@ import {Button, Dialog, DialogActions, DialogTitle, Divider, Stack, TextField, T
 import React, {useEffect, useState} from "react";
 import {RootState, useAppDispatch} from "../modules/redux/store";
 import {selectOrderById, selectOrderUnsubscribe, streamOrder} from "../modules/redux/order/ordersSlice";
-import {useLocation, useNavigate, useParams} from "react-router-dom";
+import {useParams, useSearchParams} from "react-router-dom";
 import {useSelector} from "react-redux";
 import {Order} from "../modules/redux/order/types";
 import StickyNote from "../components/StickyNote";
@@ -14,17 +14,19 @@ import {ShopStatus} from "../modules/redux/shop/types";
 import {selectShopById, selectShopStatus, streamShop} from "../modules/redux/shop/shopsSlice";
 import DelayContainer from "../components/User/delayContainer";
 
+// queryParamで使うキー
+const orderIndexParamKey = 'order';
+
 const OrderPage = () => {
     const [orderIndex, setOrderIndex] = useState<string>("");
     const [orderId, setOrderId] = useState("");
     const [openDialog, setOpenDialog] = useState(false);
 
     const dispatch = useAppDispatch();
-    const navi = useNavigate();
-    const location = useLocation();
     const params = useParams();
     const shopId = params.shopId ?? '';
-    const paramOrderIndex = params.orderIndex ?? '';
+    const [searchParams, setSearchParams] = useSearchParams();
+    const paramOrderIndex = searchParams.get(orderIndexParamKey);
     const order = useSelector((state: RootState) => selectOrderById(state, orderId));
     const unsubscribe = useSelector(selectOrderUnsubscribe);
 
@@ -78,11 +80,7 @@ const OrderPage = () => {
                 .then((payload) => {
                     setOrderId(payload.order.id);
 
-                    if (location.pathname.endsWith(`${shopId}/`)) {
-                        navi(`${orderIndex}`);
-                    } else {
-                        navi(`/${shopId}/${orderIndex}`);
-                    }
+                    setSearchParams({[orderIndexParamKey]: orderIndex});
                 })
                 .catch((e) => {
                     setOpenDialog(true);

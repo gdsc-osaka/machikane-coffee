@@ -38,7 +38,6 @@ const App = () => {
                                         }/>
                                         <Route path={"/:shopId"}>
                                             <Route path={""} Component={OrderPage}/>
-                                            <Route path={":orderIndex"} Component={OrderPage}/>
                                             <Route path={"timer"} Component={Timer}/>
                                             <Route path={"admin"}>
                                                 <Route path={""} element={
