@@ -1,5 +1,6 @@
 import Markdown, {Options} from "react-markdown";
 import {Divider, Link, Typography} from "@mui/material";
+import UnderlineDivider from "./UnderlineDivider";
 
 const MyMarkdown = (props: {children: string | null | undefined, options?: Readonly<Options>}) => {
     return <Markdown {...props} components={{
@@ -8,7 +9,7 @@ const MyMarkdown = (props: {children: string | null | undefined, options?: Reado
 
             return <Typography variant={"h4"} fontWeight={"bold"} sx={{marginTop: "0.5rem"}}>
                 {children}
-                <Divider sx={{margin: "0 0.5rem"}}/>
+                <UnderlineDivider/>
             </Typography>
         },
         h2(props) {
@@ -16,7 +17,7 @@ const MyMarkdown = (props: {children: string | null | undefined, options?: Reado
 
             return <Typography variant={"h5"} fontWeight={"bold"} sx={{marginTop: "0.5rem"}}>
                 {children}
-                <Divider sx={{margin: "0.5rem 0"}}/>
+                <UnderlineDivider/>
             </Typography>
         },
         h3(props) {

@@ -1,4 +1,4 @@
-import {Button, Card, Dialog, DialogActions, DialogTitle, Divider, Stack, TextField, Typography} from "@mui/material";
+import {Button, Dialog, DialogActions, DialogTitle, Divider, Stack, TextField, Typography} from "@mui/material";
 import React, {useEffect, useState} from "react";
 import {RootState, useAppDispatch} from "../modules/redux/store";
 import {selectOrderById, selectOrderUnsubscribe, streamOrder} from "../modules/redux/order/ordersSlice";
@@ -13,12 +13,13 @@ import {ShopStatus} from "../modules/redux/shop/types";
 import {
     fetchShops,
     selectAllShops,
-    selectShopById,
+    selectShopById, selectShopDelaySeconds,
     selectShopStatus,
     streamShop
 } from "../modules/redux/shop/shopsSlice";
 import DelayContainer from "../components/User/delayContainer";
 import MyMarkdown from "src/components/MyMarkdown";
+import {MotionList, MotionListItem} from "../components/motion/motionList";
 
 // queryParamで使うキー
 const orderIndexParamKey = 'order';
@@ -46,18 +47,17 @@ const OrderPage = () => {
     const paramOrderIndex = searchParams.get(orderIndexParamKey);
     const order = useSelector((state: RootState) => selectOrderById(state, orderId));
     const unsubscribe = useSelector(selectOrderUnsubscribe);
+    const delaySec = useSelector((state: RootState) => selectShopDelaySeconds(state, shopId));
 
     const products = useSelector(selectAllProduct);
-    const productStatus = useSelector(selectProductStatus);
+    useSelector(selectProductStatus);
     const shop = useSelector((state: RootState) => selectShopById(state, shopId));
     const allShops = useSelector(selectAllShops);
     const shopStatus = useSelector(selectShopStatus);
 
     useEffect(() => {
-        if (productStatus == "idle" || productStatus == "failed") {
-            dispatch(fetchProducts(shopId));
-        }
-    }, [dispatch, productStatus, shopId]);
+        dispatch(fetchProducts(shopId));
+    }, [dispatch, shopId]);
 
     useEffect(() => {
         if (shopStatus == "idle" || shopStatus == "failed") {
@@ -144,24 +144,37 @@ const OrderPage = () => {
     }
 
     return <Stack spacing={3} padding={"1rem"}>
-        {shop !== undefined && <DelayContainer shop={shop}/>}
         <Typography variant={"h4"} fontWeight={"bold"}>
+            {shop !== undefined && shop.display_name}
+        </Typography>
+        {shop !== undefined && <DelayContainer shop={shop} delaySec={delaySec}/>}
+        <Typography variant={"h5"} fontWeight={"bold"}>
             注文照会
         </Typography>
-        <Stack direction={"row"} spacing={1} paddingBottom={"1rem"}>
+        <Stack direction={"row"} spacing={1}>
             <TextField id={"order-index"} variant={"filled"}
                        label={"注文番号"} // helperText={"番号札に記入された数字を入力してください"}
-                       type={"number"} required
+                       type={"number"} required fullWidth
                        value={orderIndex} onChange={handleOrderIndex} sx={{minWidth: "17rem"}}/>
-            <Button variant={"contained"} sx={{width: "100%"}}
+            <Button variant={"contained"} sx={{minWidth: "100px"}}
                     disabled={orderIndex === undefined} onClick={() => handleSubmit(orderIndex)}>
                 確認
             </Button>
         </Stack>
-        {(order !== undefined && shop !== undefined) && <OrderCard order={order} products={products} shopStatus={shop.status} delaySec={0}/>}
-        {shop !== undefined && shop.message !== '' &&
-            <ShopMessage message={shop.message}/>
-        }
+        <MotionList layoutId={"order-page-stack"}>
+            {(order !== undefined && shop !== undefined) &&
+                <MotionListItem key={"order-card"}>
+                    <div style={{paddingTop: "1rem"}}>
+                        <OrderCard order={order} products={products} shopStatus={shop.status} delaySec={order.delay_seconds + delaySec}/>
+                    </div>
+                </MotionListItem>
+            }
+            {shop !== undefined && shop.message !== '' &&
+                <MotionListItem key={"shop-message"}>
+                    <ShopMessage message={shop.message}/>
+                </MotionListItem>
+            }
+        </MotionList>
         <Dialog open={dialogState.open} onClose={handleClose}>
             <DialogTitle>
                 {dialogState.title}
@@ -176,7 +189,7 @@ const OrderPage = () => {
 }
 
 const ShopMessage = (props: {message: string}) => {
-    return <Stack sx={{boxShadow: "none", padding: "1rem 0.5rem", paddingBottom: "2rem"}}>
+    return <Stack sx={{boxShadow: "none", padding: "1rem 0", paddingBottom: "2rem"}}>
         <MyMarkdown>
             {props.message}
         </MyMarkdown>
@@ -266,8 +279,20 @@ const OrderCard = (props: {order: Order, products: Product[], shopStatus: ShopSt
             <div style={{marginLeft: "-1rem", marginRight: "-1rem"}}>
                 <Divider sx={{borderBottomStyle: "dotted"}}/>
             </div>
+            {shopStatus === "pause_ordering" &&
+                <Stack>
+                    <Typography variant={"caption"}>
+                        遅延
+                    </Typography>
+                    <Stack sx={{minHeight: "38px"}} justifyContent={"center"} spacing={1}>
+                        <Typography variant={"body1"}>
+                            全部で約{Math.floor(delaySec / 60)}分遅延しています
+                        </Typography>
+                    </Stack>
+                </Stack>
+            }
             {/*見出しとTypographyの間隔が、通知設定の物と合わないので仕方なくこの書き方*/}
-            <Stack spacing={productTexts.length == 1 ? 0 : 1}>
+            <Stack spacing={productTexts.length === 1 ? 0 : 1}>
                 <Typography variant={"caption"}>
                     商品
                 </Typography>
