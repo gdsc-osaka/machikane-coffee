@@ -359,7 +359,7 @@ export const selectMaxCompleteAt = (state: RootState): Date => {
     }
     const getTrueCompleteAt = (a: Order) => a.complete_at.toDate().addSeconds(a.delay_seconds);
     // 完成時間を昇順でソート
-    orders.sort((a, b) => getTrueCompleteAt(a).getTime() - getTrueCompleteAt(b).getTime());
+    orders.sort((a, b) => getTrueCompleteAt(b).getTime() - getTrueCompleteAt(a).getTime());
     return getTrueCompleteAt(orders[0]);
 }
 /**

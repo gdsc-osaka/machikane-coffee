@@ -160,6 +160,7 @@ const ShopManager = () => {
                     value={emgMsg}
                     onChange={(e) => setEmgMsg(e.target.value)}
                     sx={{width: "100%"}}
+                    multiline
                 />
                 <Expanded>
                     <Typography variant={"h5"} sx={{fontWeight: "bold"}}>

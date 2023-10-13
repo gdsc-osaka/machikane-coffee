@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, {useEffect, useState} from "react";
 import { selectMaxCompleteAt, selectOrderStatus, streamOrders } from "../modules/redux/order/ordersSlice";
 import { useSelector } from "react-redux";
 import { RootState, useAppDispatch } from "../modules/redux/store";
@@ -7,6 +7,7 @@ import "../components/Timer/timer.css";
 import { useParams } from "react-router-dom";
 import { selectShopStatus, streamShop } from "src/modules/redux/shop/shopsSlice";
 import { fetchProducts, selectProductStatus } from "src/modules/redux/product/productsSlice";
+import {useCountDownInterval} from "../modules/hooks/useCountDownInterval";
 
 const Timer = () => {
   const selector = useSelector((state: RootState) => state);
@@ -19,33 +20,34 @@ const Timer = () => {
   const orderStatus = useSelector(selectOrderStatus);
   const productStatus = useSelector(selectProductStatus);
 
-  const now: Date = new Date();
-  const orderWaitTime: number = expectedEndTime.getTime() - now.getTime();
-  let orderWaitHour: number, orderWaitMinute: number;
-  if (orderWaitTime > 0) {
-    orderWaitHour = Math.floor(orderWaitTime / (1000 * 60 * 60));
-    orderWaitMinute = Math.floor(orderWaitTime / (1000 * 60)) % 60;
-  } else {
-    orderWaitHour = 0;
-    orderWaitMinute = 0;
-  }
+  const [waitCount, setWaitCount] = useState(0);
+  useCountDownInterval(waitCount, setWaitCount);
+
+  useEffect(() => {
+      const orderWaitTime: number = expectedEndTime.getTime() - new Date().getTime();
+      setWaitCount(Math.floor(orderWaitTime / 1000));
+  }, [expectedEndTime])
+
+    const positiveWaitCount = waitCount > 0 ? waitCount : 0;
+    const waitMin = Math.floor(positiveWaitCount / 60);
+    const waitHou = Math.floor(waitMin / 60);
 
   // データを取得
   useEffect(() => {
       if (shopStatus === "idle" || shopStatus === "failed") {
           dispatch(streamShop(shopId));
       }
-  }, [dispatch, shopStatus]);
+  }, [dispatch, shopStatus, shopId]);
   useEffect(() => {
       if (orderStatus === "idle" || orderStatus === "failed") {
           dispatch(streamOrders(shopId));
       }
-  }, [dispatch, orderStatus]);
+  }, [dispatch, orderStatus, shopId]);
   useEffect(() => {
       if (productStatus === "idle" || productStatus === "failed") {
           dispatch(fetchProducts(shopId));
       }
-  }, [dispatch, productStatus]);
+  }, [dispatch, productStatus, shopId]);
 
   return (
     <div>
@@ -61,8 +63,8 @@ const Timer = () => {
       <TimeDisplay
         className="waiting-time"
         time={{
-          hour: orderWaitHour,
-          min: orderWaitMinute,
+          hour: waitHou,
+          min: waitMin % 60,
         }}
         delimiter=":"
         fontSize="7.8em"

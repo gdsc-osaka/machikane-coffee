@@ -128,8 +128,9 @@ const OrderCard = (props: {order: Order, products: Product[], shopStatus: ShopSt
     const {order, products, shopStatus, delaySec} = props;
     const untilTime = order.complete_at.toDate().getTime() - new Date().getTime();
     const until = new Date(untilTime);
+    const untilSec = untilCount % 60;
     const untilMin = Math.floor(untilCount / 60);
-    const untilSec = untilCount - (untilMin * 60);
+    const untilHou = Math.floor(untilMin / 60);
     const completeRate = untilTime / (order.complete_at.toDate().getTime() - order.created_at.toDate().getTime());
     const productTexts = Object.keys(order.product_amount).map(key => `${products.find(e => e.id == key)?.display_name ?? '???'} × ${order.product_amount[key]}`);
     const fontColor = shopStatus === "pause_ordering" ? "#410002" : "#201B16";
@@ -149,6 +150,15 @@ const OrderCard = (props: {order: Order, products: Product[], shopStatus: ShopSt
                     </Typography>
                     {untilCount > 0 ?
                         <Stack direction={"row"} spacing={0.7} alignItems={"flex-end"}>
+                            {untilHou > 0 &&
+                                <React.Fragment>
+                                    <Typography variant={"h3"} sx={{fontWeight: "bold"}} color={fontColor}>
+                                        {untilHou}
+                                    </Typography>
+                                    <Typography variant={"h4"} sx={{paddingBottom: "0.25rem", fontWeight: "800"}} color={fontColor}>
+                                        時間
+                                    </Typography>
+                                </React.Fragment>}
                             {untilMin > 0 &&
                                 <React.Fragment>
                                     <Typography variant={"h3"} sx={{fontWeight: "bold"}} color={fontColor}>
@@ -197,18 +207,18 @@ const OrderCard = (props: {order: Order, products: Product[], shopStatus: ShopSt
                     </Typography>)}
                 </Stack>
             </Stack>
-            <Stack>
-                <Typography variant={"caption"}>
-                    通知設定
-                </Typography>
-                <Stack direction={"row"} justifyContent={"space-between"} alignItems={"center"}
-                       sx={{height: "38px"}}>
-                    <Typography variant={"body1"}>
-                        商品完成時に通知を受け取る
-                    </Typography>
-                    <M3Switch/>
-                </Stack>
-            </Stack>
+            {/*<Stack>*/}
+            {/*    <Typography variant={"caption"}>*/}
+            {/*        通知設定*/}
+            {/*    </Typography>*/}
+            {/*    <Stack direction={"row"} justifyContent={"space-between"} alignItems={"center"}*/}
+            {/*           sx={{height: "38px"}}>*/}
+            {/*        <Typography variant={"body1"}>*/}
+            {/*            商品完成時に通知を受け取る*/}
+            {/*        </Typography>*/}
+            {/*        <M3Switch/>*/}
+            {/*    </Stack>*/}
+            {/*</Stack>*/}
         </Stack>
         <Stack alignItems={"end"}>
             <Divider sx={{borderColor: "#D5C3B5", width: "100%", marginBottom: "-0.8px"}}/>

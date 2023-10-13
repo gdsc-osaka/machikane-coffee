@@ -57,7 +57,7 @@ const OrderItem = (props: {
 
     const [untilSec, setUntilSec] = useState(0);
     useCountDownInterval(untilSec, setUntilSec);
-    const untilMin = Math.floor(untilSec / 60);
+    const untilMin = Math.floor(untilSec / 60) % 60;
 
     useEffect(() => {
         const untilSec = Math.floor((order.complete_at.toDate().getTime() - new Date().getTime()) / 1000);

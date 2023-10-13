@@ -238,15 +238,20 @@ const AdminPage = () => {
                     {selectedShop !== undefined &&
                         <React.Fragment>
                             <Stack padding={"1.5rem"} spacing={2} alignItems={"flex-start"}>
-                                <Stack direction={"row"} spacing={1} paddingBottom={"1rem"}>
+                                <Stack direction={"row"} spacing={2} paddingBottom={"1rem"}>
                                     <LinkText>
                                         <Link to={`/${selectedShop.id}/admin`}>
-                                            レジページ
+                                            レジ
                                         </Link>
                                     </LinkText>
                                     <LinkText>
                                         <Link to={`/${selectedShop.id}/admin/barista`}>
-                                            ドリップページ
+                                            ドリップ
+                                        </Link>
+                                    </LinkText>
+                                    <LinkText>
+                                        <Link to={`/${selectedShop.id}/timer`}>
+                                            タイマー
                                         </Link>
                                     </LinkText>
                                 </Stack>
