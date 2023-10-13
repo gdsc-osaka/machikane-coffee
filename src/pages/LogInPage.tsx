@@ -32,23 +32,14 @@ export default function LogInPage() {
     const password = (data.get("password") ?? "") as string;
 
     signInWithEmailAndPassword(auth, email, password)
-      .then(async (userCredential) => {
-        // Signed in
-        const user = userCredential.user;
-
-        const token = await user.getIdTokenResult();
-
-        if (token.claims.admin === true) {
-          navigate("/admin");
-        } else {
-          navigate('/');
-        }
-      })
-      .catch((error) => {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        // console.log({ errorCode, errorMessage });
-      });
+        .then(result => {
+          result.user.getIdTokenResult()
+              .then(tokenResult => {
+                if (tokenResult.claims.admin) {
+                  toast("管理者としてログインしました");
+                }
+              })
+        });
   };
 
   return (

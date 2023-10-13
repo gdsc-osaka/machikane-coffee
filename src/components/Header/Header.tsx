@@ -1,20 +1,26 @@
 import React from "react";
-import {matchPath, useLocation, useNavigate} from "react-router-dom";
-import {Button, ButtonBase, IconButton, Stack, useTheme} from "@mui/material";
+import {useLocation, useNavigate} from "react-router-dom";
+import {Button, ButtonBase, IconButton, Stack, useMediaQuery, useTheme} from "@mui/material";
 import {useAuth} from "../../AuthGuard";
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import {auth} from "../../modules/firebase/firebase";
 import toast from "react-hot-toast";
 import {signOut} from "firebase/auth";
+import CurrencyYenRoundedIcon from '@mui/icons-material/CurrencyYenRounded';
+import CoffeeRoundedIcon from '@mui/icons-material/CoffeeRounded';
+import StorageRoundedIcon from '@mui/icons-material/StorageRounded';
 
 const Header = () => {
     const {pathname} = useLocation()
     const navigate = useNavigate();
     const authState = useAuth();
     const theme = useTheme()
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-    const match = matchPath({path: "/:shopId"}, pathname)
-    const shopId = match?.params.shopId;
+
+    const paths = pathname.split('/');
+    const shopId = paths[1];
+    console.log(paths);
 
     let titleText = "コーヒー愛好会";
     // const routerPath = useLocation().pathname;
@@ -62,6 +68,18 @@ const Header = () => {
             });
     }
 
+    const naviAdminPage = () => {
+        navigate(`/admin`)
+    }
+
+    const naviAdminCashierPage = () => {
+        navigate(`/${shopId}/admin`);
+    }
+
+    const naviBaristaPage = () => {
+        navigate(`/${shopId}/admin/barista`)
+    }
+
     return (
         <Stack padding={"15px"} direction={"row"} justifyContent={'space-between'} alignItems={"center"}
                sx={{borderBottom: 'solid #837468 1px'}}>
@@ -71,15 +89,32 @@ const Header = () => {
                     <div style={fontStyle}>{titleText}</div>
                 </Stack>
             </ButtonBase>
-            <Stack direction={"row"} spacing={0.5}>
-                {authState.role === 'admin' &&shopId === undefined &&
-                    <Button variant="text" onClick={() => navigate(`/admin`)}>管理</Button>
-                }
-                {authState.role === 'admin' &&shopId !== undefined && !["admin", "login"].includes(shopId) &&
+            <Stack direction={"row"} spacing={0}>
+                {authState.role === 'admin' && shopId !== '' && !["admin", "login"].includes(shopId) &&
                     <React.Fragment>
-                        <Button variant="text" onClick={() => navigate(`/${shopId}/admin`)}>レジ</Button>
-                        <Button variant="text" onClick={() => navigate(`/${shopId}/admin/barista`)}>ドリップ係</Button>
+                        {isMobile ?
+                            <IconButton onClick={naviAdminCashierPage}>
+                                <CurrencyYenRoundedIcon sx={{color: theme.palette.primary.main}}/>
+                            </IconButton>
+                            :
+                            <Button variant="text" onClick={naviAdminCashierPage}>レジ</Button>
+                        }
+                        {isMobile ?
+                            <IconButton onClick={naviBaristaPage}>
+                                <CoffeeRoundedIcon sx={{color: theme.palette.primary.main}}/>
+                            </IconButton>
+                            :
+                            <Button variant="text" onClick={naviBaristaPage}>ドリップ</Button>
+                        }
                     </React.Fragment>
+                }
+                {authState.role === 'admin' &&
+                    (isMobile ?
+                            <IconButton onClick={naviAdminPage}>
+                                <StorageRoundedIcon sx={{color: theme.palette.primary.main}}/>
+                            </IconButton>
+                            :
+                            <Button variant="text" onClick={naviAdminPage}>管理</Button>)
                 }
                 {authState.role !== 'unknown' &&
                     <IconButton onClick={handleSignOut}>

@@ -10,7 +10,8 @@ import {
     Divider,
     InputAdornment,
     Stack,
-    Typography
+    Typography,
+    Link as LinkText
 } from "@mui/material";
 import {useAppDispatch} from "../modules/redux/store";
 import {useSelector} from "react-redux";
@@ -34,6 +35,7 @@ import {
 import {SxProps} from "@mui/system";
 import {Theme} from "@mui/material/styles/createTheme";
 import FileInputButton from "../components/Admin/FileInputButton";
+import {Link} from "react-router-dom";
 
 const DataDivider = styled(Divider)`
   border-color: #D5C3B5;
@@ -221,8 +223,8 @@ const AdminPage = () => {
 
     return <React.Fragment>
         <Card sx={{border: "1px solid #837468", boxShadow: "none", margin: "1rem", overflow: 'auto'}}>
-            <Stack direction={"row"} minHeight={"600px"}>
-                <Stack minWidth={"230px"}>
+            <Stack direction={"row"}>
+                <Stack minWidth={"14rem"}>
                     <ViewLabel icon={StorefrontOutlinedIcon} label={"店舗"}/>
                     <AddTextButton addLabel={"店舗を追加する"} onClickAdd={handleAddShop}/>
                     {shops.map(shop => <SelectionItem label={shop.id}
@@ -230,11 +232,24 @@ const AdminPage = () => {
                                                       onClick={() => handleClickShop(shop.id)}/>)}
                 </Stack>
                 <DataDivider orientation={"vertical"} flexItem/>
-                <Stack width={"100%"}>
+                {/*FIXME innerWidth参照で幅を変えてるのを直す 子の幅を親の幅に合わせたいが, overflow autoとdisplay inline-block だと上手くいかない (スクロールのためのこのcssは必要)*/}
+                <Stack sx={{display: "inline-block", width: window.innerWidth >= 1434 ? '100%' : 'auto'}}>
                     <ViewLabel icon={EditOutlinedIcon} label={selectedShop?.id ?? ''}/>
                     {selectedShop !== undefined &&
                         <React.Fragment>
                             <Stack padding={"1.5rem"} spacing={2} alignItems={"flex-start"}>
+                                <Stack direction={"row"} spacing={1} paddingBottom={"1rem"}>
+                                    <LinkText>
+                                        <Link to={`/${selectedShop.id}/admin`}>
+                                            レジページ
+                                        </Link>
+                                    </LinkText>
+                                    <LinkText>
+                                        <Link to={`/${selectedShop.id}/admin/barista`}>
+                                            ドリップページ
+                                        </Link>
+                                    </LinkText>
+                                </Stack>
                                 <TextField label={"名前"} value={shopForm.display_name} id={"shop-display-name"}
                                            onChange={e => setShopForm({...shopForm, display_name: e.target.value})}/>
                                 <Button variant={"contained"} disabled={!isShopChanged(shopForm)}
@@ -534,8 +549,8 @@ const ProductDataView = (props: {
         }
     }
 
-    return <Stack direction={"row"} height={"100%"}>
-        <Stack width={"400px"}>
+    return <Stack direction={"row"}>
+        <Stack minWidth={"18rem"}>
             <ViewLabel icon={CoffeeOutlinedIcon} label={"商品"}/>
             <AddTextButton addLabel={"商品を追加する"} onClickAdd={() => onAddProduct()}/>
             {products.map(prod => <SelectionItem label={prod.id}
@@ -546,7 +561,7 @@ const ProductDataView = (props: {
         <Stack width={"100%"}>
             <ViewLabel icon={EditOutlinedIcon} label={selectedProduct?.id ?? ''}/>
             {selectedProduct !== undefined &&
-                <Stack padding={"1rem 1.5rem"} spacing={3} alignItems={"flex-start"}>
+                <Stack padding={"1rem 1.5rem"} spacing={3} alignItems={"flex-start"} paddingBottom={"5rem"}>
                     <Stack direction={"row"} spacing={3}>
                         <Stack spacing={3} minWidth={500}>
                             <Typography variant={"h6"}>
@@ -585,7 +600,7 @@ const ProductDataView = (props: {
                                 </Stack>
                             </Stack>
                         </Stack>
-                        <Stack spacing={3} minWidth={"250px"}>
+                        <Stack spacing={3} minWidth={"260px"}>
                             <Typography variant={"h6"}>
                                 サムネイルを編集
                             </Typography>

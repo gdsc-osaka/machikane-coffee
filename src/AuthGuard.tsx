@@ -14,6 +14,7 @@ type AuthState = {
 export const AuthProvider = (props: {children?: ReactNode}) => {
     const [authState, setAuthState] = useState<AuthState>({loading: true, role: "unknown"});
 
+    const navigate = useNavigate();
     const params = useParams();
     const shopId = params.shopId;
     
@@ -38,6 +39,10 @@ export const AuthProvider = (props: {children?: ReactNode}) => {
                 loading: false,
                 role: role
             });
+
+            if (role === "admin") {
+                navigate("/admin");
+            }
         });
     }, [shopId])
 
