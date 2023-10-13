@@ -30,7 +30,7 @@ export const AuthProvider = (props: {children?: ReactNode}) => {
                     }
                 });
             } else {
-                role = "user";
+                role = "unknown";
             }
             
             // ログインしていない場合、userに遷移する

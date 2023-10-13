@@ -15,6 +15,7 @@ import AuthGuard, {AuthProvider} from "./AuthGuard";
 import RootPage from "./pages/RootPage";
 import AdminPage from "./pages/AdminPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import {Toaster} from "react-hot-toast";
 
 const App = () => {
     const theme = createTheme(themeOptions);
@@ -27,6 +28,7 @@ const App = () => {
                     <div style={{display: 'flex', minHeight: '100vh', flexDirection: "column"}}>
                             <BrowserRouter>
                                 <Header/>
+                                <Toaster/>
                                 <main style={{flexGrow: 1}}>
                                     <Routes>
                                         <Route path={"/"} Component={RootPage}/>

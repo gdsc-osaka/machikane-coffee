@@ -220,7 +220,7 @@ const AdminPage = () => {
     }
 
     return <React.Fragment>
-        <Card sx={{border: "1px solid #837468", boxShadow: "none", margin: "1rem"}}>
+        <Card sx={{border: "1px solid #837468", boxShadow: "none", margin: "1rem", overflow: 'auto'}}>
             <Stack direction={"row"} minHeight={"600px"}>
                 <Stack minWidth={"230px"}>
                     <ViewLabel icon={StorefrontOutlinedIcon} label={"店舗"}/>
@@ -585,7 +585,7 @@ const ProductDataView = (props: {
                                 </Stack>
                             </Stack>
                         </Stack>
-                        <Stack spacing={3}>
+                        <Stack spacing={3} minWidth={"250px"}>
                             <Typography variant={"h6"}>
                                 サムネイルを編集
                             </Typography>
