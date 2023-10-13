@@ -1,4 +1,4 @@
-import {FieldValue, Timestamp } from "firebase/firestore";
+import {FieldValue, Timestamp} from "firebase/firestore";
 import {Weaken} from "../../util/typeUtils";
 
 /**

@@ -1,7 +1,7 @@
 import {Product} from "../../modules/redux/product/types";
 import styled from "styled-components";
 import {Card, IconButton, Stack, Typography} from "@mui/material";
-import {Remove, Add} from '@mui/icons-material';
+import {Add, Remove} from '@mui/icons-material';
 
 type ProductCounterType = {
     product: Product,

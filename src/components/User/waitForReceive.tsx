@@ -1,6 +1,5 @@
-import { VFC } from "react";
-import React from "react";
-import { Order } from "../../modules/redux/order/types";
+import React, {VFC} from "react";
+import {Order} from "../../modules/redux/order/types";
 
 type Props = {
     orders: Array<Order>

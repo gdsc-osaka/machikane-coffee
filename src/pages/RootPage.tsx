@@ -1,4 +1,4 @@
-import {Stack, Typography, Link as MLink} from "@mui/material";
+import {Link as MLink, Stack, Typography} from "@mui/material";
 import {useAppDispatch} from "../modules/redux/store";
 import {useSelector} from "react-redux";
 import {fetchShops, selectAllShops, selectShopStatus} from "../modules/redux/shop/shopsSlice";

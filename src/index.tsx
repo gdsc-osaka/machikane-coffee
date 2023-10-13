@@ -3,7 +3,6 @@
 import './modules/extensions/array.extensions';
 import './modules/extensions/date.extentions';
 // endregion
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';

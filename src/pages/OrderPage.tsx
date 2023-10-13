@@ -13,7 +13,8 @@ import {ShopStatus} from "../modules/redux/shop/types";
 import {
     fetchShops,
     selectAllShops,
-    selectShopById, selectShopDelaySeconds,
+    selectShopById,
+    selectShopDelaySeconds,
     selectShopStatus,
     streamShop
 } from "../modules/redux/shop/shopsSlice";

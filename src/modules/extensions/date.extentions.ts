@@ -1,4 +1,4 @@
-import { Timestamp } from "firebase/firestore";
+import {Timestamp} from "firebase/firestore";
 
 
 Date.prototype.addSeconds = function (seconds: number): Date {

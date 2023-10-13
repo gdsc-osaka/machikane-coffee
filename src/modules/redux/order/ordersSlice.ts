@@ -18,7 +18,6 @@ import {
     query,
     serverTimestamp,
     Timestamp,
-    updateDoc,
     where,
     writeBatch
 } from "firebase/firestore";

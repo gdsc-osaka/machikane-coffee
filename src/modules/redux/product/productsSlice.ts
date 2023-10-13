@@ -4,8 +4,8 @@ import {AsyncState} from "../stateType";
 import {db, storage} from "../../firebase/firebase";
 import {productConverter} from "../../firebase/converters";
 import {RootState} from "../store";
-import {collection, doc, getDoc, getDocs, runTransaction, setDoc, updateDoc} from "firebase/firestore";
-import {getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import {collection, doc, getDocs, setDoc, updateDoc} from "firebase/firestore";
+import {getDownloadURL, ref, uploadBytes} from "firebase/storage";
 
 const productsRef = (shopId: string) => collection(db, `shops/${shopId}/products`).withConverter(productConverter);
 const productRef = (shopId: string, productId: string) => doc(db, `shops/${shopId}/products/${productId}`).withConverter(productConverter)

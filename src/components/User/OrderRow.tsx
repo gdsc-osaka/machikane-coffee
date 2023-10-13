@@ -1,10 +1,10 @@
-import { VFC, useEffect } from "react";
-import { Order } from "../../modules/redux/order/types";
-import { TableRow, TableCell, Divider } from "@mui/material";
-import { selectAllProduct, selectProductStatus, fetchProducts } from "../../modules/redux/product/productsSlice";
-import { useSelector } from "react-redux";
-import { useAppDispatch } from "../../modules/redux/store";
-import { useParams } from "react-router-dom";
+import {useEffect, VFC} from "react";
+import {Order} from "../../modules/redux/order/types";
+import {Divider, TableCell, TableRow} from "@mui/material";
+import {fetchProducts, selectAllProduct, selectProductStatus} from "../../modules/redux/product/productsSlice";
+import {useSelector} from "react-redux";
+import {useAppDispatch} from "../../modules/redux/store";
+import {useParams} from "react-router-dom";
 
 type Props = {
     order: Order

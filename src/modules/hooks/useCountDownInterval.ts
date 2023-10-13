@@ -1,6 +1,6 @@
 // https://zenn.dev/kazuki_tam/scraps/1e2984ea02b838
 
-import { useEffect } from 'react'
+import {useEffect} from 'react'
 
 const useCountDownInterval = (
     countTime: number | null,

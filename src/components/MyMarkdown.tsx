@@ -1,5 +1,5 @@
 import Markdown, {Options} from "react-markdown";
-import {Divider, Link, Typography} from "@mui/material";
+import {Link, Typography} from "@mui/material";
 import UnderlineDivider from "./UnderlineDivider";
 
 const MyMarkdown = (props: {children: string | null | undefined, options?: Readonly<Options>}) => {

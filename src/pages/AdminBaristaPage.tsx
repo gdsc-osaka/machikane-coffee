@@ -23,7 +23,7 @@ import {
     streamOrders,
     updateOrder
 } from "../modules/redux/order/ordersSlice";
-import {fetchProducts, selectAllProduct, selectProductStatus} from "../modules/redux/product/productsSlice";
+import {fetchProducts, selectAllProduct} from "../modules/redux/product/productsSlice";
 import {getOrderLabel} from "../modules/util/orderUtils";
 import {Order, Status} from "../modules/redux/order/types";
 import {Flex} from "../components/layout/Flex";

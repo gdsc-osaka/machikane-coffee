@@ -1,4 +1,12 @@
-import {FirestoreDataConverter, QueryDocumentSnapshot, WithFieldValue, SnapshotOptions, PartialWithFieldValue, DocumentData, SetOptions} from "firebase/firestore"
+import {
+    DocumentData,
+    FirestoreDataConverter,
+    PartialWithFieldValue,
+    QueryDocumentSnapshot,
+    SetOptions,
+    SnapshotOptions,
+    WithFieldValue
+} from "firebase/firestore"
 import {assertProduct, Product} from "../redux/product/types";
 import {assertShop, Shop} from "../redux/shop/types";
 import {assertOrder, Order} from "../redux/order/types";

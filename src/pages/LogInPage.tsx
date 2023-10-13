@@ -1,4 +1,5 @@
 import * as React from "react";
+import {useEffect} from "react";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import FormControlLabel from "@mui/material/FormControlLabel";
@@ -10,7 +11,6 @@ import {signInWithEmailAndPassword} from "firebase/auth";
 import {useNavigate} from "react-router-dom";
 import {auth} from "../modules/firebase/firebase";
 import {useAuth} from "../AuthGuard";
-import {useEffect} from "react";
 import toast from "react-hot-toast";
 
 export default function LogInPage() {
