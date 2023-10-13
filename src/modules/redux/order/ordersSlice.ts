@@ -19,7 +19,8 @@ import {
     serverTimestamp,
     Timestamp,
     updateDoc,
-    where
+    where,
+    writeBatch
 } from "firebase/firestore";
 import {getToday} from "../../util/dateUtils";
 import {QueryConstraint} from "@firebase/firestore";
@@ -189,12 +190,37 @@ const switchOrderStatus = (newOrder: Order) => {
 /**
  * 注文を更新する. UIで操作された部分のみ更新すれば, その更新に依存するそれ以外の部分も自動で書き換えられる (completed 等)
  */
-export const updateOrder = createAsyncThunk<Order, {shopId: string, newOrder: Order}, {}>('orders/updateOrder',
-    async ({shopId, newOrder}) => {
+export const updateOrder = createAsyncThunk<Order, {shopId: string, newOrder: Order}, {state: RootState}>('orders/updateOrder',
+    async ({shopId, newOrder}, {getState}) => {
         switchOrderStatus(newOrder);
+        const batch = writeBatch(db);
 
         const docRef = doc(db, `shops/${shopId}/orders/${newOrder.id}`);
-        await updateDoc(docRef.withConverter(orderConverter), newOrder);
+        batch.update(docRef.withConverter(orderConverter), newOrder);
+
+        // 完成時
+        if (newOrder.status === "completed") {
+            // 実際の制作時間との差分
+            const productionTimeDiff = new Date().getTime() - newOrder.complete_at.toDate().getTime();
+            console.log(`actual sec: ${productionTimeDiff / 1000}`);
+
+            // state.orders が常に最新であるという前提. 最新でないなら足りない部分だけクエリして読み取る
+            const state = getState();
+            const createdAtTime = newOrder.created_at.toDate().getTime();
+            // newOrder より後に追加された注文
+            const afterOrders = state.order.data
+                .filter(order => order.created_at.toDate().getTime() - createdAtTime);
+
+
+            for (const order of afterOrders) {
+                const ref = doc(db, `shops/${shopId}/orders/${order.id}`);
+                const correctCompleteAtTime = order.complete_at.toDate().getTime() + productionTimeDiff;
+                // FIXME: フィールド名を定数で扱っている
+                batch.update(ref, {"complete_at": Timestamp.fromMillis(correctCompleteAtTime)})
+            }
+        }
+
+        await batch.commit();
         return newOrder;
     });
 
