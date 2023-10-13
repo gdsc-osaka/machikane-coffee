@@ -2,6 +2,7 @@ import React from "react";
 import { Image } from "@mui/icons-material";
 import { useLocation } from "react-router-dom";
 import {useParams} from "react-router-dom";
+import { Button } from "@mui/material";
 
 const Header = () => {
 
@@ -25,6 +26,8 @@ const Header = () => {
   //     titleText = 'コーヒー愛好会';
   //     break;
   // }
+  const adminPath = "/" + shopId + "/admin/cashier"
+  const baristaPath = "/" + shopId + "/admin/barista"
 
   const imageStyle = {
     width: '45px',
@@ -44,11 +47,13 @@ const Header = () => {
     // width: 412px;
     // height: 60px;
     padding: '15px 20px',
-    flexDirection: 'column' as 'column',
+    // flexDirection: 'column' as 'column',
     // justifyContent: 'center',
-    alignIitems: 'flex-start',
+    alignIitems: 'center',
+    // alignIitems: 'flex-start',
     gap: '10px',
-    borderBottom: 'solid #837468 1px'
+    borderBottom: 'solid #837468 1px',
+    justifyContent: 'space-between'
   }
   const logoStyle = {
     display: 'flex',
@@ -59,11 +64,23 @@ const Header = () => {
     padding: '0px 10px',
   }
 
+  const buttonsStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px'
+  }
+
+
+
     return (
       <div style={headerStyle}>
         <div style={logoStyle}>
           <img style={imageStyle} src="/images/logo.png" />
           <div style={fontStyle}>{titleText}</div>
+        </div>
+        <div style={buttonsStyle}>
+          <Button variant="text" href={adminPath}>管理画面</Button>
+          <Button variant="text" href={baristaPath}>ドリップ係画面</Button>
         </div>
       </div>
     );
