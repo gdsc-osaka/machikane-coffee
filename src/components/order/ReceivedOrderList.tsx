@@ -1,5 +1,5 @@
 import {Order} from "../../modules/redux/order/types";
-import {Button, Stack, Typography} from "@mui/material";
+import {Button, IconButton, Stack, Typography} from "@mui/material";
 import StickyNote from "../StickyNote";
 import IndexIcon from "./IndexIcon";
 import {getOrderLabel} from "../../modules/util/orderUtils";
@@ -8,6 +8,7 @@ import {Product} from "../../modules/redux/product/types";
 import {Flex} from "../layout/Flex";
 import {Row} from "../layout/Row";
 import {MotionList, MotionListItem} from "../motion/motionList";
+import UndoIcon from '@mui/icons-material/Undo';
 
 type ReceivedOrderListProps = {
     receivedOrders: Order[],
@@ -34,9 +35,9 @@ const ReceivedOrderList = (props: ReceivedOrderListProps) => {
                                         {getOrderLabel(order, props.products)}
                                     </Typography>
                                 </Row>
-                                <Button variant={"outlined"} onClick={() => props.onClickUnreceive(order)}>
-                                    未受取にする
-                                </Button>
+                                <IconButton color={"primary"} onClick={() => props.onClickUnreceive(order)}>
+                                    <UndoIcon/>
+                                </IconButton>
                             </Flex>
                         </StickyNote>
                     </MotionListItem>
