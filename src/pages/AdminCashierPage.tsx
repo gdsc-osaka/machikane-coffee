@@ -133,21 +133,21 @@ const AdminCashierPage = () => {
         !auth.loading ?
             <React.Fragment>
                 <Grid container spacing={4} sx={{padding: "30px 30px"}}>
-                    <Grid item xs={12} md={5}>
+                    <Grid item xs={12} sm={6} lg={5}>
                         <Stack spacing={4}>
                             <OrderForm products={products} onChangeAmount={onChangeAmount} productAmount={productAmount}
                                        onOrderAddClicked={onOrderAddClicked}/>
                             <ShopManager/>
                         </Stack>
                     </Grid>
-                    <Grid item container xs={12} md={7} spacing={4}>
-                        <Grid item xs={12} md={7}>
+                    <Grid item container xs={12} sm={6} lg={7} spacing={4}>
+                        <Grid item  md={12} lg={7}>
                             <OrderList orders={unreceivedOrders} products={products}
                                        onClickReceive={handleReceiveOrder}
                                        onClickDelete={handleDeleteOrder}
                                        onSwitchStatus={handleSwitchStatus}/>
                         </Grid>
-                        <Grid item xs={12} md={5}>
+                        <Grid item md={12} lg={5}>
                             <ReceivedOrderList receivedOrders={receivedOrders} products={products}
                                                onClickUnreceive={handleUnreceiveOrder}/>
                         </Grid>

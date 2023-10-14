@@ -43,9 +43,13 @@ type OrderStatusId = {
     orderStatusKey: string;
 }
 
+function isSameOrderStatusId(a: OrderStatusId, b: OrderStatusId) {
+    return a.orderId === b.orderId && a.orderStatusKey === b.orderStatusKey;
+}
+
 const AdminBaristaPage = () => {
     const [selectedId, setSelectedId] = useState(0);
-    const [workingOrderStatusId, setWorkingOrderStatusId] = useState<OrderStatusId | undefined>();
+    const [workingOrderStatusIds, setWorkingOrderStatusIds] = useState<OrderStatusId[]>([]);
 
     const dispatch = useAppDispatch();
     const auth = useAuth();
@@ -148,7 +152,14 @@ const AdminBaristaPage = () => {
         }
 
         dispatch(updateOrder({shopId, newOrder}));
-        setWorkingOrderStatusId(type === "working" ? {orderId: order.id, orderStatusKey: orderStatusId} : undefined);
+
+        const orderStatus = {orderId: order.id, orderStatusKey: orderStatusId};
+
+        if (type === "working") {
+            setWorkingOrderStatusIds([...workingOrderStatusIds, orderStatus]);
+        } else {
+            setWorkingOrderStatusIds(workingOrderStatusIds.concat().remove(e => isSameOrderStatusId(e, orderStatus)))
+        }
     }
 
 
@@ -174,20 +185,20 @@ const AdminBaristaPage = () => {
                 未完成の注文一覧
             </Typography>
             <MotionList layoutId={"barista-order-list"}>
-                    {orders.map(order => {
-                        // 全て完了した場合
-                        if (Object.values(order.order_statuses).findIndex(orderStatus => orderStatus.status !== "completed") === -1) {
-                            return <React.Fragment/>
-                        }
+                {orders.map(order => {
+                    // 全て完了した場合
+                    if (Object.values(order.order_statuses).findIndex(orderStatus => orderStatus.status !== "completed") === -1) {
+                        return <React.Fragment/>
+                    }
 
-                        return <MotionListItem key={order.id}>
-                            <BaristaOrderItem order={order}
-                                              products={products}
-                                              orderStatusId={workingOrderStatusId}
-                                              selectedId={selectedId}
-                                              handleOrderStatus={handleOrderStatus}/>
-                        </MotionListItem>
-                    })}
+                    return <MotionListItem key={order.id}>
+                        <BaristaOrderItem order={order}
+                                          products={products}
+                                          orderStatusIds={workingOrderStatusIds}
+                                          selectedId={selectedId}
+                                          handleOrderStatus={handleOrderStatus}/>
+                    </MotionListItem>
+                })}
             </MotionList>
         </Stack>
     }
@@ -196,15 +207,13 @@ const AdminBaristaPage = () => {
 const BaristaOrderItem = (props: {
     order: Order,
     products: Product[],
-    orderStatusId: OrderStatusId | undefined,
+    orderStatusIds: OrderStatusId[],
     selectedId: number,
     handleOrderStatus: (order: Order, orderStatusId: string, type: Status) => void,
 }) => {
-    const order = props.order;
-    const products = props.products;
-    const working = props.orderStatusId;
-    const selectedId = props.selectedId;
-    const handleOrderStatus = props.handleOrderStatus;
+    const {order, products, orderStatusIds, handleOrderStatus, selectedId} = props;
+
+    const isWorking = orderStatusIds.length > 0;
 
     return <StickyNote>
         <Flex>
@@ -220,10 +229,13 @@ const BaristaOrderItem = (props: {
         {getSortedObjectKey(order.order_statuses).map(orderStatusId => {
             const orderStatus = order.order_statuses[orderStatusId];
             const product = products.find(prod => prod.id === orderStatus.product_id);
-            const isWorkingOnThis = working !== undefined && working.orderId === order.id && working.orderStatusKey === orderStatusId;
-            const isWorkingOnOther = working !== undefined && (working.orderId !== order.id || working.orderStatusKey !== orderStatusId);
+            const isOrderStatusExists = orderStatusIds.findIndex(os => isSameOrderStatusId(os, {
+                orderId: order.id,
+                orderStatusKey: orderStatusId
+            })) !== -1;
+            const isWorkingOnThis = isWorking && isOrderStatusExists;
             const isCompleted = orderStatus.status === "completed";
-            const disabled = isWorkingOnOther || isCompleted || selectedId === 0 || (orderStatus.status === "working" && orderStatus.barista_id !== selectedId);
+            const disabled = isCompleted || selectedId === 0 || (orderStatus.status === "working" && orderStatus.barista_id !== selectedId);
 
             return <Flex style={{paddingLeft: "2.5rem"}}>
                 <Stack direction={"row"} alignItems={"center"} spacing={1}>
@@ -235,20 +247,20 @@ const BaristaOrderItem = (props: {
                     </Typography>
                 </Stack>
                 <Stack direction={"row"} alignItems={"center"} spacing={1}>
-                    {isWorkingOnThis ?
+                    {isWorkingOnThis &&
                         <Button variant={"outlined"}
                                 disabled={disabled}
                                 onClick={_ => handleOrderStatus(order, orderStatusId, "idle")}>
                             取り消し
-                        </Button> : <React.Fragment/>}
+                        </Button>
+                    }
                     <Button variant={"contained"}
                             disabled={disabled}
                             onClick={_ => handleOrderStatus(order, orderStatusId,
                                 isWorkingOnThis ? "completed" : "working")}>
                         {isWorkingOnThis ? "完成" :
                             isCompleted ? "完成済" :
-                                orderStatus.status === "working" ? `${orderStatus.barista_id}番が作成中です` :
-                                    isWorkingOnOther ? "他の商品を作成中です" : "つくる"}
+                                orderStatus.status === "working" ? `${orderStatus.barista_id}番が作成中です` : "つくる"}
                     </Button>
                 </Stack>
             </Flex>
