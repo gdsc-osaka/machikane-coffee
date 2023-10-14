@@ -1,4 +1,4 @@
-import {Order} from "../../modules/redux/order/types";
+import {Order, Status} from "../../modules/redux/order/types";
 import {Button, Chip, IconButton, Stack, Typography, useTheme} from "@mui/material";
 import {Product} from "../../modules/redux/product/types";
 import {Flex} from "../layout/Flex";
@@ -16,6 +16,7 @@ type OrderListProps = {
     products: Product[],
     onClickReceive: (order: Order) => void;
     onClickDelete: (order: Order) => void;
+    onSwitchStatus: (order: Order, orderStatusId: string, status: Status) => void;
 }
 
 const OrderList = (props: OrderListProps) => {
@@ -33,7 +34,8 @@ const OrderList = (props: OrderListProps) => {
                         <OrderItem order={order}
                                    products={products}
                                    onClickDelete={props.onClickDelete}
-                                   onClickReceive={props.onClickReceive}/>
+                                   onClickReceive={props.onClickReceive}
+                                   onClickComplete={props.onSwitchStatus}/>
                     </MotionListItem>
                 })}
             </MotionList>
@@ -45,7 +47,8 @@ const OrderItem = (props: {
     order: Order,
     products: Product[],
     onClickDelete: (order: Order) => void,
-    onClickReceive: (order: Order) => void
+    onClickReceive: (order: Order) => void,
+    onClickComplete: (order: Order, orderStatusId: string, status: Status) => void,
 }) => {
     const order = props.order;
     const isCompleted = order.status === "completed";
@@ -60,6 +63,10 @@ const OrderItem = (props: {
         const untilSec = Math.floor((order.complete_at.toDate().getTime() - new Date().getTime()) / 1000);
         setUntilSec(untilSec)
     }, [order])
+
+    const handleStatus = (orderStatusId: string, status: Status) => {
+        props.onClickComplete(order, orderStatusId, status);
+    }
 
     return <StickyNote>
         <Flex>
@@ -107,13 +114,24 @@ const OrderItem = (props: {
             const isCompleted = orderStatus.status === "completed";
             const isIdle = orderStatus.status === "idle";
 
-            return <Flex style={{paddingLeft: "3rem"}}>
+            return <Stack direction={"row"} justifyContent={"space-between"} sx={{padding: "0.375rem 0.5rem", paddingLeft: "3rem"}}>
                 <Typography variant={"body2"}>
                     {product?.shorter_name ?? ""}
                 </Typography>
-                <Chip label={isIdle ? "待機中" : isCompleted ? "完成済" : `${orderStatus.barista_id}番が担当中`}
-                      color={isCompleted ? "primary" : "default"}/>
-            </Flex>
+                <Stack direction={"row"} spacing={1}>
+                    {!isCompleted ?
+                        <Button onClick={() => handleStatus(orderStatusId, "completed")}>
+                            完成にする
+                        </Button>
+                        :
+                        <Button onClick={() => handleStatus(orderStatusId, "idle")}>
+                            未完成にする
+                        </Button>
+                    }
+                    <Chip label={isIdle ? "待機中" : isCompleted ? "完成済" : `${orderStatus.barista_id}番が担当中`}
+                          color={isCompleted ? "primary" : "default"}/>
+                </Stack>
+            </Stack>
         })}
     </StickyNote>;
 }

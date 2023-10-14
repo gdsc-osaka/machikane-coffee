@@ -19,7 +19,7 @@ type ReceivedOrderListProps = {
 const ReceivedOrderList = (props: ReceivedOrderListProps) => {
     return <Stack spacing={3}>
         <Typography variant={"h4"} sx={{fontWeight: "bold"}}>
-            受け取り済み注文一覧
+            受取済み注文一覧
         </Typography>
         <MotionList layoutId={"received-order-list"}>
                 {props.receivedOrders.map(order =>

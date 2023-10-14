@@ -3,7 +3,7 @@ import {useSelector} from "react-redux";
 import {fetchProducts, selectAllProduct, selectProductStatus,} from "../modules/redux/product/productsSlice";
 import {useAppDispatch} from "../modules/redux/store";
 import {useParams} from "react-router-dom";
-import {Order, ProductAmount} from "../modules/redux/order/types";
+import {Order, ProductAmount, Status} from "../modules/redux/order/types";
 import OrderForm from "../components/order/OrderForm";
 import {
     Button,
@@ -39,7 +39,6 @@ const AdminCashierPage = () => {
     const dispatch = useAppDispatch();
     const auth = useAuth();
     const products = useSelector(selectAllProduct);
-    const productStatus = useSelector(selectProductStatus);
     const unreceivedOrders = useSelector(selectUnreceivedOrder);
     const receivedOrders = useSelector(selectReceivedOrder);
     const orderStatus = useSelector(selectOrderStatus);
@@ -115,22 +114,42 @@ const AdminCashierPage = () => {
         }
     }
 
-    return(
+    const handleSwitchStatus = (order: Order, orderStatusId: string, status: Status) => {
+        const newOrder: Order = {
+            ...order,
+            order_statuses: {
+                ...order.order_statuses,
+                [orderStatusId]: {
+                    ...order.order_statuses[orderStatusId],
+                    status: status
+                }
+            }
+        }
+
+        dispatch(updateOrder({shopId, newOrder}));
+    }
+
+    return (
         !auth.loading ?
             <React.Fragment>
                 <Grid container spacing={4} sx={{padding: "30px 30px"}}>
-                    <Grid item xs={12} sm={6} lg={5}>
+                    <Grid item xs={12} md={5}>
                         <Stack spacing={4}>
-                            <OrderForm products={products} onChangeAmount={onChangeAmount} productAmount={productAmount} onOrderAddClicked={onOrderAddClicked}/>
+                            <OrderForm products={products} onChangeAmount={onChangeAmount} productAmount={productAmount}
+                                       onOrderAddClicked={onOrderAddClicked}/>
                             <ShopManager/>
                         </Stack>
                     </Grid>
-                    <Grid item container xs={12} sm={6} lg={7} spacing={4}>
-                        <Grid item xs={12} sm={12} lg={6}>
-                            <OrderList orders={unreceivedOrders} products={products} onClickReceive={handleReceiveOrder} onClickDelete={handleDeleteOrder}/>
+                    <Grid item container xs={12} md={7} spacing={4}>
+                        <Grid item xs={12} md={7}>
+                            <OrderList orders={unreceivedOrders} products={products}
+                                       onClickReceive={handleReceiveOrder}
+                                       onClickDelete={handleDeleteOrder}
+                                       onSwitchStatus={handleSwitchStatus}/>
                         </Grid>
-                        <Grid item xs={12} sm={12} lg={6}>
-                            <ReceivedOrderList receivedOrders={receivedOrders} products={products} onClickUnreceive={handleUnreceiveOrder}/>
+                        <Grid item xs={12} md={5}>
+                            <ReceivedOrderList receivedOrders={receivedOrders} products={products}
+                                               onClickUnreceive={handleUnreceiveOrder}/>
                         </Grid>
                     </Grid>
                 </Grid>
@@ -154,7 +173,7 @@ const AdminCashierPage = () => {
                     </DialogActions>
                 </Dialog>
             </React.Fragment>
-            : <CircularProgress />
+            : <CircularProgress/>
     )
 }
 
