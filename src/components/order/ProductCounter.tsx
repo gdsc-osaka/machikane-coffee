@@ -44,16 +44,6 @@ const ProductCounter = (props: ProductCounterType) => {
     </Card>
 }
 
-const RootContainer = styled.div`
-  display: flex;
-  padding: 1rem;
-  align-items: center;
-  gap: 1rem;
-  align-self: stretch;
-  border-radius: 10px;
-  background-color: #FFF8F5;
-`
-
 const RoundedImage = styled.img`
   width: 100px;
   height: 100px;

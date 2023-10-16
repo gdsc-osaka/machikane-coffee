@@ -40,25 +40,4 @@ const OrderForm = (props: OrderFormProps) => {
     </Stack>
 }
 
-const ContentContainer = styled.div`
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-`
-
-const CounterContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1rem;
-`
-
-const SubTotalContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: flex-end;
-  min-height: 16rem;
-`
-
 export default OrderForm;

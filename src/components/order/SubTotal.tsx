@@ -82,15 +82,6 @@ const SubTotal = (props: SubTotalProps) => {
     );
 }
 
-const Container = styled.div`
-  display: flex;
-  width: 19rem;
-  padding: 1rem;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.8rem;
-`
-
 const Row = styled.div`
   display: flex;
   justify-content: space-between;

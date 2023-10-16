@@ -232,7 +232,6 @@ const {shopAdded, shopUpdated, shopRemoved} = shopsSlice.actions;
 export const selectShopById = (state: RootState, shopId: string) => state.shop.data.find(e => e.id == shopId);
 export const selectAllShops = (state: RootState) => state.shop.data;
 export const selectShopStatus = (state: RootState) => state.shop.status;
-export const selectShopError = (state: RootState) => state.shop.error;
 /**
  * 店が pause_ordering のとき, 何秒遅延しているかを返します. shopId に一致する Shop がない場合, 0 を返します.
  * */

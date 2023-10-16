@@ -127,7 +127,7 @@ const OrderPage = () => {
 
                     setSearchParams({[orderIndexParamKey]: orderIndex});
                 })
-                .catch((e) => {
+                .catch((_) => {
                     setDialogState({
                         open: true,
                         title: "該当する番号の注文が見つかりません",
