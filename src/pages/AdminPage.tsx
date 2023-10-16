@@ -198,6 +198,7 @@ const AdminPage = () => {
         if (selectedProduct !== undefined && selectedShop !== undefined) {
             dispatch(updateProduct({
                 shopId: selectedShop.id,
+                productId: selectedProduct.id,
                 rawProduct: {...selectedProduct, ...productForm},
                 thumbnailFile: thumbnailFile
             })).then(() => {
