@@ -1,6 +1,6 @@
 import {createAsyncThunk, createSlice, PayloadAction} from "@reduxjs/toolkit";
 import {AsyncState, Unsubscribe} from "../stateType";
-import {RawShop, Shop, ShopStatus} from "./types";
+import {ShopForAdd, Shop, ShopStatus} from "./types";
 import {db} from "../../firebase/firebase";
 import {orderConverter, shopConverter} from "../../firebase/converters";
 import {RootState} from "../store";
@@ -39,8 +39,8 @@ export const streamShop = createAsyncThunk('orders/streamShops',
             const state: RootState = getState() as RootState;
             const shop = snapshot.data();
 
-            if (shop != undefined) {
-                if (state.shop.data.findIndex(e => e.id == shop.id) == -1) {
+            if (shop !== undefined) {
+                if (state.shop.data.findIndex(e => e.id === shop.id) === -1) {
                     // 同じドキュメントが存在しなければ
                     dispatch(shopAdded(shop));
                 } else {
@@ -55,24 +55,24 @@ export const streamShop = createAsyncThunk('orders/streamShops',
     })
 
 export const addShop = createAsyncThunk("shops/addShop",
-    async ({shopId, rawShop}: {shopId: string, rawShop: RawShop}) => {
-        const shopData: Shop = {
-            ...rawShop,
+    async ({shopId, shopForAdd}: {shopId: string, shopForAdd: ShopForAdd}) => {
+        const shop: Shop = {
+            ...shopForAdd,
             id: shopId,
             last_active_time: Timestamp.now(),
             status: "active"
         };
-        await setDoc(shopRef(shopId), shopData);
-        return shopData;
+        await setDoc(shopRef(shopId), shop);
+        return shop;
     })
 
-export const updateShop = createAsyncThunk<Shop | undefined, {shopId: string, rawShop: RawShop}, {state: RootState}>("shops/updateShop",
+export const updateShop = createAsyncThunk<Shop | undefined, {shopId: string, rawShop: ShopForAdd}, {state: RootState}>("shops/updateShop",
     async ({shopId, rawShop}, {getState, rejectWithValue}) => {
         try {
             await updateDoc(shopRef(shopId), rawShop);
             const oldShop = selectShopById(getState(), shopId);
 
-            if (oldShop != undefined) {
+            if (oldShop !== undefined) {
                 const newShop: Shop = {
                     ...oldShop,
                     ...rawShop
@@ -94,7 +94,7 @@ export const changeShopStatus = createAsyncThunk<Shop | undefined, {shopId: stri
     async ({shopId, status}, {getState}) => {
         const _shopRef = shopRef(shopId);
 
-        if (status == "pause_ordering") {
+        if (status === "pause_ordering") {
             // 注文停止時はショップのデータを書き換える
             await updateDoc(_shopRef, {
                 status: status,
@@ -105,7 +105,7 @@ export const changeShopStatus = createAsyncThunk<Shop | undefined, {shopId: stri
             const snapshot = await getDoc(_shopRef);
             return snapshot.data();
 
-        } else if (status == "active") {
+        } else if (status === "active") {
             // 注文再開時はオーダーの完了時刻を書き換える
 
             // last_active_time を取得
@@ -140,7 +140,7 @@ export const changeShopStatus = createAsyncThunk<Shop | undefined, {shopId: stri
                             status: status
                         })
                     })
-                    if (newShop != undefined) {
+                    if (newShop !== undefined) {
                         newShop.status = status;
                     }
                     return newShop;
@@ -168,7 +168,7 @@ const shopsSlice = createSlice({
         },
         shopUpdated(state, action: PayloadAction<Shop>) {
             const shop = action.payload;
-            state.data.update(e => e.id == shop.id, shop);
+            state.data.update(e => e.id === shop.id, shop);
         },
         /**
          * 指定した ID の shop を消去する
@@ -177,12 +177,12 @@ const shopsSlice = createSlice({
          */
         shopRemoved(state, action: PayloadAction<string>) {
             const id = action.payload;
-            state.data.remove(e => e.id == id);
+            state.data.remove(e => e.id === id);
         },
     },
     extraReducers: builder => {
         builder
-            .addCase(fetchShops.pending, (state, action) => {
+            .addCase(fetchShops.pending, (state, _) => {
                 state.status = 'loading'
             })
             .addCase(fetchShops.fulfilled, (state, action) => {
@@ -193,7 +193,7 @@ const shopsSlice = createSlice({
             .addCase(fetchShops.rejected, (state, action) => {
                 state.status = 'failed'
                 const msg = action.error.message;
-                state.error = msg == undefined ? null : msg;
+                state.error = msg === undefined ? null : msg;
             })
 
         builder
@@ -205,16 +205,16 @@ const shopsSlice = createSlice({
             .addCase(updateShop.fulfilled, (state, action) => {
                 const updatedShop = action.payload;
 
-                if (updatedShop != undefined) {
-                    state.data.update(e => e.id == updatedShop.id, updatedShop);
+                if (updatedShop !== undefined) {
+                    state.data.update(e => e.id === updatedShop.id, updatedShop);
                 }
             })
 
         builder
             .addCase(changeShopStatus.fulfilled, (state, action) => {
                 const shop = action.payload;
-                if (shop != undefined) {
-                    state.data.update(e => e.id == shop.id, shop);
+                if (shop !== undefined) {
+                    state.data.update(e => e.id === shop.id, shop);
                 }
             })
     }
@@ -229,7 +229,7 @@ const {shopAdded, shopUpdated, shopRemoved} = shopsSlice.actions;
  * @param state RootState
  * @param shopId Shop の ID
  */
-export const selectShopById = (state: RootState, shopId: string) => state.shop.data.find(e => e.id == shopId);
+export const selectShopById = (state: RootState, shopId: string) => state.shop.data.find(e => e.id === shopId);
 export const selectAllShops = (state: RootState) => state.shop.data;
 export const selectShopStatus = (state: RootState) => state.shop.status;
 /**

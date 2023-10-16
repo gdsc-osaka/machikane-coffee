@@ -10,7 +10,7 @@ import {
     updateShop
 } from "../modules/redux/shop/shopsSlice";
 import {useParams} from "react-router-dom";
-import {BaristaMap, RawShop, Shop} from "../modules/redux/shop/types";
+import {BaristaMap, ShopForAdd, Shop} from "../modules/redux/shop/types";
 import CheckIcon from '@mui/icons-material/Check';
 import HourglassEmptyRoundedIcon from '@mui/icons-material/HourglassEmptyRounded';
 import HourglassBottomRoundedIcon from '@mui/icons-material/HourglassBottomRounded';
@@ -134,7 +134,7 @@ const AdminBaristaPage = () => {
                 setSelectedId(0);
             }
 
-            const rawShop: RawShop = {...shop, baristas: newBaristas};
+            const rawShop: ShopForAdd = {...shop, baristas: newBaristas};
             dispatch(updateShop({shopId, rawShop}));
         }
     };

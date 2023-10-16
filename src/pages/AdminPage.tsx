@@ -211,7 +211,7 @@ const AdminPage = () => {
         setOpenAddShopDialog(false);
         dispatch(addShop({
             shopId: formData.id,
-            rawShop: {
+            shopForAdd: {
                 display_name: formData.displayName,
                 emg_message: "",
                 baristas: {1: "active"},
@@ -222,7 +222,7 @@ const AdminPage = () => {
 
     const handleSubmitProduct = async (id: string, formData: ProductFormType, file: File) => {
         setOpenAddProductDialog(false);
-        await dispatch(addProduct({shopId: selectedShopId, rawProduct: {...formData, id}, thumbnailFile: file})).unwrap();
+        await dispatch(addProduct({shopId: selectedShopId, productForAdd: {...formData, id}, thumbnailFile: file})).unwrap();
         return;
     }
 

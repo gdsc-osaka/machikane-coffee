@@ -29,7 +29,17 @@ export type Shop = {
 /**
  * データの追加時に不必要なフィールドを除いた Shop
  */
-export type RawShop = Omit<Shop, "id" | "status" | "last_active_time">
+export type ShopForAdd = Omit<Shop, "id" | "status" | "last_active_time">
+
+/**
+ * データの更新時に使用する Shop
+ */
+export type ShopForUpdate = Partial<Shop>;
+
+/**
+ * データをFirestoreに送信するときに使用する
+ */
+export type PayloadShop = Omit<Shop, "id">
 
 export function assertShop(data: any): asserts data is Shop {
     const d = data as Partial<Shop>; // 補完のためキャスト

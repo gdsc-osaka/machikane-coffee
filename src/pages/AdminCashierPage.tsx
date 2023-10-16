@@ -81,7 +81,7 @@ const AdminCashierPage = () => {
         await dispatch(
             addOrder({
                 shopId: shopId,
-                rawOrder: {
+                orderForAdd: {
                     is_student: false,
                     product_amount: trueProductAmount,
                     status: "idle",

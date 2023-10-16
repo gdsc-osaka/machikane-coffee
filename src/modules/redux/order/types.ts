@@ -70,12 +70,17 @@ export type Order = {
 /**
  * データの追加時、ユーザーが設定しなければいけないフィールドのみにした order
  */
-export type RawOrder = Omit<Order, "id" | "index" | "created_at" | "complete_at" | "received" | "completed" | "order_statuses" | "delay_seconds">;
+export type OrderForAdd = Omit<Order, "id" | "index" | "created_at" | "complete_at" | "received" | "completed" | "order_statuses" | "delay_seconds">;
+
+/**
+ * データの更新時に使用する Order
+ */
+export type OrderForUpdate = Partial<Order>;
 
 /**
  * データを Firestore に送信するとき, 一部フィールドを FieldValue に変更するための型
  */
-export type CargoOrder = Weaken<Omit<Order, 'id'>, 'created_at'> & {
+export type PayloadOrder = Weaken<Omit<Order, 'id'>, 'created_at'> & {
     created_at: FieldValue | Timestamp
 }
 
