@@ -9,7 +9,7 @@ import {selectShopStatus, streamShop} from "src/modules/redux/shop/shopsSlice";
 import {fetchProducts, selectProductStatus} from "src/modules/redux/product/productsSlice";
 import {useCountDownInterval} from "../modules/hooks/useCountDownInterval";
 
-const Timer = () => {
+const TimerPage = () => {
   const selector = useSelector((state: RootState) => state);
   const expectedEndTime: Date = selectMaxCompleteAt(selector);
   
@@ -86,4 +86,4 @@ const Timer = () => {
   );
 };
 
-export default Timer;
+export default TimerPage;

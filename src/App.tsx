@@ -2,7 +2,7 @@ import store from "./modules/redux/store";
 import Header from "./components/Header/Header";
 import {BrowserRouter, Route, Routes} from "react-router-dom";
 import AdminCashierPage from "./pages/AdminCashierPage";
-import Timer from "./pages/Timer";
+import TimerPage from "./pages/TimerPage";
 import Footer from "./components/Footer/Footer";
 import {Provider} from "react-redux";
 import React from "react";
@@ -41,7 +41,7 @@ const App = () => {
                                     }/>
                                     <Route path={"/:shopId"}>
                                         <Route path={""} Component={OrderPage}/>
-                                        <Route path={"timer"} Component={Timer}/>
+                                        <Route path={"timer"} Component={TimerPage}/>
                                         <Route path={"admin"}>
                                             <Route path={""} element={
                                                 <AuthGuard role={"admin"}>
