@@ -1,7 +1,7 @@
-import {ProductAmount} from "../../modules/redux/order/types";
+import {ProductAmount} from "../../modules/redux/order/orderTypes";
 import styled from "styled-components";
 import {Button, Divider, Typography, useTheme} from "@mui/material";
-import {Product} from "../../modules/redux/product/types";
+import {Product} from "../../modules/redux/product/productTypes";
 import React from "react";
 import {MotionList, MotionListItem} from "../motion/motionList";
 

@@ -1,8 +1,8 @@
 import styled from "styled-components";
 import {Grid, Stack, Typography} from "@mui/material";
-import {Product} from "../../modules/redux/product/types";
+import {Product} from "../../modules/redux/product/productTypes";
 import ProductCounter from "./ProductCounter";
-import {ProductAmount} from "../../modules/redux/order/types";
+import {ProductAmount} from "../../modules/redux/order/orderTypes";
 import SubTotal from "./SubTotal";
 
 type OrderFormProps = {

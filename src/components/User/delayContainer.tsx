@@ -1,7 +1,7 @@
 import {Button, Card, Stack, Typography} from "@mui/material";
 import React from "react";
 import {useCookies} from "react-cookie";
-import {Shop} from "../../modules/redux/shop/types";
+import {Shop} from "../../modules/redux/shop/shopTypes";
 import MyMarkdown from "../MyMarkdown";
 
 

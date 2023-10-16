@@ -14,7 +14,7 @@ import {
 import {useParams} from "react-router";
 import {useSelector} from "react-redux";
 import {RootState, useAppDispatch} from "../../modules/redux/store";
-import {BaristaMap, Shop, ShopStatus,} from "../../modules/redux/shop/types";
+import {BaristaMap, Shop, ShopStatus,} from "../../modules/redux/shop/shopTypes";
 import MarkdownTextField from "../MarkdownTextField";
 
 const ShopManager = () => {

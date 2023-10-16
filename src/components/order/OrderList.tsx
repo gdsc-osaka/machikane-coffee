@@ -1,6 +1,6 @@
-import {Order, Status} from "../../modules/redux/order/types";
+import {Order, Status} from "../../modules/redux/order/orderTypes";
 import {Button, Chip, IconButton, Stack, Typography, useTheme} from "@mui/material";
-import {Product} from "../../modules/redux/product/types";
+import {Product} from "../../modules/redux/product/productTypes";
 import {Flex} from "../layout/Flex";
 import IndexIcon from "./IndexIcon";
 import StickyNote from "../StickyNote";

@@ -3,7 +3,7 @@ import {useSelector} from "react-redux";
 import {fetchProducts, selectAllProduct, selectProductStatus,} from "../modules/redux/product/productsSlice";
 import {useAppDispatch} from "../modules/redux/store";
 import {useParams} from "react-router-dom";
-import {Order, ProductAmount, Status} from "../modules/redux/order/types";
+import {Order, ProductAmount, Status} from "../modules/redux/order/orderTypes";
 import OrderForm from "../components/order/OrderForm";
 import {
     Button,

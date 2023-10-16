@@ -1,5 +1,5 @@
 import {createAsyncThunk, createSlice} from "@reduxjs/toolkit";
-import {PayloadProduct, Product, ProductForAdd, ProductForUpdate} from "./types";
+import {PayloadProduct, Product, ProductForAdd, ProductForUpdate} from "./productTypes";
 import {AsyncState} from "../stateType";
 import {db, storage} from "../../firebase/firebase";
 import {productConverter} from "../../firebase/converters";

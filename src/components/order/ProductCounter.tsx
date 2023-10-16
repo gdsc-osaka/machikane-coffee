@@ -1,4 +1,4 @@
-import {Product} from "../../modules/redux/product/types";
+import {Product} from "../../modules/redux/product/productTypes";
 import styled from "styled-components";
 import {Card, IconButton, Stack, Typography} from "@mui/material";
 import {Add, Remove} from '@mui/icons-material';

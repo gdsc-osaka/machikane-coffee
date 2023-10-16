@@ -19,13 +19,13 @@ import {useSelector} from "react-redux";
 import {addShop, fetchShops, selectAllShops, selectShopStatus, updateShop} from "../modules/redux/shop/shopsSlice";
 import styled from "styled-components";
 import TextField from "@mui/material/TextField";
-import {Shop} from "../modules/redux/shop/types";
+import {Shop} from "../modules/redux/shop/shopTypes";
 import ArrowForwardIosRoundedIcon from '@mui/icons-material/ArrowForwardIosRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import CoffeeOutlinedIcon from '@mui/icons-material/CoffeeOutlined';
-import {Product} from "../modules/redux/product/types";
+import {Product} from "../modules/redux/product/productTypes";
 import {
     addProduct,
     fetchProducts,

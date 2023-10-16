@@ -7,9 +7,9 @@ import {
     SnapshotOptions,
     WithFieldValue
 } from "firebase/firestore"
-import {assertProduct, Product} from "../redux/product/types";
-import {assertShop, Shop} from "../redux/shop/types";
-import {assertOrder, Order} from "../redux/order/types";
+import {assertProduct, Product} from "../redux/product/productTypes";
+import {assertShop, Shop} from "../redux/shop/shopTypes";
+import {assertOrder, Order} from "../redux/order/orderTypes";
 import {Weaken} from "../util/typeUtils";
 
 export const productConverter: FirestoreDataConverter<Product> = {

@@ -10,7 +10,7 @@ import {
     updateShop
 } from "../modules/redux/shop/shopsSlice";
 import {useParams} from "react-router-dom";
-import {BaristaMap, ShopForAdd, Shop} from "../modules/redux/shop/types";
+import {BaristaMap, ShopForAdd, Shop} from "../modules/redux/shop/shopTypes";
 import CheckIcon from '@mui/icons-material/Check';
 import HourglassEmptyRoundedIcon from '@mui/icons-material/HourglassEmptyRounded';
 import HourglassBottomRoundedIcon from '@mui/icons-material/HourglassBottomRounded';
@@ -25,11 +25,11 @@ import {
 } from "../modules/redux/order/ordersSlice";
 import {fetchProducts, selectAllProduct} from "../modules/redux/product/productsSlice";
 import {getOrderLabel} from "../modules/util/orderUtils";
-import {Order, Status} from "../modules/redux/order/types";
+import {Order, Status} from "../modules/redux/order/orderTypes";
 import {Flex} from "../components/layout/Flex";
 import {MotionList, MotionListItem} from "src/components/motion/motionList";
 import {getSortedObjectKey} from "../modules/util/objUtils";
-import {Product} from "../modules/redux/product/types";
+import {Product} from "../modules/redux/product/productTypes";
 import {useAuth} from "../AuthGuard";
 import toast from "react-hot-toast";
 

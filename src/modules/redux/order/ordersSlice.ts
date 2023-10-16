@@ -1,6 +1,6 @@
 import {createAsyncThunk, createSlice, PayloadAction} from "@reduxjs/toolkit";
 import {AsyncState, Unsubscribe} from "../stateType";
-import {PayloadOrder, Order, OrderStatuses, OrderForAdd} from "./types";
+import {PayloadOrder, Order, OrderStatuses, OrderForAdd} from "./orderTypes";
 import {db} from "../../firebase/firebase";
 import {orderConverter} from "../../firebase/converters";
 import {selectProductById} from "../product/productsSlice";

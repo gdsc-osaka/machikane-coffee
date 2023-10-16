@@ -1,5 +1,5 @@
-import {Order} from "../redux/order/types";
-import {Product} from "../redux/product/types";
+import {Order} from "../redux/order/orderTypes";
+import {Product} from "../redux/product/productTypes";
 
 export const getOrderLabel = (order: Order, products: Product[]) => {
     let labelStr = "";

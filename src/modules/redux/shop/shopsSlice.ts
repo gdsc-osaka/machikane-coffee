@@ -1,6 +1,6 @@
 import {createAsyncThunk, createSlice, PayloadAction} from "@reduxjs/toolkit";
 import {AsyncState, Unsubscribe} from "../stateType";
-import {ShopForAdd, Shop, ShopStatus} from "./types";
+import {ShopForAdd, Shop, ShopStatus} from "./shopTypes";
 import {db} from "../../firebase/firebase";
 import {orderConverter, shopConverter} from "../../firebase/converters";
 import {RootState} from "../store";
