@@ -15,6 +15,7 @@ import AuthGuard, {AuthProvider} from "./AuthGuard";
 import RootPage from "./pages/RootPage";
 import AdminPage from "./pages/AdminPage";
 import NotFoundPage from "./pages/NotFoundPage";
+// @ts-ignore
 import {Toaster} from "react-hot-toast";
 
 const App = () => {
