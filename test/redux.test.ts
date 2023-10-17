@@ -1,5 +1,6 @@
 import {RootState} from "../src/modules/redux/store";
-import {addShop} from "../src/modules/redux/shop/shopsSlice";
+
+import {addShop} from "../src/modules/redux/shop/shopsThunk";
 
 // const testState: RootState = {
 //     order: {

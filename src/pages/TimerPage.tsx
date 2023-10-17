@@ -1,13 +1,16 @@
 import React, {useEffect, useState} from "react";
-import {selectMaxCompleteAt, selectOrderStatus, streamOrders} from "../modules/redux/order/ordersSlice";
+import {selectMaxCompleteAt, selectOrderStatus} from "../modules/redux/order/ordersSlice";
 import {useSelector} from "react-redux";
 import {RootState, useAppDispatch} from "../modules/redux/store";
 import TimeDisplay from "../components/Timer/TimeDisplay";
 import "../components/Timer/timer.css";
 import {useParams} from "react-router-dom";
-import {selectShopStatus, streamShop} from "src/modules/redux/shop/shopsSlice";
-import {fetchProducts, selectProductStatus} from "src/modules/redux/product/productsSlice";
+import {selectShopStatus} from "src/modules/redux/shop/shopsSlice";
+import {selectProductStatus} from "src/modules/redux/product/productsSlice";
 import {useCountDownInterval} from "../modules/hooks/useCountDownInterval";
+import {streamOrders} from "../modules/redux/order/ordersThunk";
+import {fetchProducts} from "../modules/redux/product/productsThunk";
+import {streamShop} from "../modules/redux/shop/shopsThunk";
 
 const TimerPage = () => {
   const selector = useSelector((state: RootState) => state);

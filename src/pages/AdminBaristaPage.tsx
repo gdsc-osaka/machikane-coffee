@@ -5,9 +5,7 @@ import {useSelector} from "react-redux";
 import {
     selectShopById,
     selectShopStatus,
-    selectShopUnsubscribe,
-    streamShop,
-    updateShop
+    selectShopUnsubscribe
 } from "../modules/redux/shop/shopsSlice";
 import {useParams} from "react-router-dom";
 import {BaristaMap, ShopForAdd, Shop} from "../modules/redux/shop/shopTypes";
@@ -19,11 +17,9 @@ import IndexIcon from "../components/order/IndexIcon";
 import {
     selectAllOrdersInverse,
     selectOrderStatus,
-    selectOrderUnsubscribe,
-    streamOrders,
-    updateOrder
+    selectOrderUnsubscribe
 } from "../modules/redux/order/ordersSlice";
-import {fetchProducts, selectAllProduct} from "../modules/redux/product/productsSlice";
+import {selectAllProduct} from "../modules/redux/product/productsSlice";
 import {getOrderLabel} from "../modules/util/orderUtils";
 import {Order, Status} from "../modules/redux/order/orderTypes";
 import {Flex} from "../components/layout/Flex";
@@ -32,6 +28,9 @@ import {getSortedObjectKey} from "../modules/util/objUtils";
 import {Product} from "../modules/redux/product/productTypes";
 import {useAuth} from "../AuthGuard";
 import toast from "react-hot-toast";
+import {streamOrders, updateOrder} from "../modules/redux/order/ordersThunk";
+import {fetchProducts} from "../modules/redux/product/productsThunk";
+import {streamShop, updateShop} from "../modules/redux/shop/shopsThunk";
 
 /**
  * Order.orderedStatusesの要素を識別する

@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {useSelector} from "react-redux";
-import {fetchProducts, selectAllProduct, selectProductStatus,} from "../modules/redux/product/productsSlice";
+import {selectAllProduct, selectProductStatus,} from "../modules/redux/product/productsSlice";
 import {useAppDispatch} from "../modules/redux/store";
 import {useParams} from "react-router-dom";
 import {Order, ProductAmount, Status} from "../modules/redux/order/orderTypes";
@@ -17,19 +17,17 @@ import {
     Stack
 } from "@mui/material";
 import {
-    addOrder,
-    deleteOrder,
     selectOrderStatus,
     selectReceivedOrder,
-    selectUnreceivedOrder,
-    streamOrders,
-    updateOrder
+    selectUnreceivedOrder
 } from "../modules/redux/order/ordersSlice";
 import OrderList from "../components/order/OrderList";
 import ShopManager from "../components/order/ShopManager";
 import ReceivedOrderList from "../components/order/ReceivedOrderList";
 import {selectShopUnsubscribe} from "../modules/redux/shop/shopsSlice";
 import {useAuth} from "../AuthGuard";
+import {addOrder, deleteOrder, streamOrders, updateOrder} from "../modules/redux/order/ordersThunk";
+import {fetchProducts} from "../modules/redux/product/productsThunk";
 
 const AdminCashierPage = () => {
     const [openDelete, setOpenDelete] = useState(false);

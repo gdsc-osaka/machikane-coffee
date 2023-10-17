@@ -1,26 +1,27 @@
 import {Button, Dialog, DialogActions, DialogTitle, Divider, Stack, TextField, Typography} from "@mui/material";
 import React, {useEffect, useState} from "react";
 import {RootState, useAppDispatch} from "../modules/redux/store";
-import {selectOrderById, selectOrderUnsubscribe, streamOrder} from "../modules/redux/order/ordersSlice";
+import {selectOrderById, selectOrderUnsubscribe} from "../modules/redux/order/ordersSlice";
 import {useNavigate, useParams, useSearchParams} from "react-router-dom";
 import {useSelector} from "react-redux";
 import {Order} from "../modules/redux/order/orderTypes";
 import StickyNote from "../components/StickyNote";
 import {Product} from "../modules/redux/product/productTypes";
-import {fetchProducts, selectAllProduct, selectProductStatus} from "../modules/redux/product/productsSlice";
+import {selectAllProduct, selectProductStatus} from "../modules/redux/product/productsSlice";
 import {useCountDownInterval} from "../modules/hooks/useCountDownInterval";
 import {ShopStatus} from "../modules/redux/shop/shopTypes";
 import {
-    fetchShops,
     selectAllShops,
     selectShopById,
     selectShopDelaySeconds,
-    selectShopStatus,
-    streamShop
+    selectShopStatus
 } from "../modules/redux/shop/shopsSlice";
 import DelayContainer from "../components/User/delayContainer";
 import MyMarkdown from "src/components/MyMarkdown";
 import {MotionList, MotionListItem} from "../components/motion/motionList";
+import {streamOrder} from "../modules/redux/order/ordersThunk";
+import {fetchProducts} from "../modules/redux/product/productsThunk";
+import {fetchShops, streamShop} from "../modules/redux/shop/shopsThunk";
 
 // queryParamで使うキー
 const orderIndexParamKey = 'order';

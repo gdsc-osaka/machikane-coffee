@@ -5,17 +5,17 @@ import {Row} from "../layout/Row";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import RemoveRoundedIcon from "@mui/icons-material/RemoveRounded";
 import {
-    changeShopStatus,
     selectShopById,
     selectShopStatus,
-    streamShop,
-    updateShop,
+
+
 } from "../../modules/redux/shop/shopsSlice";
 import {useParams} from "react-router";
 import {useSelector} from "react-redux";
 import {RootState, useAppDispatch} from "../../modules/redux/store";
 import {BaristaMap, Shop, ShopStatus,} from "../../modules/redux/shop/shopTypes";
 import MarkdownTextField from "../MarkdownTextField";
+import {changeShopStatus, streamShop, updateShop} from "../../modules/redux/shop/shopsThunk";
 
 const ShopManager = () => {
     const dispatch = useAppDispatch();
