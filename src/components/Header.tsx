@@ -11,9 +11,9 @@ import {
     useMediaQuery,
     useTheme
 } from "@mui/material";
-import {useAuth} from "../../AuthGuard";
+import {useAuth} from "../AuthGuard";
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
-import {auth} from "../../modules/firebase/firebase";
+import {auth} from "../modules/firebase/firebase";
 import toast from "react-hot-toast";
 import {signOut} from "firebase/auth";
 import CurrencyYenRoundedIcon from '@mui/icons-material/CurrencyYenRounded';

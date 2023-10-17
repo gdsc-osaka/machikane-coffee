@@ -35,7 +35,7 @@ import {
 } from "../modules/redux/product/productsSlice";
 import {SxProps} from "@mui/system";
 import {Theme} from "@mui/material/styles/createTheme";
-import FileInputButton from "../components/Admin/FileInputButton";
+import FileInputButton from "../components/FileInputButton";
 import {Link} from "react-router-dom";
 import MarkdownTextField from "../components/MarkdownTextField";
 

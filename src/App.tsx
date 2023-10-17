@@ -1,9 +1,9 @@
 import store from "./modules/redux/store";
-import Header from "./components/Header/Header";
+import Header from "./components/Header";
 import {BrowserRouter, Route, Routes} from "react-router-dom";
 import AdminCashierPage from "./pages/AdminCashierPage";
 import TimerPage from "./pages/TimerPage";
-import Footer from "./components/Footer/Footer";
+import Footer from "./components/Footer";
 import {Provider} from "react-redux";
 import React from "react";
 import {createTheme, CssBaseline, ThemeProvider} from "@mui/material";
