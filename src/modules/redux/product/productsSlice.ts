@@ -1,5 +1,5 @@
 import {createAsyncThunk, createSlice} from "@reduxjs/toolkit";
-import {CargoProduct, Product, RawProduct} from "./types";
+import {PayloadProduct, Product, ProductForAdd, ProductForUpdate} from "./productTypes";
 import {AsyncState} from "../stateType";
 import {db, storage} from "../../firebase/firebase";
 import {productConverter} from "../../firebase/converters";
@@ -19,19 +19,18 @@ export const fetchProducts = createAsyncThunk("products/fetchProducts",
 
         for (const product of products) {
             const thumbnailPath = product.thumbnail_path;
-            const url = await getDownloadURL(ref(storage, thumbnailPath));
-            product.thumbnail_url = url;
+            product.thumbnail_url = await getDownloadURL(ref(storage, thumbnailPath));
         }
 
         return products;
 });
 
 export const addProduct = createAsyncThunk('products/addProduct',
-    async ({shopId, rawProduct, thumbnailFile}: {shopId: string, rawProduct: RawProduct, thumbnailFile: File}, {rejectWithValue}) => {
+    async ({shopId, productForAdd, thumbnailFile}: {shopId: string, productForAdd: ProductForAdd, thumbnailFile: File}, {rejectWithValue}) => {
         try {
-            const thumbnailPath = getThumbnailPath(shopId, rawProduct.id);
-            const product: CargoProduct = {...rawProduct, thumbnail_path: thumbnailPath};
-            await setDoc(productRef(shopId, rawProduct.id), product);
+            const thumbnailPath = getThumbnailPath(shopId, productForAdd.id);
+            const product: PayloadProduct = {...productForAdd, thumbnail_path: thumbnailPath};
+            await setDoc(productRef(shopId, productForAdd.id), product);
 
             const thumbnailRef = ref(storage, thumbnailPath);
 
@@ -50,17 +49,22 @@ export const addProduct = createAsyncThunk('products/addProduct',
         }
 });
 
-export const updateProduct = createAsyncThunk<Product | undefined, {shopId: string, rawProduct: RawProduct, thumbnailFile: File | undefined}, {state: RootState}>('products/updateProduct',
-    async ({shopId, rawProduct, thumbnailFile}, {getState, rejectWithValue}): Promise<Product | undefined> => {
+export const updateProduct = createAsyncThunk<Product | undefined, {
+    shopId: string,
+    productId: string,
+    rawProduct: ProductForUpdate,
+    thumbnailFile: File | undefined
+}, { state: RootState }>('products/updateProduct',
+    async ({shopId, productId, rawProduct, thumbnailFile}, {getState, rejectWithValue}): Promise<Product | undefined> => {
         try {
-            const oldProduct = selectProductById(getState(), rawProduct.id);
+            const oldProduct = selectProductById(getState(), productId);
 
-            if (oldProduct != null) {
+            if (oldProduct !== null) {
                 const newProduct: Product = {...oldProduct, ...rawProduct};
-                const docRef = productRef(shopId, rawProduct.id);
+                const docRef = productRef(shopId, productId);
                 if (thumbnailFile !== undefined) {
                     // サムネアップロード
-                    const thumbnailPath = getThumbnailPath(shopId, rawProduct.id);
+                    const thumbnailPath = getThumbnailPath(shopId, productId);
                     const thumbnailRef = ref(storage, thumbnailPath);
                     await uploadBytes(thumbnailRef, thumbnailFile);
                 }
@@ -93,14 +97,14 @@ const productsSlice = createSlice({
             .addCase(fetchProducts.rejected, (state, action) => {
                 state.status = 'failed'
                 const msg = action.error.message;
-                state.error = msg == undefined ? null : msg;
+                state.error = msg === undefined ? null : msg;
             })
 
         builder
             .addCase(addProduct.fulfilled, (state, action) => {
                 const product = action.payload;
 
-                if (product != undefined) {
+                if (product !== undefined) {
                     state.data.push();
                 }
             })
@@ -110,8 +114,8 @@ const productsSlice = createSlice({
                 const updatedProd = action.payload;
 
                 // state.data の要素を更新
-                if (updatedProd != undefined) {
-                    state.data.update(e => e.id == updatedProd.id, updatedProd);
+                if (updatedProd !== undefined) {
+                    state.data.update(e => e.id === updatedProd.id, updatedProd);
                 }
             })
     },
@@ -120,6 +124,6 @@ const productsSlice = createSlice({
 const productReducer = productsSlice.reducer;
 export default productReducer;
 
-export const selectProductById = (state: RootState, productId: string) => state.product.data.find(e => e.id == productId) ?? null
+export const selectProductById = (state: RootState, productId: string) => state.product.data.find(e => e.id === productId) ?? null
 export const selectAllProduct = (state: RootState) => state.product.data;
 export const selectProductStatus = (state: RootState) => state.product.status;

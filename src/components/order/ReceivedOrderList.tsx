@@ -1,10 +1,10 @@
-import {Order} from "../../modules/redux/order/types";
+import {Order} from "../../modules/redux/order/orderTypes";
 import {Button, IconButton, Stack, Typography} from "@mui/material";
 import StickyNote from "../StickyNote";
 import IndexIcon from "./IndexIcon";
 import {getOrderLabel} from "../../modules/util/orderUtils";
 import React from "react";
-import {Product} from "../../modules/redux/product/types";
+import {Product} from "../../modules/redux/product/productTypes";
 import {Flex} from "../layout/Flex";
 import {Row} from "../layout/Row";
 import {MotionList, MotionListItem} from "../motion/motionList";

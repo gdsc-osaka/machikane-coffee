@@ -1,4 +1,4 @@
-import {Product} from "../../modules/redux/product/types";
+import {Product} from "../../modules/redux/product/productTypes";
 import styled from "styled-components";
 import {Card, IconButton, Stack, Typography} from "@mui/material";
 import {Add, Remove} from '@mui/icons-material';
@@ -43,16 +43,6 @@ const ProductCounter = (props: ProductCounterType) => {
         </Stack>
     </Card>
 }
-
-const RootContainer = styled.div`
-  display: flex;
-  padding: 1rem;
-  align-items: center;
-  gap: 1rem;
-  align-self: stretch;
-  border-radius: 10px;
-  background-color: #FFF8F5;
-`
 
 const RoundedImage = styled.img`
   width: 100px;

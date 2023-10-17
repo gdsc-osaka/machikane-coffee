@@ -1,7 +1,7 @@
-import {ProductAmount} from "../../modules/redux/order/types";
+import {ProductAmount} from "../../modules/redux/order/orderTypes";
 import styled from "styled-components";
 import {Button, Divider, Typography, useTheme} from "@mui/material";
-import {Product} from "../../modules/redux/product/types";
+import {Product} from "../../modules/redux/product/productTypes";
 import React from "react";
 import {MotionList, MotionListItem} from "../motion/motionList";
 
@@ -81,15 +81,6 @@ const SubTotal = (props: SubTotalProps) => {
         </MotionList>
     );
 }
-
-const Container = styled.div`
-  display: flex;
-  width: 19rem;
-  padding: 1rem;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.8rem;
-`
 
 const Row = styled.div`
   display: flex;

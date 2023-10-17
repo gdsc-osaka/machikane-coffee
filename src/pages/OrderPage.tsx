@@ -4,12 +4,12 @@ import {RootState, useAppDispatch} from "../modules/redux/store";
 import {selectOrderById, selectOrderUnsubscribe, streamOrder} from "../modules/redux/order/ordersSlice";
 import {useNavigate, useParams, useSearchParams} from "react-router-dom";
 import {useSelector} from "react-redux";
-import {Order} from "../modules/redux/order/types";
+import {Order} from "../modules/redux/order/orderTypes";
 import StickyNote from "../components/StickyNote";
-import {Product} from "../modules/redux/product/types";
+import {Product} from "../modules/redux/product/productTypes";
 import {fetchProducts, selectAllProduct, selectProductStatus} from "../modules/redux/product/productsSlice";
 import {useCountDownInterval} from "../modules/hooks/useCountDownInterval";
-import {ShopStatus} from "../modules/redux/shop/types";
+import {ShopStatus} from "../modules/redux/shop/shopTypes";
 import {
     fetchShops,
     selectAllShops,
@@ -127,7 +127,7 @@ const OrderPage = () => {
 
                     setSearchParams({[orderIndexParamKey]: orderIndex});
                 })
-                .catch((e) => {
+                .catch((_) => {
                     setDialogState({
                         open: true,
                         title: "該当する番号の注文が見つかりません",

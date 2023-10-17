@@ -21,11 +21,17 @@ export type Product = {
 /**
  * データをUIから入力するときに使用する
  */
-export type RawProduct = Omit<Product, "thumbnail_path" | "thumbnail_url">;
+export type ProductForAdd = Omit<Product, "thumbnail_path" | "thumbnail_url">;
+
+/**
+ * データの更新時に使用する
+ */
+export type ProductForUpdate = Partial<Product>;
+
 /**
  * データをFirestoreに送信するときに使用する
  */
-export type CargoProduct = Omit<Product, "id" | "thumbnail_url">;
+export type PayloadProduct = Omit<Product, "id" | "thumbnail_url">;
 
 export function assertProduct(data: any): asserts data is Product {
     const d = data as Partial<Product>; // 補完のためキャスト

@@ -1,8 +1,8 @@
 import styled from "styled-components";
 import {Grid, Stack, Typography} from "@mui/material";
-import {Product} from "../../modules/redux/product/types";
+import {Product} from "../../modules/redux/product/productTypes";
 import ProductCounter from "./ProductCounter";
-import {ProductAmount} from "../../modules/redux/order/types";
+import {ProductAmount} from "../../modules/redux/order/orderTypes";
 import SubTotal from "./SubTotal";
 
 type OrderFormProps = {
@@ -39,26 +39,5 @@ const OrderForm = (props: OrderFormProps) => {
         </Grid>
     </Stack>
 }
-
-const ContentContainer = styled.div`
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-`
-
-const CounterContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1rem;
-`
-
-const SubTotalContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: flex-end;
-  min-height: 16rem;
-`
 
 export default OrderForm;
