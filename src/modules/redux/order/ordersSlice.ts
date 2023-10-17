@@ -142,8 +142,6 @@ export const addOrder = createAsyncThunk<Order | undefined, {shopId: string, ord
             index: 1,
             created_at: serverTimestamp(),
             complete_at: new Date().addSeconds(waitingSec).toTimestamp(),
-            received: false,
-            completed: false,
             order_statuses: orderStatuses,
             delay_seconds: 0
         }

@@ -56,21 +56,12 @@ export type Order = {
     // データ追加時は以下のみ
     product_amount: ProductAmount;
     is_student: boolean;
-
-    /**
-     * @deprecated status に統合
-     */
-    received: boolean;
-    /**
-     * @deprecated status に統合
-     */
-    completed: boolean;
 };
 
 /**
  * データの追加時、ユーザーが設定しなければいけないフィールドのみにした order
  */
-export type OrderForAdd = Omit<Order, "id" | "index" | "created_at" | "complete_at" | "received" | "completed" | "order_statuses" | "delay_seconds">;
+export type OrderForAdd = Omit<Order, "id" | "index" | "created_at" | "complete_at" | "order_statuses" | "delay_seconds">;
 
 /**
  * データの更新時に使用する Order
