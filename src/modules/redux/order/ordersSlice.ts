@@ -54,7 +54,7 @@ const ordersSlice = createSlice({
          * @param state
          * @param action
          */
-        pending(state, action: PayloadAction<{ shopId: string }>) {
+        setPending(state, action: PayloadAction<{ shopId: string }>) {
             const { shopId } = action.payload;
 
             if (!(shopId in state)) state[shopId] = initialSingleOrderState
@@ -66,7 +66,7 @@ const ordersSlice = createSlice({
          * @param state
          * @param action
          */
-        rejected(state, action: PayloadAction<{ shopId: string, error: SerializedError }>) {
+        setRejected(state, action: PayloadAction<{ shopId: string, error: SerializedError }>) {
             const {shopId, error} = action.payload;
 
             if (!(shopId in state)) state[shopId] = initialSingleOrderState
@@ -136,7 +136,7 @@ const ordersSlice = createSlice({
 
 const orderReducer = ordersSlice.reducer;
 export default orderReducer;
-export const {orderAdded, orderUpdated, orderRemoved} = ordersSlice.actions;
+export const {orderAdded, orderUpdated, orderRemoved, setRejected, setPending} = ordersSlice.actions;
 
 /**
  * createdが新しい方が先にソートする
