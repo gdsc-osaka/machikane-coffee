@@ -1,13 +1,12 @@
 import {Button, Dialog, DialogActions, DialogTitle, Divider, Stack, TextField, Typography} from "@mui/material";
 import React, {useEffect, useState} from "react";
-import {RootState, useAppDispatch} from "../modules/redux/store";
+import {RootState, useAppDispatch, useAppSelector} from "../modules/redux/store";
 import {selectOrderById, selectOrderUnsubscribe} from "../modules/redux/order/ordersSlice";
 import {useNavigate, useParams, useSearchParams} from "react-router-dom";
-import {useSelector} from "react-redux";
 import {Order} from "../modules/redux/order/orderTypes";
 import StickyNote from "../components/StickyNote";
 import {Product} from "../modules/redux/product/productTypes";
-import {selectAllProduct, selectProductStatus} from "../modules/redux/product/productsSlice";
+import {selectAllProduct} from "../modules/redux/product/productsSlice";
 import {useCountDownInterval} from "../modules/hooks/useCountDownInterval";
 import {ShopStatus} from "../modules/redux/shop/shopTypes";
 import {
@@ -47,15 +46,15 @@ const OrderPage = () => {
     const shopId = params.shopId ?? '';
     const [searchParams, setSearchParams] = useSearchParams();
     const paramOrderIndex = searchParams.get(orderIndexParamKey);
-    const order = useSelector((state: RootState) => selectOrderById(state, orderId));
-    const unsubscribe = useSelector(selectOrderUnsubscribe);
-    const delaySec = useSelector((state: RootState) => selectShopDelaySeconds(state, shopId));
+    
+    const order = useAppSelector(state => selectOrderById(state, shopId, orderId));
+    const unsubscribe = useAppSelector(state => selectOrderUnsubscribe(state, shopId));
+    const delaySec = useAppSelector(state => selectShopDelaySeconds(state, shopId));
 
-    const products = useSelector(selectAllProduct);
-    useSelector(selectProductStatus);
-    const shop = useSelector((state: RootState) => selectShopById(state, shopId));
-    const allShops = useSelector(selectAllShops);
-    const shopStatus = useSelector(selectShopStatus);
+    const products = useAppSelector(selectAllProduct);
+    const shop = useAppSelector((state: RootState) => selectShopById(state, shopId));
+    const allShops = useAppSelector(selectAllShops);
+    const shopStatus = useAppSelector(selectShopStatus);
 
     useEffect(() => {
         dispatch(fetchProducts(shopId));
@@ -124,7 +123,8 @@ const OrderPage = () => {
             await dispatch(streamOrder({shopId: shopId, orderIndex: num}))
                 .unwrap()
                 .then((payload) => {
-                    setOrderId(payload.order.id);
+                    const {order} = payload;
+                    setOrderId(order.id);
 
                     setSearchParams({[orderIndexParamKey]: orderIndex});
                 })

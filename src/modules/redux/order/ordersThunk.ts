@@ -4,7 +4,6 @@ import {
     collection,
     deleteDoc,
     doc,
-    getDoc,
     getDocs,
     limit,
     onSnapshot,
@@ -18,11 +17,12 @@ import {
 import {getToday} from "../../util/dateUtils";
 import {db} from "../../firebase/firebase";
 import {orderConverter} from "../../firebase/converters";
-import {createAsyncThunk} from "@reduxjs/toolkit";
-import {RootState} from "../store";
+import {createAsyncThunk, Dispatch} from "@reduxjs/toolkit";
+import {AppDispatch, RootState} from "../store";
 import {Order, OrderForAdd, OrderStatuses, PayloadOrder} from "./orderTypes";
 import {selectProductById} from "../product/productsSlice";
 import {orderAdded, orderRemoved, orderUpdated} from "./ordersSlice";
+import {Unsubscribe} from "../stateType";
 
 const ordersQuery = (shopId: string, ...queryConstraints: QueryConstraint[]) => {
     const today = Timestamp.fromDate(getToday());
@@ -34,13 +34,20 @@ const orderQuery = (shopId: string, orderIndex: number, ...queryConstraints: Que
     return query(collection(db, `shops/${shopId}/orders`).withConverter(orderConverter),
         where("created_at", ">=", today), where("index", "==", orderIndex), ...queryConstraints);
 }
-export const fetchOrders = createAsyncThunk("orders/fetchOrders",
+
+export const fetchOrders = createAsyncThunk<
+    { shopId: string, orders: Order[] },
+    string,
+    {}
+>("orders/fetchOrders",
     async (shopId: string) => {
         const _query = ordersQuery(shopId);
         const snapshot = await getDocs(_query);
+        const orders = snapshot.docs.map(doc => doc.data());
 
-        return snapshot.docs.map(doc => doc.data());
+        return {orders, shopId}
     });
+
 /**
  * order をリアルタイム更新する. ユーザー側で使用されることを想定
  */
@@ -52,21 +59,28 @@ export const streamOrders = createAsyncThunk('orders/streamOrders',
 
                 if (change.type === "added") {
                     const order = change.doc.data();
-                    dispatch(orderAdded(order));
+                    dispatch(orderAdded({shopId, order}));
                 }
                 if (change.type === "modified") {
                     const order = change.doc.data();
-                    dispatch(orderUpdated(order));
+                    dispatch(orderUpdated({shopId, order}));
                 }
                 if (change.type === "removed") {
-                    const id = change.doc.id;
-                    dispatch(orderRemoved(id));
+                    const orderId = change.doc.id;
+                    dispatch(orderRemoved({shopId, orderId}));
                 }
             });
         });
 
-        return unsubscribe;
+        return {shopId, unsubscribe};
     })
+
+
+// <
+//     { shopId: string, unsubscribe: Unsubscribe },
+//     string,
+// { dispatch?:  Dispatch }
+// >
 export const streamOrder = createAsyncThunk('orders/streamOrder',
     async ({shopId, orderIndex}: { shopId: string, orderIndex: number }, {dispatch, getState, rejectWithValue}) => {
         const _query = orderQuery(shopId, orderIndex);
@@ -82,29 +96,31 @@ export const streamOrder = createAsyncThunk('orders/streamOrder',
 
             const unsubscribe = onSnapshot(doc.ref, (doc) => {
                 const state = getState() as RootState;
-                const data = doc.data();
+                const order = doc.data();
 
-                if (data === undefined) return;
+                if (order === undefined) return;
 
                 // 同じIDのOrderがないとき
-                if (state.order.data.findIndex(e => e.id === data.id) === -1) {
-                    dispatch(orderAdded(data));
+                if (state.order[shopId].data.findIndex(e => e.id === order.id) === -1) {
+                    dispatch(orderAdded({shopId, order}));
                 } else {
-                    dispatch(orderUpdated(data));
+                    dispatch(orderUpdated({shopId, order}));
                 }
             });
 
-            return {unsubscribe: unsubscribe, order: doc.data()};
+            return {unsubscribe: unsubscribe, shopId: shopId, order: doc.data()};
 
         } catch (e) {
             console.error(e);
             return rejectWithValue(e);
         }
     })
-export const addOrder = createAsyncThunk<Order | undefined, { shopId: string, orderForAdd: OrderForAdd }, {
-    state: RootState
-}>("orders/addOrder",
-    async ({shopId, orderForAdd}, {getState, rejectWithValue}): Promise<Order | undefined> => {
+
+export const addOrder = createAsyncThunk<
+    { shopId: string, order: Order },
+    { shopId: string, orderForAdd: OrderForAdd },
+    { state: RootState }
+>("orders/addOrder", async ({shopId, orderForAdd}, {getState, rejectWithValue}) => {
         // TODO: 直列と考えて待ち時間を計算しているので、並列にも対応させる
         // 注文の待ち時間 (秒)
         let waitingSec = 0;
@@ -160,14 +176,18 @@ export const addOrder = createAsyncThunk<Order | undefined, { shopId: string, or
 
             // ランダムIDで追加
             const addedDoc = await addDoc(collection(db, `shops/${shopId}/orders`).withConverter(orderConverter), order);
-            // ドキュメントを取得してStoreに追加
-            const addedOrderSnapshot = await getDoc(doc(db, addedDoc.path).withConverter(orderConverter));
-            return addedOrderSnapshot.data();
+
+            const addedOrder: Order = {
+                ...order,
+                id: addedDoc.id,
+            }
+
+            return {shopId: shopId, order: addedOrder}
         } catch (e) {
-            rejectWithValue(e);
-            return undefined;
+            return rejectWithValue(e);
         }
     });
+
 /**
  * order_statuses の status が全て completed かつ status が idle のとき, ルートの status も completed に設定する
  */
@@ -179,12 +199,15 @@ const switchOrderStatus = (newOrder: Order) => {
         newOrder.status = "completed";
     }
 }
+
 /**
  * 注文を更新する. UIで操作された部分のみ更新すれば, その更新に依存するそれ以外の部分も自動で書き換えられる (completed 等)
  */
-export const updateOrder = createAsyncThunk<Order, { shopId: string, newOrder: Order }, {
-    state: RootState
-}>('orders/updateOrder',
+export const updateOrder = createAsyncThunk<
+    { shopId: string, order: Order},
+    { shopId: string, newOrder: Order },
+    { state: RootState }
+>('orders/updateOrder',
     async ({shopId, newOrder}, {getState}) => {
         switchOrderStatus(newOrder);
         const batch = writeBatch(db);
@@ -202,7 +225,7 @@ export const updateOrder = createAsyncThunk<Order, { shopId: string, newOrder: O
             const state = getState();
             const createdAtTime = newOrder.created_at.toDate().getTime();
             // newOrder より後に追加された注文
-            const afterOrders = state.order.data
+            const afterOrders = state.order[shopId].data
                 .filter(order => order.created_at.toDate().getTime() - createdAtTime);
 
 
@@ -215,11 +238,15 @@ export const updateOrder = createAsyncThunk<Order, { shopId: string, newOrder: O
         }
 
         await batch.commit();
-        return newOrder;
+        return {shopId: shopId, order: newOrder};
     });
-export const deleteOrder = createAsyncThunk<Order, { shopId: string, order: Order }, {}>('orders/deleteOrder',
+export const deleteOrder = createAsyncThunk<
+    { shopId: string, order: Order },
+    { shopId: string, order: Order },
+    {}
+>('orders/deleteOrder',
     async ({shopId, order}) => {
         const docRef = doc(db, `shops/${shopId}/orders/${order.id}`);
         await deleteDoc(docRef);
-        return order;
+        return {shopId, order};
     })

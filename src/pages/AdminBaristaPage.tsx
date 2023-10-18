@@ -1,24 +1,15 @@
 import {Button, CircularProgress, Stack, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
 import React, {useEffect, useState} from "react";
-import {RootState, useAppDispatch} from "../modules/redux/store";
-import {useSelector} from "react-redux";
-import {
-    selectShopById,
-    selectShopStatus,
-    selectShopUnsubscribe
-} from "../modules/redux/shop/shopsSlice";
+import {useAppDispatch, useAppSelector} from "../modules/redux/store";
+import {selectShopById, selectShopStatus, selectShopUnsubscribe} from "../modules/redux/shop/shopsSlice";
 import {useParams} from "react-router-dom";
-import {BaristaMap, ShopForAdd, Shop} from "../modules/redux/shop/shopTypes";
+import {BaristaMap, ShopForAdd} from "../modules/redux/shop/shopTypes";
 import CheckIcon from '@mui/icons-material/Check';
 import HourglassEmptyRoundedIcon from '@mui/icons-material/HourglassEmptyRounded';
 import HourglassBottomRoundedIcon from '@mui/icons-material/HourglassBottomRounded';
 import StickyNote from "../components/StickyNote";
 import IndexIcon from "../components/order/IndexIcon";
-import {
-    selectAllOrdersInverse,
-    selectOrderStatus,
-    selectOrderUnsubscribe
-} from "../modules/redux/order/ordersSlice";
+import {selectAllOrdersInverse, selectOrderStatus, selectOrderUnsubscribe} from "../modules/redux/order/ordersSlice";
 import {selectAllProduct} from "../modules/redux/product/productsSlice";
 import {getOrderLabel} from "../modules/util/orderUtils";
 import {Order, Status} from "../modules/redux/order/orderTypes";
@@ -55,17 +46,17 @@ const AdminBaristaPage = () => {
     const params = useParams();
 
     const shopId = params.shopId ?? '';
-    const shopStatus = useSelector(selectShopStatus);
-    const shop = useSelector<RootState, Shop | undefined>(state => selectShopById(state, shopId));
+    const shopStatus = useAppSelector(selectShopStatus);
+    const shop = useAppSelector(state => selectShopById(state, shopId));
     const baristas = shop?.baristas ?? {};
     const baristaIds = shop === undefined ? [] : Object.keys(shop.baristas).map((e) => parseInt(e));
 
-    const orderStatus = useSelector(selectOrderStatus);
-    const orders = useSelector(selectAllOrdersInverse);
-    const products = useSelector(selectAllProduct);
+    const orderStatus = useAppSelector(state => selectOrderStatus(state, shopId));
+    const orders = useAppSelector(state => selectAllOrdersInverse(state, shopId));
+    const products = useAppSelector(selectAllProduct);
 
-    const shopUnsubscribe = useSelector(selectShopUnsubscribe);
-    const orderUnsubscribe = useSelector(selectOrderUnsubscribe);
+    const shopUnsubscribe = useAppSelector(selectShopUnsubscribe);
+    const orderUnsubscribe = useAppSelector(state => selectOrderUnsubscribe(state, shopId));
 
     // データを取得
     useEffect(() => {

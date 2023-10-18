@@ -1,7 +1,6 @@
 import React, {useEffect, useState} from "react";
-import {useSelector} from "react-redux";
-import {selectAllProduct, selectProductStatus,} from "../modules/redux/product/productsSlice";
-import {useAppDispatch} from "../modules/redux/store";
+import {selectAllProduct,} from "../modules/redux/product/productsSlice";
+import {useAppDispatch, useAppSelector} from "../modules/redux/store";
 import {useParams} from "react-router-dom";
 import {Order, ProductAmount, Status} from "../modules/redux/order/orderTypes";
 import OrderForm from "../components/order/OrderForm";
@@ -16,11 +15,7 @@ import {
     Grid,
     Stack
 } from "@mui/material";
-import {
-    selectOrderStatus,
-    selectReceivedOrder,
-    selectUnreceivedOrder
-} from "../modules/redux/order/ordersSlice";
+import {selectOrderStatus, selectReceivedOrder, selectUnreceivedOrder} from "../modules/redux/order/ordersSlice";
 import OrderList from "../components/order/OrderList";
 import ShopManager from "../components/order/ShopManager";
 import ReceivedOrderList from "../components/order/ReceivedOrderList";
@@ -34,16 +29,17 @@ const AdminCashierPage = () => {
     const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
     const [productAmount, setProductAmount] = useState<ProductAmount>({});
 
-    const dispatch = useAppDispatch();
-    const auth = useAuth();
-    const products = useSelector(selectAllProduct);
-    const unreceivedOrders = useSelector(selectUnreceivedOrder);
-    const receivedOrders = useSelector(selectReceivedOrder);
-    const orderStatus = useSelector(selectOrderStatus);
     const params = useParams();
     const shopId = params.shopId ?? "";
 
-    const shopUnsubscribe = useSelector(selectShopUnsubscribe);
+    const dispatch = useAppDispatch();
+    const auth = useAuth();
+    const products = useAppSelector(selectAllProduct);
+    const unreceivedOrders = useAppSelector(state => selectUnreceivedOrder(state, shopId));
+    const receivedOrders = useAppSelector(state => selectReceivedOrder(state, shopId));
+    const orderStatus = useAppSelector(state => selectOrderStatus(state, shopId));
+
+    const shopUnsubscribe = useAppSelector(selectShopUnsubscribe);
 
     const onChangeAmount = (productId: string, amount: number) => {
         setProductAmount({...productAmount, [productId]: amount});

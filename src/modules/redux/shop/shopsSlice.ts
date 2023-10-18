@@ -9,7 +9,7 @@ const shopsSlice = createSlice({
     initialState: {
         data: [],
         status: "idle",
-        error: null,
+        error: undefined,
         unsubscribe: null,
     } as AsyncState<Shop[]> & Unsubscribe,
     reducers: {
@@ -42,8 +42,7 @@ const shopsSlice = createSlice({
             })
             .addCase(fetchShops.rejected, (state, action) => {
                 state.status = 'failed'
-                const msg = action.error.message;
-                state.error = msg === undefined ? null : msg;
+                state.error = action.error.message;
             })
 
         builder

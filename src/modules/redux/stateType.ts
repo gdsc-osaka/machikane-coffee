@@ -6,7 +6,7 @@ export type AsyncStatus = 'idle' | 'loading' | 'succeeded' | 'failed'
 export type AsyncState<T> = {
     data: T,
     status: AsyncStatus,
-    error: string | null,
+    error: string | undefined,
 }
 
 export type Unsubscribe = {
