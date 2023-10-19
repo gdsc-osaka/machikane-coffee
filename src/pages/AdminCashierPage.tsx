@@ -52,7 +52,7 @@ const AdminCashierPage = () => {
     }, [])
 
     useEffect(() => {
-        if (orderStatus == "idle" || orderStatus == "failed") {
+        if (orderStatus === "idle") {
             dispatch(streamOrders(shopId));
         }
     }, [shopId, dispatch, orderStatus]);

@@ -27,14 +27,10 @@ const ordersSlice = createSlice({
     initialState: {} as OrderState,
     reducers: {
         orderAdded(state, action: PayloadAction<{shopId: string, order: Order}>) {
-            console.log("orderAdded")
             const {order, shopId} = action.payload;
 
             ensureInitialized(state, shopId);
-
-            if (state[shopId].data.findIndex(e => e.id === order.id) === -1) {
-                state[shopId].data.push(order);
-            }
+            state[shopId].data.push(order);
         },
         orderUpdated(state, action: PayloadAction<{shopId: string, order: Order}>) {
             const {order, shopId} = action.payload;
