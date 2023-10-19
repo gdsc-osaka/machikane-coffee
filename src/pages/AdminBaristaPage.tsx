@@ -53,7 +53,7 @@ const AdminBaristaPage = () => {
 
     const orderStatus = useAppSelector(state => selectOrderStatus(state, shopId));
     const orders = useAppSelector(state => selectAllOrdersInverse(state, shopId));
-    const products = useAppSelector(selectAllProduct);
+    const products = useAppSelector(state => selectAllProduct(state, shopId));
 
     const shopUnsubscribe = useAppSelector(selectShopUnsubscribe);
     const orderUnsubscribe = useAppSelector(state => selectOrderUnsubscribe(state, shopId));

@@ -51,7 +51,7 @@ const OrderPage = () => {
     const unsubscribe = useAppSelector(state => selectOrderUnsubscribe(state, shopId));
     const delaySec = useAppSelector(state => selectShopDelaySeconds(state, shopId));
 
-    const products = useAppSelector(selectAllProduct);
+    const products = useAppSelector(state => selectAllProduct(state, shopId));
     const shop = useAppSelector((state: RootState) => selectShopById(state, shopId));
     const allShops = useAppSelector(selectAllShops);
     const shopStatus = useAppSelector(selectShopStatus);

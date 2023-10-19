@@ -18,23 +18,29 @@ type OrderState = {
     [shopId in string]: SingleOrderState
 }
 
+function ensureInitialized(state: any, shopId: string) {
+    if (!state.hasOwnProperty(shopId)) state[shopId] = Object.assign({}, initialSingleOrderState);
+}
+
 const ordersSlice = createSlice({
     name: "orders",
     initialState: {} as OrderState,
     reducers: {
         orderAdded(state, action: PayloadAction<{shopId: string, order: Order}>) {
+            console.log("orderAdded")
             const {order, shopId} = action.payload;
 
-            if (!(shopId in state)) state[shopId] = initialSingleOrderState
+            ensureInitialized(state, shopId);
 
-            state[shopId].data.push(order);
+            if (state[shopId].data.findIndex(e => e.id === order.id) === -1) {
+                state[shopId].data.push(order);
+            }
         },
         orderUpdated(state, action: PayloadAction<{shopId: string, order: Order}>) {
             const {order, shopId} = action.payload;
 
-            if (shopId in state) {
-                state[shopId].data.update(d => d.id === order.id, order);
-            }
+            ensureInitialized(state, shopId);
+            state[shopId].data.update(d => d.id === order.id, order);
         },
         /**
          * 指定した ID の order を消去する
@@ -44,9 +50,8 @@ const ordersSlice = createSlice({
         orderRemoved(state, action: PayloadAction<{shopId: string, orderId: string}>) {
             const {shopId, orderId} = action.payload;
 
-            if (shopId in state) {
-                state[shopId].data.remove(d => d.id === orderId);
-            }
+            ensureInitialized(state, shopId);
+            state[shopId].data.remove(d => d.id === orderId);
         },
         /**
          * OrderStateをshopIdのマップとしたため、extraReducerのpendingでloadingに設定することができない(shopIdがとってこれないため)
@@ -54,11 +59,10 @@ const ordersSlice = createSlice({
          * @param state
          * @param action
          */
-        setPending(state, action: PayloadAction<{ shopId: string }>) {
+        orderPending(state, action: PayloadAction<{ shopId: string }>) {
             const { shopId } = action.payload;
 
-            if (!(shopId in state)) state[shopId] = initialSingleOrderState
-
+            ensureInitialized(state, shopId);
             state[shopId].status = 'loading';
         },
         /**
@@ -66,11 +70,10 @@ const ordersSlice = createSlice({
          * @param state
          * @param action
          */
-        setRejected(state, action: PayloadAction<{ shopId: string, error: SerializedError }>) {
+        orderRejected(state, action: PayloadAction<{ shopId: string, error: SerializedError }>) {
             const {shopId, error} = action.payload;
-
-            if (!(shopId in state)) state[shopId] = initialSingleOrderState
-
+            
+            ensureInitialized(state, shopId);
             state[shopId].status = 'failed';
             state[shopId].error = error.message;
         }
@@ -79,8 +82,8 @@ const ordersSlice = createSlice({
         builder.addCase(fetchOrders.fulfilled, (state, action) => {
                 const {shopId, orders} = action.payload;
 
-                if (!(shopId in state)) state[shopId] = initialSingleOrderState
-
+                ensureInitialized(state, shopId);
+                
                 state[shopId].status = 'succeeded'
                 state[shopId].data = orders.sort((a, b) => a.created_at.toDate().getTime() - b.created_at.toDate().getTime());
             })
@@ -88,8 +91,8 @@ const ordersSlice = createSlice({
         builder.addCase(streamOrders.fulfilled, (state, action) => {
             const {unsubscribe, shopId} = action.payload;
 
-            if (!(shopId in state)) state[shopId] = initialSingleOrderState
-
+            ensureInitialized(state, shopId);
+            
             state[shopId].status = 'succeeded'
             state[shopId].unsubscribe = unsubscribe;
         });
@@ -97,31 +100,31 @@ const ordersSlice = createSlice({
         builder.addCase(streamOrder.fulfilled, (state, action) => {
             const {unsubscribe, shopId} = action.payload;
 
-            if (!(shopId in state)) state[shopId] = initialSingleOrderState
+            ensureInitialized(state, shopId);
 
             state[shopId].status = 'succeeded'
             state[shopId].unsubscribe = unsubscribe;
         });
 
-        builder.addCase(addOrder.fulfilled, (state, action) => {
-            const { shopId, order } = action.payload;
-
-            if (!(shopId in state)) state[shopId] = initialSingleOrderState
-
-            // IDが同じ注文のindex
-            const sameOrderIndex = state[shopId].data.findIndex(e => e.id === order.id);
-            
-            if (sameOrderIndex === -1) {
-                state[shopId].data.push(order);
-            } else {
-                state[shopId].data[sameOrderIndex] = order;
-            }
-        })
+        // builder.addCase(addOrder.fulfilled, (state, action) => {
+        //     const { shopId, order } = action.payload;
+        //
+        //     ensureInitialized(state, shopId);
+        //
+        //     // IDが同じ注文のindex
+        //     const sameOrderIndex = state[shopId].data.findIndex(e => e.id === order.id);
+        //
+        //     if (sameOrderIndex === -1) {
+        //         state[shopId].data.push(order);
+        //     } else {
+        //         state[shopId].data[sameOrderIndex] = order;
+        //     }
+        // })
 
         builder.addCase(updateOrder.fulfilled, (state, action) => {
            const {order, shopId} = action.payload;
            
-           if (!(shopId in state)) state[shopId] = initialSingleOrderState
+            ensureInitialized(state, shopId);
            
            state[shopId].data.update(e => e.id === order.id, order); 
         });
@@ -136,7 +139,7 @@ const ordersSlice = createSlice({
 
 const orderReducer = ordersSlice.reducer;
 export default orderReducer;
-export const {orderAdded, orderUpdated, orderRemoved, setRejected, setPending} = ordersSlice.actions;
+export const {orderAdded, orderUpdated, orderRemoved, orderRejected, orderPending} = ordersSlice.actions;
 
 /**
  * createdが新しい方が先にソートする
@@ -167,19 +170,19 @@ function sortByCompletedThenCreated(a: Order, b: Order) {
 }
 
 export const selectAllOrders = (state: RootState, shopId: string) =>
-    state.order[shopId].data.slice().sort(sortByCreated);
+    state.order[shopId]?.data.slice().sort(sortByCreated) ?? [];
 
 export const selectAllOrdersByCompleted = (state: RootState, shopId: string) =>
-    state.order[shopId].data.slice().sort(sortByCompletedThenCreated);
+    state.order[shopId]?.data.slice().sort(sortByCompletedThenCreated) ?? [];
 
 export const selectAllOrdersInverse = (state: RootState, shopId: string) =>
-    state.order[shopId].data.slice().sort((a, b) => sortByCreated(b, a));
+    state.order[shopId]?.data.slice().sort((a, b) => sortByCreated(b, a)) ?? [];
 
 export const selectOrderStatus = (state: RootState, shopId: string) =>
-    state.order[shopId].status;
+    state.order[shopId]?.status ?? 'idle';
 
 export const selectOrderById = (state: RootState, shopId: string, orderId: string) =>
-    state.order[shopId].data.find(e => e.id === orderId);
+    state.order[shopId]?.data.find(e => e.id === orderId);
 
 export const selectReceivedOrder = (state: RootState, shopId: string) =>
     selectAllOrders(state, shopId).filter(e => e.status === "received");
@@ -206,11 +209,11 @@ export const selectMaxCompleteAt = (state: RootState, shopId: string): Date => {
  * streamOrdersのunsubscribeを取得
  */
 export const selectOrderUnsubscribe = (state: RootState, shopId: string) =>
-    state.order[shopId].unsubscribe;
+    state.order[shopId]?.unsubscribe ?? null;
 
 /**
  * 注文番号と一致する注文を返す
  * WARN: 日時の条件が入ってない
   */
 export const selectOrderByIndex = (state: RootState, shopId: string, index: number) =>
-    state.order[shopId].data.find(e => e.index === index);
+    state.order[shopId]?.data.find(e => e.index === index);

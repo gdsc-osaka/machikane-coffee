@@ -1,7 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {Button, Card, InputAdornment, Link as LinkText, Stack, Typography} from "@mui/material";
-import {useAppDispatch} from "../modules/redux/store";
-import {useSelector} from "react-redux";
+import {useAppDispatch, useAppSelector} from "../modules/redux/store";
 import {selectAllShops, selectShopStatus} from "../modules/redux/shop/shopsSlice";
 import TextField from "@mui/material/TextField";
 import {Shop} from "../modules/redux/shop/shopTypes";
@@ -51,11 +50,11 @@ const AdminPage = () => {
     const [openAddProductDialog, setOpenAddProductDialog] = useState(false);
 
     const dispatch = useAppDispatch();
-    const shopStatus = useSelector(selectShopStatus);
-    const shops = useSelector(selectAllShops);
+    const shopStatus = useAppSelector(selectShopStatus);
+    const shops = useAppSelector(selectAllShops);
     const selectedShop = shops.find(shop => shop.id === selectedShopId);
-    const products = useSelector(selectAllProduct);
-    const productStatus = useSelector(selectProductStatus);
+    const products = useAppSelector(state => selectAllProduct(state, selectedShopId));
+    const productStatus = useAppSelector(state => selectProductStatus(state, selectedShopId));
     const selectedProduct = products.find(p => p.id === selectedProductId);
 
     const isProductChanged = (newProductForm: ProductFormType) => {
@@ -128,7 +127,6 @@ const AdminPage = () => {
 
     const handleClickShop = (shopId: string) => {
         setSelectedShopId(shopId);
-        dispatch(fetchProducts(shopId));
     }
 
 
@@ -171,7 +169,7 @@ const AdminPage = () => {
             dispatch(updateProduct({
                 shopId: selectedShop.id,
                 productId: selectedProduct.id,
-                rawProduct: {...selectedProduct, ...productForm},
+                productForUpdate: {...selectedProduct, ...productForm},
                 thumbnailFile: thumbnailFile
             })).then(() => {
                 // TODO: 更新したProductだけ更新. ローカルでreducer回すだけでいいかも?

@@ -21,7 +21,7 @@ import {createAsyncThunk} from "@reduxjs/toolkit";
 import {RootState} from "../store";
 import {Order, OrderForAdd, OrderStatuses, PayloadOrder} from "./orderTypes";
 import {selectProductById} from "../product/productsSlice";
-import {orderAdded, orderRemoved, orderUpdated, setPending, setRejected} from "./ordersSlice";
+import {orderAdded, orderRemoved, orderUpdated, orderPending, orderRejected} from "./ordersSlice";
 
 const ordersQuery = (shopId: string, ...queryConstraints: QueryConstraint[]) => {
     const today = Timestamp.fromDate(getToday());
@@ -40,7 +40,7 @@ export const fetchOrders = createAsyncThunk<
     {}
 >("orders/fetchOrders",
     async (shopId: string, {dispatch}) => {
-        dispatch(setPending({shopId: shopId}));
+        dispatch(orderPending({shopId: shopId}));
 
         const _query = ordersQuery(shopId);
         const snapshot = await getDocs(_query);
@@ -54,7 +54,7 @@ export const fetchOrders = createAsyncThunk<
  */
 export const streamOrders = createAsyncThunk('orders/streamOrders',
     (shopId: string, {dispatch}) => {
-        dispatch(setPending({shopId: shopId}));
+        dispatch(orderPending({shopId: shopId}));
 
         const _query = ordersQuery(shopId);
         const unsubscribe = onSnapshot(_query, (snapshot) => {
@@ -86,7 +86,7 @@ export const streamOrders = createAsyncThunk('orders/streamOrders',
 // >
 export const streamOrder = createAsyncThunk('orders/streamOrder',
     async ({shopId, orderIndex}: { shopId: string, orderIndex: number }, {dispatch, getState, rejectWithValue}) => {
-        dispatch(setPending({shopId: shopId}))
+        dispatch(orderPending({shopId: shopId}))
         const _query = orderQuery(shopId, orderIndex);
 
         try {
@@ -116,7 +116,7 @@ export const streamOrder = createAsyncThunk('orders/streamOrder',
 
         } catch (e) {
             if (e instanceof Error) {
-                dispatch(setRejected({shopId: shopId, error: e}))
+                dispatch(orderRejected({shopId: shopId, error: e}))
             }
             return rejectWithValue(e);
         }
@@ -135,7 +135,7 @@ export const addOrder = createAsyncThunk<
 
     for (const productId of Object.keys(orderForAdd.product_amount)) {
         const amount = orderForAdd.product_amount[productId];
-        const product = selectProductById(getState(), productId);
+        const product = selectProductById(getState(), shopId, productId);
 
         // Product が登録されているまたはフェッチされているとき
         if (product !== null) {
@@ -162,7 +162,7 @@ export const addOrder = createAsyncThunk<
         created_at: serverTimestamp(),
         complete_at: new Date().addSeconds(waitingSec).toTimestamp(),
         order_statuses: orderStatuses,
-        delay_seconds: 0
+        delay_seconds: 0,
     }
 
     try {
@@ -186,6 +186,7 @@ export const addOrder = createAsyncThunk<
         const addedOrder: Order = {
             ...order,
             id: addedDoc.id,
+            created_at: Timestamp.now()
         }
 
         return {shopId: shopId, order: addedOrder}

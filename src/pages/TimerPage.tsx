@@ -19,7 +19,7 @@ const TimerPage = () => {
   const expectedEndTime: Date = useAppSelector(state => selectMaxCompleteAt(state, shopId));
   const shopStatus = useAppSelector(selectShopStatus);
   const orderStatus = useAppSelector(state => selectOrderStatus(state, shopId));
-  const productStatus = useAppSelector(selectProductStatus);
+  const productStatus = useAppSelector(state => selectProductStatus(state, shopId));
 
   const [waitCount, setWaitCount] = useState(0);
   useCountDownInterval(waitCount, setWaitCount);

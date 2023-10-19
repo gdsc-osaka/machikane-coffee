@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {selectAllProduct,} from "../modules/redux/product/productsSlice";
-import {useAppDispatch, useAppSelector} from "../modules/redux/store";
+import {RootState, useAppDispatch} from "../modules/redux/store";
 import {useParams} from "react-router-dom";
 import {Order, ProductAmount, Status} from "../modules/redux/order/orderTypes";
 import OrderForm from "../components/order/OrderForm";
@@ -23,6 +23,7 @@ import {selectShopUnsubscribe} from "../modules/redux/shop/shopsSlice";
 import {useAuth} from "../AuthGuard";
 import {addOrder, deleteOrder, streamOrders, updateOrder} from "../modules/redux/order/ordersThunk";
 import {fetchProducts} from "../modules/redux/product/productsThunk";
+import {useSelector} from "react-redux";
 
 const AdminCashierPage = () => {
     const [openDelete, setOpenDelete] = useState(false);
@@ -34,12 +35,12 @@ const AdminCashierPage = () => {
 
     const dispatch = useAppDispatch();
     const auth = useAuth();
-    const products = useAppSelector(selectAllProduct);
-    const unreceivedOrders = useAppSelector(state => selectUnreceivedOrder(state, shopId));
-    const receivedOrders = useAppSelector(state => selectReceivedOrder(state, shopId));
-    const orderStatus = useAppSelector(state => selectOrderStatus(state, shopId));
+    const products = useSelector((state: RootState) => selectAllProduct(state, shopId));
+    const unreceivedOrders = useSelector((state: RootState) => selectUnreceivedOrder(state, shopId));
+    const receivedOrders = useSelector((state: RootState) => selectReceivedOrder(state, shopId));
+    const orderStatus = useSelector((state: RootState) => selectOrderStatus(state, shopId));
 
-    const shopUnsubscribe = useAppSelector(selectShopUnsubscribe);
+    const shopUnsubscribe = useSelector(selectShopUnsubscribe);
 
     const onChangeAmount = (productId: string, amount: number) => {
         setProductAmount({...productAmount, [productId]: amount});

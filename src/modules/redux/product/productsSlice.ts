@@ -1,55 +1,93 @@
-import {createSlice} from "@reduxjs/toolkit";
+import {createSlice, PayloadAction, SerializedError} from "@reduxjs/toolkit";
 import {Product} from "./productTypes";
-import {AsyncState} from "../stateType";
+import {AsyncState, Unsubscribe} from "../stateType";
 import {RootState} from "../store";
 import {addProduct, fetchProducts, updateProduct} from "./productsThunk";
 
+type SingleProductState = AsyncState<Product[]> & Unsubscribe;
+
+const initialSingleProductState: SingleProductState = {
+    data: [],
+    error: "",
+    status: "idle",
+    unsubscribe: null
+}
+
+type ProductState = {
+    [shopId in string]: SingleProductState
+}
+
+function ensureInitialized(state: any, shopId: string) {
+    if (!state.hasOwnProperty(shopId)) state[shopId] = Object.assign({}, initialSingleProductState);
+}
+
 const productsSlice = createSlice({
     name: "products",
-    initialState: {
-        data: [],
-        status: 'idle',
-        error: undefined,
-    } as AsyncState<Product[]>,
-    reducers: {},
+    initialState: {} as ProductState,
+    reducers: {
+        /**
+         * OrderStateをshopIdのマップとしたため、extraReducerのpendingでloadingに設定することができない(shopIdがとってこれないため)
+         * このため、OrderのAsyncThunkではこのReducerを使う
+         * @param state
+         * @param action
+         */
+        productPending(state, action: PayloadAction<{ shopId: string }>) {
+            const { shopId } = action.payload;
+
+            ensureInitialized(state, shopId);
+
+            state[shopId].status = 'loading';
+        },
+        /**
+         * pendingと同様の理由で, OrderのAsyncThunkではrejectedを用いる
+         * @param state
+         * @param action
+         */
+        productRejected(state, action: PayloadAction<{ shopId: string, error: SerializedError }>) {
+            const {shopId, error} = action.payload;
+
+            ensureInitialized(state, shopId);
+
+            state[shopId].status = 'failed';
+            state[shopId].error = error.message;
+        }
+    },
     extraReducers: builder => {
-        builder
-            .addCase(fetchProducts.pending, (state) => {
-                state.status = 'loading'
-            })
-            .addCase(fetchProducts.fulfilled, (state, action) => {
-                state.status = 'succeeded'
-                state.data = action.payload;
-            })
-            .addCase(fetchProducts.rejected, (state, action) => {
-                state.status = 'failed'
-                state.error = action.error.message;
+        builder.addCase(fetchProducts.fulfilled, (state, action) => {
+                const {shopId, products} = action.payload;
+
+                ensureInitialized(state, shopId);
+
+                state[shopId].status = 'succeeded';
+                state[shopId].data = products;
             })
 
-        builder
-            .addCase(addProduct.fulfilled, (state, action) => {
-                const product = action.payload;
+        builder.addCase(addProduct.fulfilled, (state, action) => {
+                const {shopId, product} = action.payload;
 
-                if (product !== undefined) {
-                    state.data.push();
-                }
+                ensureInitialized(state, shopId);
+
+                state[shopId].data.push(product);
             })
 
-        builder
-            .addCase(updateProduct.fulfilled, (state, action) => {
-                const updatedProd = action.payload;
+        builder.addCase(updateProduct.fulfilled, (state, action) => {
+                if (action.payload === undefined) return;
 
-                // state.data の要素を更新
-                if (updatedProd !== undefined) {
-                    state.data.update(e => e.id === updatedProd.id, updatedProd);
-                }
+                const {shopId, product} = action.payload;
+
+                state[shopId].data.update(e => e.id === product.id, product);
             })
     },
 });
 
 const productReducer = productsSlice.reducer;
+export const {productRejected, productPending} = productsSlice.actions;
+
 export default productReducer;
 
-export const selectProductById = (state: RootState, productId: string) => state.product.data.find(e => e.id === productId) ?? null
-export const selectAllProduct = (state: RootState) => state.product.data;
-export const selectProductStatus = (state: RootState) => state.product.status;
+export const selectProductById = (state: RootState, shopId: string, productId: string) =>
+    state.product[shopId]?.data.find(e => e.id === productId) ?? null
+export const selectAllProduct = (state: RootState, shopId: string) =>
+    state.product[shopId]?.data ?? [];
+export const selectProductStatus = (state: RootState, shopId: string) =>
+    state.product[shopId]?.status ?? "idle";
