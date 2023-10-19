@@ -11,7 +11,6 @@ import {
     query,
     serverTimestamp,
     Timestamp,
-    Unsubscribe,
     where,
     writeBatch
 } from "firebase/firestore";
@@ -22,14 +21,7 @@ import {createAsyncThunk, Dispatch} from "@reduxjs/toolkit";
 import {RootState} from "../store";
 import {Order, OrderForAdd, OrderStatuses, PayloadOrder} from "./orderTypes";
 import {selectProductById} from "../product/productsSlice";
-import {
-    orderAdded,
-    orderRemoved,
-    orderUpdated,
-    orderPending,
-    orderRejected,
-    selectOrderUnsubscribe, selectOrderStatus, orderSucceeded
-} from "./ordersSlice";
+import {orderAdded, orderPending, orderRejected, orderRemoved, orderSucceeded, orderUpdated} from "./ordersSlice";
 
 const ordersQuery = (shopId: string, ...queryConstraints: QueryConstraint[]) => {
     const today = Timestamp.fromDate(getToday());
@@ -135,7 +127,7 @@ export const addOrder = createAsyncThunk<
     // 注文の待ち時間 (秒)
     let waitingSec = 0;
     // 提供状況
-    const orderStatuses: OrderStatuses = {};
+    const orderStatuses: OrderStatuses<Timestamp> = {};
 
     for (const productId of Object.keys(orderForAdd.product_amount)) {
         const amount = orderForAdd.product_amount[productId];
@@ -152,8 +144,7 @@ export const addOrder = createAsyncThunk<
                 barista_id: 0,
                 status: "idle",
                 product_id: productId,
-                received: false,
-                completed: false
+                start_working_at: Timestamp.now(),
             };
         }
     }
@@ -190,7 +181,8 @@ export const addOrder = createAsyncThunk<
         const addedOrder: Order = {
             ...order,
             id: addedDoc.id,
-            created_at: Timestamp.now()
+            created_at: Timestamp.now(),
+            order_statuses: orderStatuses
         }
 
         return {shopId: shopId, order: addedOrder}
@@ -219,7 +211,7 @@ export const updateOrder = createAsyncThunk<
     { shopId: string, newOrder: Order },
     { state: RootState }
 >('orders/updateOrder',
-    async ({shopId, newOrder}, {getState, dispatch, rejectWithValue}) => {
+    async ({shopId, newOrder}, {getState, rejectWithValue}) => {
         switchOrderStatus(newOrder);
         const batch = writeBatch(db);
 
@@ -230,7 +222,6 @@ export const updateOrder = createAsyncThunk<
         if (newOrder.status === "completed") {
             // 実際の制作時間との差分
             const productionTimeDiff = new Date().getTime() - newOrder.complete_at.toDate().getTime();
-            console.log(`actual sec: ${productionTimeDiff / 1000}`);
 
             // state.orders が常に最新であるという前提. 最新でないなら足りない部分だけクエリして読み取る
             const state = getState();

@@ -2,7 +2,7 @@ import {createSlice, PayloadAction, SerializedError} from "@reduxjs/toolkit";
 import {AsyncState, Unsubscribe} from "../stateType";
 import {Order} from "./orderTypes";
 import {RootState} from "../store";
-import {deleteOrder, fetchOrders, streamOrder, streamOrders, updateOrder} from "./ordersThunk";
+import {deleteOrder, fetchOrders, streamOrder, updateOrder} from "./ordersThunk";
 
 // それぞれのショップごとのOrderState
 type SingleOrderState = AsyncState<Order[]> & Unsubscribe;

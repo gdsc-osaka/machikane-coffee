@@ -1,5 +1,4 @@
 import {FieldValue, Timestamp} from "firebase/firestore";
-import {Weaken} from "../../util/typeUtils";
 
 /**
  * 商品IDと個数のマップ
@@ -15,28 +14,34 @@ export type Status = "idle" | "working" | "completed"
  * @property product_id 商品ID
  * @property status 初期状態(idle), 作成中(working), 完成済み(completed) のいずれか
  * @property barista_id 担当中のbaristaのid
+ * @property start_working_at statusがworkingになった時刻
  */
-export type OrderStatus = {
+export type OrderStatus<T extends Timestamp | FieldValue> = {
     product_id: string;
     status: Status;
     barista_id: number;
-
-    /**
-     * @deprecated status に統合
-     */
-    received: boolean;
-    /**
-     * @deprecated status に統合
-     */
-    completed: boolean;
+    start_working_at: T;
 }
 
 /**
  * OrderStatus のマップ. キーは任意の文字列
  */
-export type OrderStatuses = {
-    [K in string]: OrderStatus
+export type OrderStatuses<T extends Timestamp | FieldValue> = {
+    [K in string]: OrderStatus<T>
 }
+
+type OrderTemplate<T extends Timestamp | FieldValue> = {
+    id: string;
+    index: number;
+    created_at: T;
+    complete_at: Timestamp;
+    delay_seconds: number;
+    status: "idle" | "completed" | "received";
+    order_statuses: OrderStatuses<T>;
+    // データ追加時は以下のみ
+    product_amount: ProductAmount;
+    is_student: boolean;
+};
 
 /**
  * 注文情報
@@ -45,18 +50,7 @@ export type OrderStatuses = {
  * @property completed 商品が完成したかどうか
  * @property is_student 客が生徒がどうか
  */
-export type Order = {
-    id: string;
-    index: number;
-    created_at: Timestamp;
-    complete_at: Timestamp;
-    delay_seconds: number;
-    status: "idle" | "completed" | "received";
-    order_statuses: OrderStatuses;
-    // データ追加時は以下のみ
-    product_amount: ProductAmount;
-    is_student: boolean;
-};
+export type Order = OrderTemplate<Timestamp>;
 
 /**
  * データの追加時、ユーザーが設定しなければいけないフィールドのみにした order
@@ -71,9 +65,7 @@ export type OrderForUpdate = Partial<Order>;
 /**
  * データを Firestore に送信するとき, 一部フィールドを FieldValue に変更するための型
  */
-export type PayloadOrder = Weaken<Omit<Order, 'id'>, 'created_at'> & {
-    created_at: FieldValue
-}
+export type PayloadOrder = Omit<OrderTemplate<FieldValue>, 'id'>
 
 
 export function assertOrder(data: any): asserts data is Order {
