@@ -1,24 +1,25 @@
 import React, {useEffect, useState} from "react";
-import {selectMaxCompleteAt, selectOrderStatus, streamOrders} from "../modules/redux/order/ordersSlice";
-import {useSelector} from "react-redux";
-import {RootState, useAppDispatch} from "../modules/redux/store";
+import {selectMaxCompleteAt, selectOrderStatus} from "../modules/redux/order/ordersSlice";
+import {useAppDispatch, useAppSelector} from "../modules/redux/store";
 import TimeDisplay from "../components/Timer/TimeDisplay";
 import "../components/Timer/timer.css";
 import {useParams} from "react-router-dom";
-import {selectShopStatus, streamShop} from "src/modules/redux/shop/shopsSlice";
-import {fetchProducts, selectProductStatus} from "src/modules/redux/product/productsSlice";
+import {selectShopStatus} from "src/modules/redux/shop/shopsSlice";
+import {selectProductStatus} from "src/modules/redux/product/productsSlice";
 import {useCountDownInterval} from "../modules/hooks/useCountDownInterval";
+import {streamOrders} from "../modules/redux/order/ordersThunk";
+import {fetchProducts} from "../modules/redux/product/productsThunk";
+import {streamShop} from "../modules/redux/shop/shopsThunk";
 
 const TimerPage = () => {
-  const selector = useSelector((state: RootState) => state);
-  const expectedEndTime: Date = selectMaxCompleteAt(selector);
-  
   const dispatch = useAppDispatch();
   const params = useParams();
   const shopId = params.shopId ?? '';
-  const shopStatus = useSelector(selectShopStatus);
-  const orderStatus = useSelector(selectOrderStatus);
-  const productStatus = useSelector(selectProductStatus);
+
+  const expectedEndTime: Date = useAppSelector(state => selectMaxCompleteAt(state, shopId));
+  const shopStatus = useAppSelector(selectShopStatus);
+  const orderStatus = useAppSelector(state => selectOrderStatus(state, shopId));
+  const productStatus = useAppSelector(state => selectProductStatus(state, shopId));
 
   const [waitCount, setWaitCount] = useState(0);
   useCountDownInterval(waitCount, setWaitCount);

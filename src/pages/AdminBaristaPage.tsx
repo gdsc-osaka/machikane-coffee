@@ -1,29 +1,16 @@
 import {Button, CircularProgress, Stack, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
 import React, {useEffect, useState} from "react";
-import {RootState, useAppDispatch} from "../modules/redux/store";
-import {useSelector} from "react-redux";
-import {
-    selectShopById,
-    selectShopStatus,
-    selectShopUnsubscribe,
-    streamShop,
-    updateShop
-} from "../modules/redux/shop/shopsSlice";
+import {useAppDispatch, useAppSelector} from "../modules/redux/store";
+import {selectShopById, selectShopStatus, selectShopUnsubscribe} from "../modules/redux/shop/shopsSlice";
 import {useParams} from "react-router-dom";
-import {BaristaMap, ShopForAdd, Shop} from "../modules/redux/shop/shopTypes";
+import {BaristaMap, ShopForAdd} from "../modules/redux/shop/shopTypes";
 import CheckIcon from '@mui/icons-material/Check';
 import HourglassEmptyRoundedIcon from '@mui/icons-material/HourglassEmptyRounded';
 import HourglassBottomRoundedIcon from '@mui/icons-material/HourglassBottomRounded';
 import StickyNote from "../components/StickyNote";
 import IndexIcon from "../components/order/IndexIcon";
-import {
-    selectAllOrdersInverse,
-    selectOrderStatus,
-    selectOrderUnsubscribe,
-    streamOrders,
-    updateOrder
-} from "../modules/redux/order/ordersSlice";
-import {fetchProducts, selectAllProduct} from "../modules/redux/product/productsSlice";
+import {selectAllOrdersInverse, selectOrderStatus, selectOrderUnsubscribe} from "../modules/redux/order/ordersSlice";
+import {selectAllProduct} from "../modules/redux/product/productsSlice";
 import {getOrderLabel} from "../modules/util/orderUtils";
 import {Order, Status} from "../modules/redux/order/orderTypes";
 import {Flex} from "../components/layout/Flex";
@@ -32,6 +19,9 @@ import {getSortedObjectKey} from "../modules/util/objUtils";
 import {Product} from "../modules/redux/product/productTypes";
 import {useAuth} from "../AuthGuard";
 import toast from "react-hot-toast";
+import {streamOrders, updateOrder} from "../modules/redux/order/ordersThunk";
+import {fetchProducts} from "../modules/redux/product/productsThunk";
+import {streamShop, updateShop} from "../modules/redux/shop/shopsThunk";
 
 /**
  * Order.orderedStatusesの要素を識別する
@@ -56,17 +46,17 @@ const AdminBaristaPage = () => {
     const params = useParams();
 
     const shopId = params.shopId ?? '';
-    const shopStatus = useSelector(selectShopStatus);
-    const shop = useSelector<RootState, Shop | undefined>(state => selectShopById(state, shopId));
+    const shopStatus = useAppSelector(selectShopStatus);
+    const shop = useAppSelector(state => selectShopById(state, shopId));
     const baristas = shop?.baristas ?? {};
     const baristaIds = shop === undefined ? [] : Object.keys(shop.baristas).map((e) => parseInt(e));
 
-    const orderStatus = useSelector(selectOrderStatus);
-    const orders = useSelector(selectAllOrdersInverse);
-    const products = useSelector(selectAllProduct);
+    const orderStatus = useAppSelector(state => selectOrderStatus(state, shopId));
+    const orders = useAppSelector(state => selectAllOrdersInverse(state, shopId));
+    const products = useAppSelector(state => selectAllProduct(state, shopId));
 
-    const shopUnsubscribe = useSelector(selectShopUnsubscribe);
-    const orderUnsubscribe = useSelector(selectOrderUnsubscribe);
+    const shopUnsubscribe = useAppSelector(selectShopUnsubscribe);
+    const orderUnsubscribe = useAppSelector(state => selectOrderUnsubscribe(state, shopId));
 
     // データを取得
     useEffect(() => {

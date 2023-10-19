@@ -1,7 +1,6 @@
 import React, {useEffect, useState} from "react";
-import {useSelector} from "react-redux";
-import {fetchProducts, selectAllProduct, selectProductStatus,} from "../modules/redux/product/productsSlice";
-import {useAppDispatch} from "../modules/redux/store";
+import {selectAllProduct,} from "../modules/redux/product/productsSlice";
+import {RootState, useAppDispatch} from "../modules/redux/store";
 import {useParams} from "react-router-dom";
 import {Order, ProductAmount, Status} from "../modules/redux/order/orderTypes";
 import OrderForm from "../components/order/OrderForm";
@@ -16,34 +15,30 @@ import {
     Grid,
     Stack
 } from "@mui/material";
-import {
-    addOrder,
-    deleteOrder,
-    selectOrderStatus,
-    selectReceivedOrder,
-    selectUnreceivedOrder,
-    streamOrders,
-    updateOrder
-} from "../modules/redux/order/ordersSlice";
+import {selectOrderStatus, selectReceivedOrder, selectUnreceivedOrder} from "../modules/redux/order/ordersSlice";
 import OrderList from "../components/order/OrderList";
 import ShopManager from "../components/order/ShopManager";
 import ReceivedOrderList from "../components/order/ReceivedOrderList";
 import {selectShopUnsubscribe} from "../modules/redux/shop/shopsSlice";
 import {useAuth} from "../AuthGuard";
+import {addOrder, deleteOrder, streamOrders, updateOrder} from "../modules/redux/order/ordersThunk";
+import {fetchProducts} from "../modules/redux/product/productsThunk";
+import {useSelector} from "react-redux";
 
 const AdminCashierPage = () => {
     const [openDelete, setOpenDelete] = useState(false);
     const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
     const [productAmount, setProductAmount] = useState<ProductAmount>({});
 
-    const dispatch = useAppDispatch();
-    const auth = useAuth();
-    const products = useSelector(selectAllProduct);
-    const unreceivedOrders = useSelector(selectUnreceivedOrder);
-    const receivedOrders = useSelector(selectReceivedOrder);
-    const orderStatus = useSelector(selectOrderStatus);
     const params = useParams();
     const shopId = params.shopId ?? "";
+
+    const dispatch = useAppDispatch();
+    const auth = useAuth();
+    const products = useSelector((state: RootState) => selectAllProduct(state, shopId));
+    const unreceivedOrders = useSelector((state: RootState) => selectUnreceivedOrder(state, shopId));
+    const receivedOrders = useSelector((state: RootState) => selectReceivedOrder(state, shopId));
+    const orderStatus = useSelector((state: RootState) => selectOrderStatus(state, shopId));
 
     const shopUnsubscribe = useSelector(selectShopUnsubscribe);
 
@@ -57,7 +52,7 @@ const AdminCashierPage = () => {
     }, [])
 
     useEffect(() => {
-        if (orderStatus == "idle" || orderStatus == "failed") {
+        if (orderStatus === "idle") {
             dispatch(streamOrders(shopId));
         }
     }, [shopId, dispatch, orderStatus]);

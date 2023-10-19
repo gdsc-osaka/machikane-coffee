@@ -72,7 +72,7 @@ export type OrderForUpdate = Partial<Order>;
  * データを Firestore に送信するとき, 一部フィールドを FieldValue に変更するための型
  */
 export type PayloadOrder = Weaken<Omit<Order, 'id'>, 'created_at'> & {
-    created_at: FieldValue | Timestamp
+    created_at: FieldValue
 }
 
 

@@ -1,8 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {Button, Card, InputAdornment, Link as LinkText, Stack, Typography} from "@mui/material";
-import {useAppDispatch} from "../modules/redux/store";
-import {useSelector} from "react-redux";
-import {addShop, fetchShops, selectAllShops, selectShopStatus, updateShop} from "../modules/redux/shop/shopsSlice";
+import {useAppDispatch, useAppSelector} from "../modules/redux/store";
+import {selectAllShops, selectShopStatus} from "../modules/redux/shop/shopsSlice";
 import TextField from "@mui/material/TextField";
 import {Shop} from "../modules/redux/shop/shopTypes";
 import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
@@ -10,11 +9,8 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import CoffeeOutlinedIcon from '@mui/icons-material/CoffeeOutlined';
 import {Product} from "../modules/redux/product/productTypes";
 import {
-    addProduct,
-    fetchProducts,
     selectAllProduct,
-    selectProductStatus,
-    updateProduct
+    selectProductStatus
 } from "../modules/redux/product/productsSlice";
 import FileInputButton from "../components/FileInputButton";
 import {Link} from "react-router-dom";
@@ -22,6 +18,8 @@ import MarkdownTextField from "../components/MarkdownTextField";
 import DataView from "../components/admin/DataView";
 import AddProductDialog, {ProductFormType} from "../components/admin/AddProductDialog";
 import AddShopDialog, {AddShopFormType} from "../components/admin/AddShopDialog";
+import {addProduct, fetchProducts, updateProduct} from "../modules/redux/product/productsThunk";
+import {addShop, fetchShops, updateShop} from "../modules/redux/shop/shopsThunk";
 
 type ShopFormType = {
     display_name: string;
@@ -52,11 +50,11 @@ const AdminPage = () => {
     const [openAddProductDialog, setOpenAddProductDialog] = useState(false);
 
     const dispatch = useAppDispatch();
-    const shopStatus = useSelector(selectShopStatus);
-    const shops = useSelector(selectAllShops);
+    const shopStatus = useAppSelector(selectShopStatus);
+    const shops = useAppSelector(selectAllShops);
     const selectedShop = shops.find(shop => shop.id === selectedShopId);
-    const products = useSelector(selectAllProduct);
-    const productStatus = useSelector(selectProductStatus);
+    const products = useAppSelector(state => selectAllProduct(state, selectedShopId));
+    const productStatus = useAppSelector(state => selectProductStatus(state, selectedShopId));
     const selectedProduct = products.find(p => p.id === selectedProductId);
 
     const isProductChanged = (newProductForm: ProductFormType) => {
@@ -129,7 +127,6 @@ const AdminPage = () => {
 
     const handleClickShop = (shopId: string) => {
         setSelectedShopId(shopId);
-        dispatch(fetchProducts(shopId));
     }
 
 
@@ -172,7 +169,7 @@ const AdminPage = () => {
             dispatch(updateProduct({
                 shopId: selectedShop.id,
                 productId: selectedProduct.id,
-                rawProduct: {...selectedProduct, ...productForm},
+                productForUpdate: {...selectedProduct, ...productForm},
                 thumbnailFile: thumbnailFile
             })).then(() => {
                 // TODO: 更新したProductだけ更新. ローカルでreducer回すだけでいいかも?
