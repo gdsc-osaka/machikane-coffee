@@ -22,6 +22,7 @@ import toast from "react-hot-toast";
 import {streamOrders, updateOrder} from "../modules/redux/order/ordersThunk";
 import {fetchProducts} from "../modules/redux/product/productsThunk";
 import {streamShop, updateShop} from "../modules/redux/shop/shopsThunk";
+import {Timestamp} from "firebase/firestore";
 
 /**
  * Order.orderedStatusesの要素を識別する
@@ -66,10 +67,15 @@ const AdminBaristaPage = () => {
     }, [dispatch, shopStatus, shopId]);
 
     useEffect(() => {
-        if (orderStatus === "idle" || orderStatus === "failed") {
-            streamOrders(shopId, {dispatch})
+        if (orderStatus === "idle") {
+            const unsub = streamOrders(shopId, {dispatch})
+
+            return () => {
+                unsub()
+            }
         }
-    }, [dispatch, orderStatus, shopId]);
+        // empty array でないと unsub() が2回呼ばれる
+    }, []);
 
     useEffect(() => {
         dispatch(fetchProducts(shopId));
@@ -135,7 +141,9 @@ const AdminBaristaPage = () => {
             ...order,
             order_statuses: {
                 ...order.order_statuses,
-                [orderStatusId]: {
+                [orderStatusId]: type === "working" ? {
+                    ...order.order_statuses[orderStatusId], status: type, barista_id: selectedId, start_working_at: Timestamp.now()
+                } : {
                     ...order.order_statuses[orderStatusId], status: type, barista_id: selectedId
                 }
             }

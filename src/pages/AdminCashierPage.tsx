@@ -15,12 +15,7 @@ import {
     Grid,
     Stack
 } from "@mui/material";
-import {
-    selectOrderStatus,
-    selectOrderUnsubscribe,
-    selectReceivedOrder,
-    selectUnreceivedOrder
-} from "../modules/redux/order/ordersSlice";
+import {selectOrderStatus, selectReceivedOrder, selectUnreceivedOrder} from "../modules/redux/order/ordersSlice";
 import OrderList from "../components/order/OrderList";
 import ShopManager from "../components/order/ShopManager";
 import ReceivedOrderList from "../components/order/ReceivedOrderList";
@@ -29,6 +24,7 @@ import {useAuth} from "../AuthGuard";
 import {addOrder, deleteOrder, streamOrders, updateOrder} from "../modules/redux/order/ordersThunk";
 import {fetchProducts} from "../modules/redux/product/productsThunk";
 import {useSelector} from "react-redux";
+import {Timestamp} from "firebase/firestore";
 
 const AdminCashierPage = () => {
     const [openDelete, setOpenDelete] = useState(false);
@@ -53,15 +49,20 @@ const AdminCashierPage = () => {
     };
 
     useEffect(() => {
-        dispatch(fetchProducts(shopId));
-    }, [])
+        if (productStatus === "idle") {
+            dispatch(fetchProducts(shopId));
+        }
+    }, [productStatus, shopId, dispatch])
 
     useEffect(() => {
         if (orderStatus === "idle") {
             const unsub = streamOrders(shopId, {dispatch})
 
-            return () => unsub()
+            return () => {
+                unsub()
+            }
         }
+        // empty array でないと unsub() が2回呼ばれる
     }, []);
 
     useEffect(() => {
@@ -121,9 +122,13 @@ const AdminCashierPage = () => {
             ...order,
             order_statuses: {
                 ...order.order_statuses,
-                [orderStatusId]: {
+                [orderStatusId]: status === "working" ? {
                     ...order.order_statuses[orderStatusId],
                     status: status
+                } : {
+                    ...order.order_statuses[orderStatusId],
+                    status: status,
+                    start_working_at: Timestamp.now()
                 }
             }
         }
