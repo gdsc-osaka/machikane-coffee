@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
-import {selectAllProduct,} from "../modules/redux/product/productsSlice";
-import {RootState, useAppDispatch} from "../modules/redux/store";
+import {selectAllProduct, selectProductStatus,} from "../modules/redux/product/productsSlice";
+import {RootState, useAppDispatch, useAppSelector} from "../modules/redux/store";
 import {useParams} from "react-router-dom";
 import {Order, ProductAmount, Status} from "../modules/redux/order/orderTypes";
 import OrderForm from "../components/order/OrderForm";
@@ -15,7 +15,12 @@ import {
     Grid,
     Stack
 } from "@mui/material";
-import {selectOrderStatus, selectReceivedOrder, selectUnreceivedOrder} from "../modules/redux/order/ordersSlice";
+import {
+    selectOrderStatus,
+    selectOrderUnsubscribe,
+    selectReceivedOrder,
+    selectUnreceivedOrder
+} from "../modules/redux/order/ordersSlice";
 import OrderList from "../components/order/OrderList";
 import ShopManager from "../components/order/ShopManager";
 import ReceivedOrderList from "../components/order/ReceivedOrderList";
@@ -36,6 +41,7 @@ const AdminCashierPage = () => {
     const dispatch = useAppDispatch();
     const auth = useAuth();
     const products = useSelector((state: RootState) => selectAllProduct(state, shopId));
+    const productStatus = useAppSelector(state => selectProductStatus(state, shopId));
     const unreceivedOrders = useSelector((state: RootState) => selectUnreceivedOrder(state, shopId));
     const receivedOrders = useSelector((state: RootState) => selectReceivedOrder(state, shopId));
     const orderStatus = useSelector((state: RootState) => selectOrderStatus(state, shopId));
@@ -47,15 +53,16 @@ const AdminCashierPage = () => {
     };
 
     useEffect(() => {
-        // 最初にフェッチ
         dispatch(fetchProducts(shopId));
     }, [])
 
     useEffect(() => {
         if (orderStatus === "idle") {
-            dispatch(streamOrders(shopId));
+            const unsub = streamOrders(shopId, {dispatch})
+
+            return () => unsub()
         }
-    }, [shopId, dispatch, orderStatus]);
+    }, []);
 
     useEffect(() => {
         if (shopUnsubscribe != null) {

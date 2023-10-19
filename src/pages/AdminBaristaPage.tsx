@@ -67,7 +67,7 @@ const AdminBaristaPage = () => {
 
     useEffect(() => {
         if (orderStatus === "idle" || orderStatus === "failed") {
-            dispatch(streamOrders(shopId));
+            streamOrders(shopId, {dispatch})
         }
     }, [dispatch, orderStatus, shopId]);
 

@@ -2,7 +2,7 @@ import {createSlice, PayloadAction, SerializedError} from "@reduxjs/toolkit";
 import {AsyncState, Unsubscribe} from "../stateType";
 import {Order} from "./orderTypes";
 import {RootState} from "../store";
-import {addOrder, deleteOrder, fetchOrders, streamOrder, streamOrders, updateOrder} from "./ordersThunk";
+import {deleteOrder, fetchOrders, streamOrder, streamOrders, updateOrder} from "./ordersThunk";
 
 // それぞれのショップごとのOrderState
 type SingleOrderState = AsyncState<Order[]> & Unsubscribe;
@@ -19,7 +19,9 @@ type OrderState = {
 }
 
 function ensureInitialized(state: any, shopId: string) {
-    if (!state.hasOwnProperty(shopId)) state[shopId] = Object.assign({}, initialSingleOrderState);
+    if (!state.hasOwnProperty(shopId)) {
+        state[shopId] = Object.assign({}, initialSingleOrderState);
+    }
 }
 
 const ordersSlice = createSlice({
@@ -49,6 +51,12 @@ const ordersSlice = createSlice({
             ensureInitialized(state, shopId);
             state[shopId].data.remove(d => d.id === orderId);
         },
+        orderSucceeded(state, action: PayloadAction<{shopId: string}>) {
+            const {shopId} = action.payload;
+
+            ensureInitialized(state, shopId);
+            state[shopId].status = 'succeeded';
+        },
         /**
          * OrderStateをshopIdのマップとしたため、extraReducerのpendingでloadingに設定することができない(shopIdがとってこれないため)
          * このため、OrderのAsyncThunkではこのReducerを使う
@@ -75,7 +83,14 @@ const ordersSlice = createSlice({
         }
     },
     extraReducers: builder => {
-        builder.addCase(fetchOrders.fulfilled, (state, action) => {
+        builder
+            .addCase(fetchOrders.pending, (state, {meta}) => {
+                const shopId = meta.arg;
+
+                ensureInitialized(state, shopId);
+                state[shopId].status = 'loading';
+            })
+            .addCase(fetchOrders.fulfilled, (state, action) => {
                 const {shopId, orders} = action.payload;
 
                 ensureInitialized(state, shopId);
@@ -83,15 +98,6 @@ const ordersSlice = createSlice({
                 state[shopId].status = 'succeeded'
                 state[shopId].data = orders.sort((a, b) => a.created_at.toDate().getTime() - b.created_at.toDate().getTime());
             })
-
-        builder.addCase(streamOrders.fulfilled, (state, action) => {
-            const {unsubscribe, shopId} = action.payload;
-
-            ensureInitialized(state, shopId);
-            
-            state[shopId].status = 'succeeded'
-            state[shopId].unsubscribe = unsubscribe;
-        });
 
         builder.addCase(streamOrder.fulfilled, (state, action) => {
             const {unsubscribe, shopId} = action.payload;
@@ -135,7 +141,7 @@ const ordersSlice = createSlice({
 
 const orderReducer = ordersSlice.reducer;
 export default orderReducer;
-export const {orderAdded, orderUpdated, orderRemoved, orderRejected, orderPending} = ordersSlice.actions;
+export const {orderAdded, orderUpdated, orderRemoved, orderSucceeded, orderRejected, orderPending} = ordersSlice.actions;
 
 /**
  * createdが新しい方が先にソートする

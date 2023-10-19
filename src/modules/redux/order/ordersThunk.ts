@@ -11,17 +11,25 @@ import {
     query,
     serverTimestamp,
     Timestamp,
+    Unsubscribe,
     where,
     writeBatch
 } from "firebase/firestore";
 import {getToday} from "../../util/dateUtils";
 import {db} from "../../firebase/firebase";
 import {orderConverter} from "../../firebase/converters";
-import {createAsyncThunk} from "@reduxjs/toolkit";
+import {createAsyncThunk, Dispatch} from "@reduxjs/toolkit";
 import {RootState} from "../store";
 import {Order, OrderForAdd, OrderStatuses, PayloadOrder} from "./orderTypes";
 import {selectProductById} from "../product/productsSlice";
-import {orderAdded, orderRemoved, orderUpdated, orderPending, orderRejected} from "./ordersSlice";
+import {
+    orderAdded,
+    orderRemoved,
+    orderUpdated,
+    orderPending,
+    orderRejected,
+    selectOrderUnsubscribe, selectOrderStatus, orderSucceeded
+} from "./ordersSlice";
 
 const ordersQuery = (shopId: string, ...queryConstraints: QueryConstraint[]) => {
     const today = Timestamp.fromDate(getToday());
@@ -52,38 +60,34 @@ export const fetchOrders = createAsyncThunk<
 /**
  * order をリアルタイム更新する. ユーザー側で使用されることを想定
  */
-export const streamOrders = createAsyncThunk('orders/streamOrders',
-    (shopId: string, {dispatch}) => {
-        dispatch(orderPending({shopId: shopId}));
+export const streamOrders = (shopId: string, {dispatch}: { dispatch: Dispatch }) => {
+    dispatch(orderSucceeded({shopId}))
 
-        const _query = ordersQuery(shopId);
-        const unsubscribe = onSnapshot(_query, (snapshot) => {
-            snapshot.docChanges().forEach((change) => {
+    const _query = ordersQuery(shopId);
+    const unsubscribe = onSnapshot(_query, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            if (change.doc.metadata.hasPendingWrites) {
+                return;
+            }
 
-                if (change.type === "added") {
-                    const order = change.doc.data();
-                    dispatch(orderAdded({shopId, order}));
-                }
-                if (change.type === "modified") {
-                    const order = change.doc.data();
-                    dispatch(orderUpdated({shopId, order}));
-                }
-                if (change.type === "removed") {
-                    const orderId = change.doc.id;
-                    dispatch(orderRemoved({shopId, orderId}));
-                }
-            });
+            if (change.type === "added") {
+                const order = change.doc.data();
+                dispatch(orderAdded({shopId, order}));
+            }
+            if (change.type === "modified") {
+                const order = change.doc.data();
+                dispatch(orderUpdated({shopId, order}));
+            }
+            if (change.type === "removed") {
+                const orderId = change.doc.id;
+                dispatch(orderRemoved({shopId, orderId}));
+            }
         });
+    });
 
-        return {shopId, unsubscribe};
-    })
+    return unsubscribe;
+}
 
-
-// <
-//     { shopId: string, unsubscribe: Unsubscribe },
-//     string,
-// { dispatch?:  Dispatch }
-// >
 export const streamOrder = createAsyncThunk('orders/streamOrder',
     async ({shopId, orderIndex}: { shopId: string, orderIndex: number }, {dispatch, getState, rejectWithValue}) => {
         dispatch(orderPending({shopId: shopId}))
