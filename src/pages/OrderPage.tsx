@@ -218,6 +218,22 @@ const OrderCard = (props: {order: Order, products: Product[], shopStatus: ShopSt
     }, [until]);
 
     useCountDownInterval(untilCount, setUntilCount);
+    const [isWorking, setIsWorking] = useState(false);
+    useEffect(() => {
+        let isWorking_tmp = false;
+        for( const order_status in order.order_statuses){
+            const status = order.order_statuses[order_status].status;
+            if(status === "working" || status === "completed"){
+                isWorking_tmp = true;
+            }
+            // 完了済み，受け取り済みの場合は非表示
+            if(order.status === "completed" || order.status === "received"){
+                setIsWorking(false);
+            }else{ // 何れかの商品を制作中であれば表示
+                setIsWorking(isWorking_tmp);
+            }
+        }
+    }, [order.order_statuses, order.status]);
 
     return <StickyNote>
         <Stack spacing={3} sx={{width: "100%", padding: "1rem 1.5rem"}}>
@@ -267,6 +283,11 @@ const OrderCard = (props: {order: Order, products: Product[], shopStatus: ShopSt
                             <br/>受け取りをお待ちしております
                         </Typography>
 
+                    }
+                    {isWorking ? 
+                        <Typography variant={"overline"}>
+                        現在お作りしています
+                        </Typography>: null
                     }
                 </Stack>
                 <Stack spacing={1}>
