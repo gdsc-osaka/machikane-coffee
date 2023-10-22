@@ -16,11 +16,12 @@ import {
 } from "firebase/firestore";
 import {getToday} from "../../util/dateUtils";
 import {db} from "../../firebase/firebase";
-import {orderConverter} from "../../firebase/converters";
+import {orderConverter, stockConverter} from "../../firebase/converters";
 import {createAsyncThunk, Dispatch} from "@reduxjs/toolkit";
 import {RootState} from "../store";
 import {Order, OrderForAdd, PayloadOrder} from "./orderTypes";
 import {orderAdded, orderPending, orderRejected, orderRemoved, orderSucceeded, orderUpdated} from "./ordersSlice";
+import {PayloadStock, Stock} from "../stock/stockTypes";
 
 const ordersQuery = (shopId: string, ...queryConstraints: QueryConstraint[]) => {
     const today = Timestamp.fromDate(getToday());
@@ -118,7 +119,7 @@ export const streamOrder = createAsyncThunk('orders/streamOrder',
     })
 
 export const addOrder = createAsyncThunk<
-    { shopId: string, order: Order },
+    { shopId: string },
     { shopId: string, orderForAdd: OrderForAdd },
     {}
 >("orders/addOrder", async ({shopId, orderForAdd}, {rejectWithValue}) => {
@@ -142,16 +143,33 @@ export const addOrder = createAsyncThunk<
             order.index = lastOrder.index + 1;
         }
 
-        // ランダムIDで追加
-        const addedDoc = await addDoc(collection(db, `shops/${shopId}/orders`).withConverter(orderConverter), order);
+        const batch = writeBatch(db);
 
-        const addedOrder: Order = {
-            ...order,
-            id: addedDoc.id,
-            created_at: Timestamp.now(),
+        for (const prodKey in order.product_amount) {
+            const amount = order.product_amount[prodKey];
+            for (let i = 0; i < amount; i++) {
+                const stock: PayloadStock = {
+                    barista_id: 0,
+                    created_at: serverTimestamp(),
+                    product_id: prodKey,
+                    start_working_at: serverTimestamp(),
+                    status: "idle"
+                };
+
+                batch.set(doc(db, `shops/${shopId}/stocks`).withConverter(stockConverter), stock);
+            }
         }
 
-        return {shopId: shopId, order: addedOrder}
+        batch.set(doc(db, `shops/${shopId}/orders`).withConverter(orderConverter), order);
+
+        try {
+            await batch.commit();
+            return {shopId: shopId}
+
+        } catch (e) {
+            return rejectWithValue(e);
+        }
+
     } catch (error) {
         return rejectWithValue(error);
     }
