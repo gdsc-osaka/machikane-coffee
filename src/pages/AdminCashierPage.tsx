@@ -98,7 +98,7 @@ const AdminCashierPage = () => {
     }
 
     const handleUnreceiveOrder = (order: Order) => {
-        dispatch(updateOrder({shopId, newOrder: {...order, status: "completed"}}));
+        dispatch(updateOrder({shopId, newOrder: {...order, status: "idle"}}));
     }
 
     const handleDeleteOrder = (order: Order) => {
@@ -118,22 +118,6 @@ const AdminCashierPage = () => {
     }
 
     const handleSwitchStatus = (order: Order, orderStatusId: string, status: Status) => {
-        const newOrder: Order = {
-            ...order,
-            order_statuses: {
-                ...order.order_statuses,
-                [orderStatusId]: status === "working" ? {
-                    ...order.order_statuses[orderStatusId],
-                    status: status
-                } : {
-                    ...order.order_statuses[orderStatusId],
-                    status: status,
-                    start_working_at: Timestamp.now()
-                }
-            }
-        }
-
-        dispatch(updateOrder({shopId, newOrder}));
     }
 
     return (
