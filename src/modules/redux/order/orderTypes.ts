@@ -34,10 +34,8 @@ type OrderTemplate<T extends Timestamp | FieldValue> = {
     id: string;
     index: number;
     created_at: T;
-    complete_at: Timestamp;
     delay_seconds: number;
-    status: "idle" | "completed" | "received";
-    order_statuses: OrderStatuses<T>;
+    status: "idle" | "received";
     // データ追加時は以下のみ
     product_amount: ProductAmount;
     is_student: boolean;
@@ -55,7 +53,7 @@ export type Order = OrderTemplate<Timestamp>;
 /**
  * データの追加時、ユーザーが設定しなければいけないフィールドのみにした order
  */
-export type OrderForAdd = Omit<Order, "id" | "index" | "created_at" | "complete_at" | "order_statuses" | "delay_seconds">;
+export type OrderForAdd = Omit<Order, "id" | "index" | "created_at" | "delay_seconds">;
 
 /**
  * データの更新時に使用する Order
@@ -75,8 +73,7 @@ export function assertOrder(data: any): asserts data is Order {
             // FIXME: product_amount の条件を追加
             typeof d?.id === "string" &&
             typeof d?.index === "number" &&
-            d?.created_at instanceof Timestamp &&
-            d?.complete_at instanceof Timestamp
+            d?.created_at instanceof Timestamp
         )
     ) {
         throw new Error("data is not order type");
