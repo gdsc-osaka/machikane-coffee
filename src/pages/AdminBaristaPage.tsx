@@ -23,6 +23,8 @@ import {streamOrders, updateOrder} from "../modules/redux/order/ordersThunk";
 import {fetchProducts} from "../modules/redux/product/productsThunk";
 import {streamShop, updateShop} from "../modules/redux/shop/shopsThunk";
 import {Timestamp} from "firebase/firestore";
+import { useDate } from "src/modules/hooks/useDate";
+import TimeDisplay from "src/components/Timer/TimeDisplay";
 
 /**
  * Order.orderedStatusesの要素を識別する
@@ -210,9 +212,8 @@ const BaristaOrderItem = (props: {
     handleOrderStatus: (order: Order, orderStatusId: string, type: Status) => void,
 }) => {
     const {order, products, orderStatusIds, handleOrderStatus, selectedId} = props;
-
     const isWorking = orderStatusIds.length > 0;
-
+    const current_time =  Math.floor((useDate(1).getTime())/1000);
     return <StickyNote>
         <Flex>
             <Stack direction={"row"} alignItems={"center"} spacing={1}>
@@ -235,6 +236,12 @@ const BaristaOrderItem = (props: {
             const isCompleted = orderStatus.status === "completed";
             const disabled = isCompleted || selectedId === 0 || (orderStatus.status === "working" && orderStatus.barista_id !== selectedId);
 
+            // 「つくる」を押してからの時間
+            // (現在の時刻) - (orderStatus.status === "working" になった時刻)
+            const start_time = orderStatus.start_working_at.seconds;
+            const diff = Number(current_time)-start_time;
+            const elapsedMin = Math.floor(diff / 60);
+            const elapsedSec = Math.floor(diff % 60);
             return <Flex style={{paddingLeft: "2.5rem"}}>
                 <Stack direction={"row"} alignItems={"center"} spacing={1}>
                     {orderStatus.status === "idle" ? <HourglassEmptyRoundedIcon/> : <React.Fragment/>}
@@ -245,6 +252,11 @@ const BaristaOrderItem = (props: {
                     </Typography>
                 </Stack>
                 <Stack direction={"row"} alignItems={"center"} spacing={1}>
+                    <Typography variant={"body2"}>
+                        {orderStatus.status === "working" && 
+                        String(elapsedMin).padStart(2, "0")
+                         + ":" + String(elapsedSec).padStart(2, "0")}
+                    </Typography>
                     {isWorkingOnThis &&
                         <Button variant={"outlined"}
                                 disabled={disabled}
