@@ -51,10 +51,10 @@ export const fetchOrders = createAsyncThunk<
 /**
  * order をリアルタイム更新する. ユーザー側で使用されることを想定
  */
-export const streamOrders = (shopId: string, {dispatch}: { dispatch: Dispatch }) => {
+export const streamOrders = (shopId: string, {dispatch}: { dispatch: Dispatch }, ...queryConstraints: QueryConstraint[]) => {
     dispatch(orderSucceeded({shopId}))
 
-    const _query = ordersQuery(shopId);
+    const _query = ordersQuery(shopId, ...queryConstraints);
     const unsubscribe = onSnapshot(_query, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
             if (change.doc.metadata.hasPendingWrites) {
