@@ -11,6 +11,7 @@ import {assertProduct, Product} from "../redux/product/productTypes";
 import {assertShop, Shop} from "../redux/shop/shopTypes";
 import {assertOrder, Order} from "../redux/order/orderTypes";
 import {Weaken} from "../util/typeUtils";
+import {assertStock, Stock} from "../redux/stock/stockTypes";
 
 export const productConverter: FirestoreDataConverter<Product> = {
     fromFirestore(snapshot: QueryDocumentSnapshot<DocumentData, DocumentData>, options: SnapshotOptions | undefined): Product {
@@ -54,6 +55,22 @@ export const orderConverter: FirestoreDataConverter<Order> = {
     toFirestore(modelObject: WithFieldValue<Order> | PartialWithFieldValue<Order>, options?: SetOptions): any {
         // データから id を除去
         const weakenModel: Weaken<WithFieldValue<Order> | PartialWithFieldValue<Order>, "id"> = Object.assign({}, modelObject);
+        delete weakenModel.id;
+        return weakenModel;
+    }
+
+}
+
+export const stockConverter: FirestoreDataConverter<Stock> = {
+    fromFirestore(snapshot: QueryDocumentSnapshot<DocumentData, DocumentData>, options: SnapshotOptions | undefined): Stock {
+        // データに id を付加
+        const data = {...snapshot.data(options), id: snapshot.id};
+        assertStock(data);
+        return data;
+
+    }, toFirestore(modelObject: WithFieldValue<Stock> | PartialWithFieldValue<Stock>, options?: SetOptions): any {
+        // データから id を除去
+        const weakenModel: Weaken<WithFieldValue<Stock> | PartialWithFieldValue<Stock>, "id"> = Object.assign({}, modelObject);
         delete weakenModel.id;
         return weakenModel;
     }
