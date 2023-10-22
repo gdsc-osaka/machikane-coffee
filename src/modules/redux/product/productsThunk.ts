@@ -50,7 +50,7 @@ export const addProduct = createAsyncThunk('products/addProduct',
     }, {rejectWithValue}) => {
         try {
             const thumbnailPath = getThumbnailPath(shopId, productForAdd.id);
-            const payloadProduct: PayloadProduct = {...productForAdd, thumbnail_path: thumbnailPath};
+            const payloadProduct: PayloadProduct = {...productForAdd, thumbnail_path: thumbnailPath, stock: 0};
             await setDoc(productRef(shopId, productForAdd.id), payloadProduct);
 
             const thumbnailRef = ref(storage, thumbnailPath);
