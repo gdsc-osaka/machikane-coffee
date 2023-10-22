@@ -284,10 +284,10 @@ const OrderCard = (props: {order: Order, products: Product[], shopStatus: ShopSt
                         </Typography>
 
                     }
-                    {isWorking ? 
+                    {isWorking &&
                         <Typography variant={"overline"}>
                         現在お作りしています
-                        </Typography>: null
+                        </Typography>
                     }
                 </Stack>
                 <Stack spacing={1}>
