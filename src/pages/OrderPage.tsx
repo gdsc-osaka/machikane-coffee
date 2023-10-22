@@ -1,12 +1,18 @@
 import {Button, Dialog, DialogActions, DialogTitle, Divider, Stack, TextField, Typography} from "@mui/material";
 import React, {useEffect, useState} from "react";
 import {RootState, useAppDispatch, useAppSelector} from "../modules/redux/store";
-import {selectOrderById, selectOrderUnsubscribe} from "../modules/redux/order/ordersSlice";
+import {
+    selectAllIdleOrdersBeforeMe,
+    selectAllOrders,
+    selectOrderById,
+    selectOrderStatus,
+    selectOrderUnsubscribe
+} from "../modules/redux/order/ordersSlice";
 import {useNavigate, useParams, useSearchParams} from "react-router-dom";
 import {Order} from "../modules/redux/order/orderTypes";
 import StickyNote from "../components/StickyNote";
 import {Product} from "../modules/redux/product/productTypes";
-import {selectAllProduct} from "../modules/redux/product/productsSlice";
+import {selectAllProduct, selectProductStatus} from "../modules/redux/product/productsSlice";
 import {useCountDownInterval} from "../modules/hooks/useCountDownInterval";
 import {ShopStatus} from "../modules/redux/shop/shopTypes";
 import {
@@ -18,8 +24,8 @@ import {
 import DelayContainer from "../components/User/delayContainer";
 import MyMarkdown from "src/components/MyMarkdown";
 import {MotionList, MotionListItem} from "../components/motion/motionList";
-import {streamOrder} from "../modules/redux/order/ordersThunk";
-import {fetchProducts} from "../modules/redux/product/productsThunk";
+import {streamOrder, streamOrders} from "../modules/redux/order/ordersThunk";
+import {streamProducts} from "../modules/redux/product/productsThunk";
 import {fetchShops, streamShop} from "../modules/redux/shop/shopsThunk";
 
 // queryParamで使うキー
@@ -37,7 +43,8 @@ const OrderPage = () => {
     const [dialogState, setDialogState] = useState<DialogState>({
         open: false,
         title: "",
-        onOk: () => {}
+        onOk: () => {
+        }
     });
 
     const dispatch = useAppDispatch();
@@ -46,22 +53,46 @@ const OrderPage = () => {
     const shopId = params.shopId ?? '';
     const [searchParams, setSearchParams] = useSearchParams();
     const paramOrderIndex = searchParams.get(orderIndexParamKey);
-    
+
+    // Order関連
     const order = useAppSelector(state => selectOrderById(state, shopId, orderId));
+    const orders = useAppSelector(state => selectAllIdleOrdersBeforeMe(state, shopId, order));
+    const orderStatus = useAppSelector(state => selectOrderStatus(state, shopId))
     const unsubscribe = useAppSelector(state => selectOrderUnsubscribe(state, shopId));
+
+    // Product関連
+    const products = useAppSelector(state => selectAllProduct(state, shopId));
+    const productStatus = useAppSelector(state => selectProductStatus(state, shopId))
+
+    // Shop関連
+    const shop = useAppSelector((state: RootState) => selectShopById(state, shopId));
+    const shopStatus = useAppSelector(selectShopStatus);
+    const allShops = useAppSelector(selectAllShops);
     const delaySec = useAppSelector(state => selectShopDelaySeconds(state, shopId));
 
-    const products = useAppSelector(state => selectAllProduct(state, shopId));
-    const shop = useAppSelector((state: RootState) => selectShopById(state, shopId));
-    const allShops = useAppSelector(selectAllShops);
-    const shopStatus = useAppSelector(selectShopStatus);
+    useEffect(() => {
+        if (productStatus === "idle") {
+            const unsub = streamProducts(shopId, {dispatch})
+
+            return () => {
+                unsub();
+            }
+        }
+    }, []);
 
     useEffect(() => {
-        dispatch(fetchProducts(shopId));
-    }, [dispatch, shopId]);
+        if (orderStatus === "idle") {
+            // TODO: 自分の注文以前の未受け取り注文 にクエリする
+            const unsub = streamOrders(shopId, {dispatch})
+
+            return () => {
+                unsub();
+            }
+        }
+    }, [])
 
     useEffect(() => {
-        if (shopStatus == "idle" || shopStatus == "failed") {
+        if (shopStatus === "idle") {
             dispatch(fetchShops());
             dispatch(streamShop(shopId));
         }
@@ -85,7 +116,7 @@ const OrderPage = () => {
     useEffect(() => {
         const oIndex = Number(paramOrderIndex);
 
-        if (!isNaN(oIndex) && oIndex != 0) {
+        if (!isNaN(oIndex) && oIndex !== 0) {
             const strOIndex = oIndex.toString();
             setOrderIndex(strOIndex);
             handleSubmit(strOIndex);
@@ -94,16 +125,16 @@ const OrderPage = () => {
 
     const handleOrderIndex = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const num = Number(e.target.value);
-        if (!isNaN(num) && num != 0) {
+        if (!isNaN(num) && num !== 0) {
             setOrderIndex(num.toString());
 
-        } else if (e.target.value == "") {
+        } else if (e.target.value === "") {
             setOrderIndex("");
         }
     }
 
     const handleSubmit = async (orderIndex: string) => {
-        if (unsubscribe != null) {
+        if (unsubscribe !== null) {
             unsubscribe();
         }
 
@@ -167,7 +198,8 @@ const OrderPage = () => {
             {(order !== undefined && shop !== undefined) &&
                 <MotionListItem key={"order-card"}>
                     <div style={{paddingTop: "1rem"}}>
-                        <OrderCard order={order} products={products} shopStatus={shop.status} delaySec={order.delay_seconds + delaySec}/>
+                        <OrderCard order={order} orders={orders} products={products} shopStatus={shop.status}
+                                   delaySec={order.delay_seconds + delaySec}/>
                     </div>
                 </MotionListItem>
             }
@@ -190,7 +222,7 @@ const OrderPage = () => {
     </Stack>
 }
 
-const ShopMessage = (props: {message: string}) => {
+const ShopMessage = (props: { message: string }) => {
     return <Stack sx={{boxShadow: "none", padding: "1rem 0", paddingBottom: "2rem"}}>
         <MyMarkdown>
             {props.message}
@@ -198,24 +230,68 @@ const ShopMessage = (props: {message: string}) => {
     </Stack>
 }
 
-const OrderCard = (props: {order: Order, products: Product[], shopStatus: ShopStatus, delaySec: number}) => {
-    const [untilCount, setUntilCount] = useState(0);
+const OrderCard = (props: {
+    order: Order,
+    orders: Order[],
+    products: Product[],
+    shopStatus: ShopStatus,
+    delaySec: number
+}) => {
+    const [untilCount, setUntilCount] = useState(0); // 秒単位で完成までのカウントダウン
+    const [completeAtMilliSec, setCompleteAtMilliSec] = useState(0); // 注文が完成する時刻をミリ秒で
+    const [isCompleted, setIsCompleted] = useState(false);
 
-    const {order, products, shopStatus, delaySec} = props;
-    const untilTime = order.complete_at.toDate().getTime() - new Date().getTime();
-    const until = new Date(untilTime);
+    const {order, orders, products, shopStatus, delaySec} = props;
+
     const untilSec = untilCount % 60;
     const untilMin = Math.floor(untilCount / 60);
     const untilHou = Math.floor(untilMin / 60);
-    const completeRate = untilTime / (order.complete_at.toDate().getTime() - order.created_at.toDate().getTime());
-    const productTexts = Object.keys(order.product_amount).map(key => `${products.find(e => e.id == key)?.display_name ?? '???'} × ${order.product_amount[key]}`);
+    const completeRate = untilCount / (completeAtMilliSec - order.created_at.toDate().getTime()) / 1000;
+    const productTexts = Object.keys(order.product_amount).map(key => `${products.find(e => e.id === key)?.display_name ?? '???'} × ${order.product_amount[key]}`);
     const fontColor = shopStatus === "pause_ordering" ? "#410002" : "#201B16";
 
-    const isCompleted = order.status === "completed";
 
     useEffect(() => {
-        setUntilCount(Math.floor(until.getTime() / 1000));
-    }, [until]);
+        function getStockMap(products: Product[]) {
+            const stockMap = new Map<string, number>();
+            for (const product of products) stockMap.set(product.id, product.stock);
+            return stockMap;
+        }
+
+        if (order !== undefined && orders.length > 0 && products.length > 0) {
+
+
+            const stockMap = getStockMap(products);
+
+            for (const o of [...orders, order]) {
+                for (const prodId in o.product_amount) {
+                    const stock = stockMap.get(prodId);
+                    stockMap.set(prodId, stock ?? 0 - o.product_amount[prodId])
+                }
+            }
+
+            let untilSec = 0;
+
+            stockMap.forEach((stock, prodId) => {
+                if (stock < 0) {
+                    // 不足なら
+                    const prod = products.find(p => p.id === prodId);
+
+                    if (prod !== undefined) {
+                        // マイナスを引く
+                        untilSec -= prod.span * stock;
+                    }
+                }
+            })
+
+            if (untilSec > 0) {
+                setUntilCount(untilSec);
+                setCompleteAtMilliSec(untilSec * 1000 + new Date().getTime())
+            } else {
+                setIsCompleted(true);
+            }
+        }
+    }, [order, orders, products])
 
     useCountDownInterval(untilCount, setUntilCount);
 
@@ -226,14 +302,15 @@ const OrderCard = (props: {order: Order, products: Product[], shopStatus: ShopSt
                     <Typography variant={"caption"}>
                         完成予定まで
                     </Typography>
-                    {!isCompleted && (untilCount > 0  ?
+                    {!isCompleted && (untilCount > 0 ?
                         <Stack direction={"row"} spacing={0.7} alignItems={"flex-end"}>
                             {untilHou > 0 &&
                                 <React.Fragment>
                                     <Typography variant={"h3"} sx={{fontWeight: "bold"}} color={fontColor}>
                                         {untilHou}
                                     </Typography>
-                                    <Typography variant={"h4"} sx={{paddingBottom: "0.25rem", fontWeight: "800"}} color={fontColor}>
+                                    <Typography variant={"h4"} sx={{paddingBottom: "0.25rem", fontWeight: "800"}}
+                                                color={fontColor}>
                                         時間
                                     </Typography>
                                 </React.Fragment>}
@@ -242,16 +319,19 @@ const OrderCard = (props: {order: Order, products: Product[], shopStatus: ShopSt
                                     <Typography variant={"h3"} sx={{fontWeight: "bold"}} color={fontColor}>
                                         {untilMin}
                                     </Typography>
-                                    <Typography variant={"h4"} sx={{paddingBottom: "0.25rem", fontWeight: "800"}} color={fontColor}>
+                                    <Typography variant={"h4"} sx={{paddingBottom: "0.25rem", fontWeight: "800"}}
+                                                color={fontColor}>
                                         分
                                     </Typography>
                                 </React.Fragment>}
                             {untilSec > 0 &&
                                 <React.Fragment>
-                                    <Typography variant={"h3"} sx={{paddingLeft: "0.2rem", fontWeight: "bold"}} color={fontColor}>
+                                    <Typography variant={"h3"} sx={{paddingLeft: "0.2rem", fontWeight: "bold"}}
+                                                color={fontColor}>
                                         {untilSec}
                                     </Typography>
-                                    <Typography variant={"h4"} sx={{paddingBottom: "0.25rem", fontWeight: "800"}} color={fontColor}>
+                                    <Typography variant={"h4"} sx={{paddingBottom: "0.25rem", fontWeight: "800"}}
+                                                color={fontColor}>
                                         秒
                                     </Typography>
                                 </React.Fragment>}
