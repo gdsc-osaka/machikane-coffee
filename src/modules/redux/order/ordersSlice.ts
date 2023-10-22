@@ -180,6 +180,15 @@ export const selectAllOrdersByCompleted = (state: RootState, shopId: string) =>
 export const selectAllOrdersInverse = (state: RootState, shopId: string) =>
     state.order[shopId]?.data.slice().sort((a, b) => sortByCreated(b, a)) ?? [];
 
+/**
+ * 自分以前のstatus==idleなOrderを返す. myOrderがundefinedの場合は空配列を返す.
+ */
+export const selectAllIdleOrdersBeforeMe = (state: RootState, shopId: string, myOrder?: Order) => {
+    const createdAtTime = myOrder?.created_at.toDate().getTime() ?? 0;
+
+    return selectAllOrders(state, shopId).filter(o => o.status === "idle" && o.created_at.toDate().getTime() - createdAtTime < 0);
+}
+
 export const selectOrderStatus = (state: RootState, shopId: string) =>
     state.order[shopId]?.status ?? 'idle';
 
