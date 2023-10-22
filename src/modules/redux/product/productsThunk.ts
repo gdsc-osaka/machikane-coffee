@@ -1,15 +1,24 @@
-import {collection, doc, getDocs, setDoc, updateDoc} from "firebase/firestore";
+import {collection, doc, getDocs, onSnapshot, setDoc, updateDoc} from "firebase/firestore";
 import {db, storage} from "../../firebase/firebase";
 import {productConverter} from "../../firebase/converters";
-import {createAsyncThunk} from "@reduxjs/toolkit";
+import {createAsyncThunk, Dispatch} from "@reduxjs/toolkit";
 import {PayloadProduct, Product, ProductForAdd, ProductForUpdate} from "./productTypes";
 import {getDownloadURL, ref, uploadBytes} from "firebase/storage";
 import {RootState} from "../store";
-import {productPending, productRejected, selectProductById} from "./productsSlice";
+import {
+    productAdded,
+    productPending,
+    productRejected,
+    productRemoved,
+    productSucceeded,
+    productUpdated,
+    selectProductById
+} from "./productsSlice";
 
 const productsRef = (shopId: string) => collection(db, `shops/${shopId}/products`).withConverter(productConverter);
 const productRef = (shopId: string, productId: string) => doc(db, `shops/${shopId}/products/${productId}`).withConverter(productConverter)
 const getThumbnailPath = (shopId: string, productId: string) => `${shopId}/${productId}/thumbnail`;
+
 export const fetchProducts = createAsyncThunk("products/fetchProducts",
     async (shopId: string, {dispatch, rejectWithValue}) => {
         dispatch(productPending({shopId}));
@@ -98,3 +107,30 @@ export const updateProduct = createAsyncThunk<
             return rejectWithValue(e);
         }
     })
+
+export const streamProducts = (shopId: string, {dispatch}: {dispatch: Dispatch}) => {
+    dispatch(productSucceeded({shopId}));
+
+    const q = productsRef(shopId);
+
+    return onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            if (change.doc.metadata.hasPendingWrites) {
+                return;
+            }
+
+            if (change.type === "added") {
+                const product = change.doc.data();
+                dispatch(productAdded({shopId, product}));
+            }
+            if (change.type === "modified") {
+                const product = change.doc.data();
+                dispatch(productUpdated({shopId, product}));
+            }
+            if (change.type === "removed") {
+                const productId = change.doc.id;
+                dispatch(productRemoved({shopId, productId}));
+            }
+        });
+    });
+}

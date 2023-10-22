@@ -25,6 +25,29 @@ const productsSlice = createSlice({
     name: "products",
     initialState: {} as ProductState,
     reducers: {
+        productAdded(state, action: PayloadAction<{shopId: string, product: Product}>) {
+            const {product, shopId} = action.payload;
+
+            ensureInitialized(state, shopId);
+            state[shopId].data.push(product);
+        },
+        productUpdated(state, action: PayloadAction<{shopId: string, product: Product}>) {
+            const {product, shopId} = action.payload;
+
+            ensureInitialized(state, shopId);
+            state[shopId].data.update(d => d.id === product.id, product);
+        },
+        /**
+         * 指定した ID の product を消去する
+         * @param state
+         * @param action 消去する product の ID
+         */
+        productRemoved(state, action: PayloadAction<{shopId: string, productId: string}>) {
+            const {shopId, productId} = action.payload;
+
+            ensureInitialized(state, shopId);
+            state[shopId].data.remove(d => d.id === productId);
+        },
         /**
          * OrderStateをshopIdのマップとしたため、extraReducerのpendingでloadingに設定することができない(shopIdがとってこれないため)
          * このため、OrderのAsyncThunkではこのReducerを使う
@@ -39,7 +62,7 @@ const productsSlice = createSlice({
             state[shopId].status = 'loading';
         },
         /**
-         * pendingと同様の理由で, OrderのAsyncThunkではrejectedを用いる
+         * pendingと同様の理由で, OrderのAsyncThunkではproductRejectedを用いる
          * @param state
          * @param action
          */
@@ -50,6 +73,18 @@ const productsSlice = createSlice({
 
             state[shopId].status = 'failed';
             state[shopId].error = error.message;
+        },
+        /**
+         * pendingと同様の理由で, OrderのAsyncThunkではproductSucceededを用いる
+         * @param state
+         * @param action
+         */
+        productSucceeded(state, action: PayloadAction<{ shopId: string }>) {
+            const {shopId} = action.payload;
+
+            ensureInitialized(state, shopId);
+
+            state[shopId].status = 'succeeded';
         }
     },
     extraReducers: builder => {
@@ -81,7 +116,7 @@ const productsSlice = createSlice({
 });
 
 const productReducer = productsSlice.reducer;
-export const {productRejected, productPending} = productsSlice.actions;
+export const {productAdded, productUpdated, productRemoved, productRejected, productPending, productSucceeded} = productsSlice.actions;
 
 export default productReducer;
 
