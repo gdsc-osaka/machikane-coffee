@@ -1,13 +1,6 @@
 import {Button, Dialog, DialogActions, DialogTitle, Divider, Stack, TextField, Typography} from "@mui/material";
 import React, {useEffect, useState} from "react";
 import {RootState, useAppDispatch, useAppSelector} from "../modules/redux/store";
-import {
-    selectAllIdleOrdersBeforeMe,
-    selectAllOrders,
-    selectOrderById,
-    selectOrderStatus,
-    selectOrderUnsubscribe
-} from "../modules/redux/order/ordersSlice";
 import {useNavigate, useParams, useSearchParams} from "react-router-dom";
 import {Order} from "../modules/redux/order/orderTypes";
 import StickyNote from "../components/StickyNote";
@@ -27,6 +20,12 @@ import {MotionList, MotionListItem} from "../components/motion/motionList";
 import {streamOrder, streamOrders} from "../modules/redux/order/ordersThunk";
 import {streamProducts} from "../modules/redux/product/productsThunk";
 import {fetchShops, streamShop} from "../modules/redux/shop/shopsThunk";
+import {
+    selectAllIdleOrdersBeforeMe, selectAllOrders,
+    selectOrderById,
+    selectOrderStatus,
+    selectOrderUnsubscribe
+} from "../modules/redux/order/orderSelectors";
 
 // queryParamで使うキー
 const orderIndexParamKey = 'order';

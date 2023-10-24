@@ -25,11 +25,11 @@ import {
     orderRejected,
     orderRemoved,
     orderSucceeded,
-    orderUpdated,
-    selectAllOrders
+    orderUpdated
 } from "./ordersSlice";
 import {PayloadStock} from "../stock/stockTypes";
 import * as crypto from "crypto";
+import {selectAllOrders} from "./orderSelectors";
 
 const ordersQuery = (shopId: string, ...queryConstraints: QueryConstraint[]) => {
     const today = Timestamp.fromDate(getToday());

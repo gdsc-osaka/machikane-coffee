@@ -1,5 +1,4 @@
 import React, {useEffect, useState} from "react";
-import {selectMaxCompleteAt, selectOrderStatus} from "../modules/redux/order/ordersSlice";
 import {useAppDispatch, useAppSelector} from "../modules/redux/store";
 import TimeDisplay from "../components/Timer/TimeDisplay";
 import "../components/Timer/timer.css";
@@ -10,6 +9,7 @@ import {useCountDownInterval} from "../modules/hooks/useCountDownInterval";
 import {streamOrders} from "../modules/redux/order/ordersThunk";
 import {fetchProducts} from "../modules/redux/product/productsThunk";
 import {streamShop} from "../modules/redux/shop/shopsThunk";
+import {selectMaxCompleteAt, selectOrderStatus} from "../modules/redux/order/orderSelectors";
 
 const TimerPage = () => {
   const dispatch = useAppDispatch();

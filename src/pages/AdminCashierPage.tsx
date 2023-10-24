@@ -15,7 +15,6 @@ import {
     Grid,
     Stack
 } from "@mui/material";
-import {selectOrderStatus, selectReceivedOrder, selectUnreceivedOrder} from "../modules/redux/order/ordersSlice";
 import OrderList from "../components/order/OrderList";
 import ShopManager from "../components/order/ShopManager";
 import ReceivedOrderList from "../components/order/ReceivedOrderList";
@@ -25,6 +24,7 @@ import {addOrder, deleteOrder, streamOrders, updateOrder} from "../modules/redux
 import {fetchProducts} from "../modules/redux/product/productsThunk";
 import {useSelector} from "react-redux";
 import {Timestamp} from "firebase/firestore";
+import {selectOrderStatus, selectReceivedOrder, selectUnreceivedOrder} from "../modules/redux/order/orderSelectors";
 
 const AdminCashierPage = () => {
     const [openDelete, setOpenDelete] = useState(false);

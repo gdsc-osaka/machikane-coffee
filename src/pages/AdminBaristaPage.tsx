@@ -9,7 +9,6 @@ import HourglassEmptyRoundedIcon from '@mui/icons-material/HourglassEmptyRounded
 import HourglassBottomRoundedIcon from '@mui/icons-material/HourglassBottomRounded';
 import StickyNote from "../components/StickyNote";
 import IndexIcon from "../components/order/IndexIcon";
-import {selectAllOrdersInverse, selectOrderStatus, selectOrderUnsubscribe} from "../modules/redux/order/ordersSlice";
 import {selectAllProduct} from "../modules/redux/product/productsSlice";
 import {getOrderLabel} from "../modules/util/orderUtils";
 import {Order, Status} from "../modules/redux/order/orderTypes";
@@ -23,6 +22,7 @@ import {streamOrders, updateOrder} from "../modules/redux/order/ordersThunk";
 import {fetchProducts} from "../modules/redux/product/productsThunk";
 import {streamShop, updateShop} from "../modules/redux/shop/shopsThunk";
 import {Timestamp} from "firebase/firestore";
+import {selectAllOrdersInverse, selectOrderStatus, selectOrderUnsubscribe} from "../modules/redux/order/orderSelectors";
 
 /**
  * Order.orderedStatusesの要素を識別する
