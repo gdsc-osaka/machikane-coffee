@@ -23,6 +23,7 @@ import {streamOrders, updateOrder} from "../modules/redux/order/ordersThunk";
 import {fetchProducts} from "../modules/redux/product/productsThunk";
 import {streamShop, updateShop} from "../modules/redux/shop/shopsThunk";
 import {Timestamp} from "firebase/firestore";
+import { useDate } from "src/modules/hooks/useDate";
 
 /**
  * Order.orderedStatusesの要素を識別する
@@ -58,6 +59,9 @@ const AdminBaristaPage = () => {
 
     const shopUnsubscribe = useAppSelector(selectShopUnsubscribe);
     const orderUnsubscribe = useAppSelector(state => selectOrderUnsubscribe(state, shopId));
+
+    const current_time =  useDate().getTime();
+    // const current_time =  Number(Math.floor(useDate(1).getTime()));
 
     // データを取得
     useEffect(() => {
@@ -194,6 +198,7 @@ const AdminBaristaPage = () => {
                                           products={products}
                                           orderStatusIds={workingOrderStatusIds}
                                           selectedId={selectedId}
+                                          current_time={current_time}
                                           handleOrderStatus={handleOrderStatus}/>
                     </MotionListItem>
                 })}
@@ -207,12 +212,11 @@ const BaristaOrderItem = (props: {
     products: Product[],
     orderStatusIds: OrderStatusId[],
     selectedId: number,
+    current_time: number,
     handleOrderStatus: (order: Order, orderStatusId: string, type: Status) => void,
 }) => {
-    const {order, products, orderStatusIds, handleOrderStatus, selectedId} = props;
-
+    const {order, products, orderStatusIds, handleOrderStatus, selectedId, current_time} = props;
     const isWorking = orderStatusIds.length > 0;
-
     return <StickyNote>
         <Flex>
             <Stack direction={"row"} alignItems={"center"} spacing={1}>
@@ -235,6 +239,10 @@ const BaristaOrderItem = (props: {
             const isCompleted = orderStatus.status === "completed";
             const disabled = isCompleted || selectedId === 0 || (orderStatus.status === "working" && orderStatus.barista_id !== selectedId);
 
+            const start_time = orderStatus.start_working_at.toDate().getTime();
+            const diff = (current_time-start_time)/1000;
+            const elapsedMin = Math.floor(diff / 60) >= 0 ? Math.floor(diff / 60) : 0;
+            const elapsedSec = Math.floor(diff % 60) >= 0 ? Math.floor(diff % 60) : 0;
             return <Flex style={{paddingLeft: "2.5rem"}}>
                 <Stack direction={"row"} alignItems={"center"} spacing={1}>
                     {orderStatus.status === "idle" ? <HourglassEmptyRoundedIcon/> : <React.Fragment/>}
@@ -245,6 +253,11 @@ const BaristaOrderItem = (props: {
                     </Typography>
                 </Stack>
                 <Stack direction={"row"} alignItems={"center"} spacing={1}>
+                    <Typography variant={"body2"}>
+                        {orderStatus.status === "working" && 
+                        String(elapsedMin).padStart(2, "0")
+                         + ":" + String(elapsedSec).padStart(2, "0")}
+                    </Typography>
                     {isWorkingOnThis &&
                         <Button variant={"outlined"}
                                 disabled={disabled}
