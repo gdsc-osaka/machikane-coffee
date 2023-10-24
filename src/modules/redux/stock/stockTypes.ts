@@ -7,6 +7,7 @@ export type StockStatus = "idle" | "working" | "completed"
  * @param barista_id 担当するバリスタのID
  * @param start_working_at statusをworkingにした時刻
  * @param orderRef 対応する注文のref
+ * @param spend_to_make 作成にかかった時間を milli sec 単位で保存
  */
 export type StockTemplate<T extends Timestamp | FieldValue> = {
     id: string
