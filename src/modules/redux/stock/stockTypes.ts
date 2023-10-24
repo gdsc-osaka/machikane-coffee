@@ -16,12 +16,13 @@ export type StockTemplate<T extends Timestamp | FieldValue> = {
     created_at: T
     start_working_at: T
     orderRef: DocumentReference
+    spend_to_make: number,
 }
 
 export type Stock = StockTemplate<Timestamp>;
 type StockFieldValue = StockTemplate<FieldValue>;
 
-export type StockFroAdd = Omit<StockFieldValue, "id" | "created_at" | "start_working_at" | "barista_id" | "status">;
+export type StockFroAdd = Omit<StockFieldValue, "id" | "created_at" | "start_working_at" | "barista_id" | "status" | "orderRef" | "spend_to_make">;
 export type StockForUpdate = Partial<StockFieldValue>;
 export type PayloadStock = Omit<StockFieldValue, 'id'>;
 

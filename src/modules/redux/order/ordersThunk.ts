@@ -190,7 +190,8 @@ export const addOrder = createAsyncThunk<
                     created_at: serverTimestamp(),
                     product_id: prodKey,
                     start_working_at: serverTimestamp(),
-                    status: "idle"
+                    status: "idle",
+                    spend_to_make: 0
                 };
                 const stockId = crypto.randomUUID();
                 const stockRef = doc(db, `shops/${shopId}/stocks/${stockId}`);
