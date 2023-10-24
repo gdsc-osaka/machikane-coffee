@@ -85,9 +85,7 @@ const AdminCashierPage = () => {
             addOrder({
                 shopId: shopId,
                 orderForAdd: {
-                    is_student: false,
                     product_amount: trueProductAmount,
-                    status: "idle",
                 },
             })
         );

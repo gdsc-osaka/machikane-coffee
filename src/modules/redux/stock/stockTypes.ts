@@ -1,13 +1,21 @@
-import {FieldValue, Timestamp} from "firebase/firestore";
+import {DocumentReference, FieldValue, Timestamp} from "firebase/firestore";
 
 export type StockStatus = "idle" | "working" | "completed"
+
+/**
+ * 在庫ドキュメント
+ * @param barista_id 担当するバリスタのID
+ * @param start_working_at statusをworkingにした時刻
+ * @param orderRef 対応する注文のref
+ */
 export type StockTemplate<T extends Timestamp | FieldValue> = {
+    id: string
     status: StockStatus
     product_id: string
     barista_id: number
     created_at: T
     start_working_at: T
-    id: string
+    orderRef: DocumentReference
 }
 
 export type Stock = StockTemplate<Timestamp>;

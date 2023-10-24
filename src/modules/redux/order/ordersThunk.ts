@@ -1,9 +1,8 @@
 import {QueryConstraint} from "@firebase/firestore";
 import {
-    addDoc,
     collection,
     deleteDoc,
-    doc,
+    doc, DocumentReference,
     getDocs,
     limit,
     onSnapshot,
@@ -20,8 +19,17 @@ import {orderConverter, stockConverter} from "../../firebase/converters";
 import {createAsyncThunk, Dispatch} from "@reduxjs/toolkit";
 import {RootState} from "../store";
 import {Order, OrderForAdd, PayloadOrder} from "./orderTypes";
-import {orderAdded, orderPending, orderRejected, orderRemoved, orderSucceeded, orderUpdated} from "./ordersSlice";
-import {PayloadStock, Stock} from "../stock/stockTypes";
+import {
+    orderAdded,
+    orderPending,
+    orderRejected,
+    orderRemoved,
+    orderSucceeded,
+    orderUpdated,
+    selectAllOrders
+} from "./ordersSlice";
+import {PayloadStock} from "../stock/stockTypes";
+import * as crypto from "crypto";
 
 const ordersQuery = (shopId: string, ...queryConstraints: QueryConstraint[]) => {
     const today = Timestamp.fromDate(getToday());
@@ -121,16 +129,41 @@ export const streamOrder = createAsyncThunk('orders/streamOrder',
 export const addOrder = createAsyncThunk<
     { shopId: string },
     { shopId: string, orderForAdd: OrderForAdd },
-    {}
->("orders/addOrder", async ({shopId, orderForAdd}, {rejectWithValue}) => {
+    { state: RootState }
+>("orders/addOrder", async ({shopId, orderForAdd}, {getState, rejectWithValue}) => {
     const order: PayloadOrder = {
+        product_status: {},
+        required_product_amount: {},
+        stocksRef: [],
         status: "idle",
-        is_student: orderForAdd.is_student,
         product_amount: orderForAdd.product_amount,
         index: 1,
         created_at: serverTimestamp(),
-        delay_seconds: 0,
+        delay_seconds: 0
     }
+
+    const unreceivedOrders = selectAllOrders(getState(), shopId).filter(o => o.status !== "received");
+    const productIds: String[] = [];
+
+    for (const productId in order.product_amount) {
+        order.product_status[productId] = {
+            productId: productId,
+            status: "idle"
+        }
+        order.required_product_amount[productId] = order.product_amount[productId];
+        productIds.push(productId);
+    }
+
+    for (const o of unreceivedOrders) {
+        for (const productId of productIds) {
+            const pid = productId as string;
+
+            if (o.product_amount.hasOwnProperty(pid)) {
+                order.required_product_amount[pid] += o.product_amount[pid];
+            }
+        }
+    }
+
 
     try {
         // TODO: Transaction を使う
@@ -145,22 +178,30 @@ export const addOrder = createAsyncThunk<
 
         const batch = writeBatch(db);
 
+        const orderId = crypto.randomUUID()
+        const orderRef = doc(db, `shops/${shopId}/orders/${orderId}`);
+
         for (const prodKey in order.product_amount) {
             const amount = order.product_amount[prodKey];
             for (let i = 0; i < amount; i++) {
                 const stock: PayloadStock = {
+                    orderRef: orderRef,
                     barista_id: 0,
                     created_at: serverTimestamp(),
                     product_id: prodKey,
                     start_working_at: serverTimestamp(),
                     status: "idle"
                 };
+                const stockId = crypto.randomUUID();
+                const stockRef = doc(db, `shops/${shopId}/stocks/${stockId}`);
 
-                batch.set(doc(db, `shops/${shopId}/stocks`).withConverter(stockConverter), stock);
+                order.stocksRef.push(stockRef);
+
+                batch.set(stockRef.withConverter(stockConverter), stock);
             }
         }
 
-        batch.set(doc(db, `shops/${shopId}/orders`).withConverter(orderConverter), order);
+        batch.set(orderRef.withConverter(orderConverter), order);
 
         try {
             await batch.commit();

@@ -1,4 +1,4 @@
-import {FieldValue, Timestamp} from "firebase/firestore";
+import {DocumentReference, FieldValue, Timestamp} from "firebase/firestore";
 
 /**
  * 商品IDと個数のマップ
@@ -30,30 +30,41 @@ export type OrderStatuses<T extends Timestamp | FieldValue> = {
     [K in string]: OrderStatus<T>
 }
 
+/**
+ * 注文ドキュメント
+ * @param created_at 注文が作成された時刻
+ * @param delay_seconds 店舗が提供中止になったことで遅延した秒数
+ * @param stocksRef 対応するStockのref
+ * @param product_status 一つ一つの商品が受け取られたか否かを保存する
+ * @param required_product_amount これ以前の注文も合わせた商品種ごとの必要な商品数
+ */
 type OrderTemplate<T extends Timestamp | FieldValue> = {
     id: string;
     index: number;
     created_at: T;
     delay_seconds: number;
     status: "idle" | "received";
+    stocksRef: DocumentReference[];
+    product_status: {
+        [k in string]: {
+            productId: string;
+            status: "idle" | "received"
+        }
+    }
+    required_product_amount: {
+        [p in string]: number
+    }
     // データ追加時は以下のみ
     product_amount: ProductAmount;
-    is_student: boolean;
 };
 
-/**
- * 注文情報
- * @property order_statuses それぞれの商品の提供状況のリスト
- * @property complete_at 商品が完成する時間
- * @property completed 商品が完成したかどうか
- * @property is_student 客が生徒がどうか
- */
 export type Order = OrderTemplate<Timestamp>;
 
 /**
  * データの追加時、ユーザーが設定しなければいけないフィールドのみにした order
  */
-export type OrderForAdd = Omit<Order, "id" | "index" | "created_at" | "delay_seconds">;
+export type OrderForAdd = Omit<Order, "id" | "index" | "created_at" | "delay_seconds" | "status" |
+    "product_status" | "required_product_amount" | "stocksRef">;
 
 /**
  * データの更新時に使用する Order
