@@ -146,14 +146,20 @@ export const addOrder = createAsyncThunk<
     const productIds: String[] = [];
 
     for (const productId in order.product_amount) {
-        order.product_status[productId] = {
-            productId: productId,
-            status: "idle"
+        // 商品一つ一つでproduct_statusを設定
+        const amount = order.product_amount[productId];
+        for (let i = 0; i < amount; i++) {
+            order.product_status[`${productId}_${i+1}`] = {
+                productId: productId,
+                status: "idle"
+            }
         }
-        order.required_product_amount[productId] = order.product_amount[productId];
+        // required_product_amount の初期値=この注文の商品数を設定
+        order.required_product_amount[productId] = amount;
         productIds.push(productId);
     }
 
+    // required_product_amountに以前の注文の商品数も加算
     for (const o of unreceivedOrders) {
         for (const productId of productIds) {
             const pid = productId as string;
