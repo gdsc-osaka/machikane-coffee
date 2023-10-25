@@ -47,13 +47,19 @@ const stocksSlice = createSlice({
 
             ensureInitialized(state, shopId);
             state[shopId].status = 'succeeded';
+        },
+        stockIdle(state, action: PayloadAction<{ shopId: string }>) {
+            const {shopId} = action.payload;
+
+            ensureInitialized(state, shopId);
+            state[shopId].status = 'idle';
         }
 
     },
     extraReducers: {}
 });
 
-export const {stockAdded, stockUpdated, stockRemoved, stockSucceeded} = stocksSlice.actions;
+export const {stockAdded, stockUpdated, stockRemoved, stockSucceeded, stockIdle} = stocksSlice.actions;
 
 const stockReducer = stocksSlice.reducer;
 export default stockReducer;

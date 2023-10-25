@@ -4,7 +4,7 @@ import {collection, doc, onSnapshot, serverTimestamp, Timestamp, updateDoc} from
 import {db} from "../../firebase/firebase";
 import {stockConverter} from "../../firebase/converters";
 import {QueryConstraint} from "@firebase/firestore";
-import {stockAdded, stockRemoved, stockSucceeded, stockUpdated} from "./stocksSlice";
+import {stockAdded, stockIdle, stockRemoved, stockSucceeded, stockUpdated} from "./stocksSlice";
 
 const stocksRef = (shopId: string) =>
     collection(db, `shops/${shopId}/stocks`).withConverter(stockConverter);
@@ -15,7 +15,7 @@ export const streamStocks = (shopId: string, {dispatch}: { dispatch: Dispatch },
     dispatch(stockSucceeded({shopId}))
 
     const _query = stocksRef(shopId);
-    return onSnapshot(_query, (snapshot) => {
+    const unsub = onSnapshot(_query, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
             if (change.doc.metadata.hasPendingWrites) {
                 return;
@@ -35,6 +35,11 @@ export const streamStocks = (shopId: string, {dispatch}: { dispatch: Dispatch },
             }
         });
     });
+
+    return () => {
+        dispatch(stockIdle({shopId}));
+        unsub();
+    }
 }
 
 /* StockはaddOrderから追加される

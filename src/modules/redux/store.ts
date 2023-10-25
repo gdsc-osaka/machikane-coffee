@@ -14,9 +14,10 @@ const store = configureStore({
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({
-            serializableCheck: {
-                ignoredActions: ['shops/fetchShops/fulfilled', 'products/fetchProducts/pending', 'products/fetchProducts/rejected', 'products/fetchProducts/fulfilled'],
-            },
+            serializableCheck: false,
+            // serializableCheck: {
+            //     ignoredActions: ['shops/fetchShops/fulfilled', 'products/fetchProducts/pending', 'products/fetchProducts/rejected', 'products/fetchProducts/fulfilled'],
+            // },
         }),
 })
 

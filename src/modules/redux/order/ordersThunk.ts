@@ -2,7 +2,7 @@ import {QueryConstraint} from "@firebase/firestore";
 import {
     collection,
     deleteDoc,
-    doc, DocumentReference,
+    doc,
     getDocs,
     limit,
     onSnapshot,
@@ -19,17 +19,10 @@ import {orderConverter, stockConverter} from "../../firebase/converters";
 import {createAsyncThunk, Dispatch} from "@reduxjs/toolkit";
 import {RootState} from "../store";
 import {Order, OrderForAdd, PayloadOrder} from "./orderTypes";
-import {
-    orderAdded,
-    orderPending,
-    orderRejected,
-    orderRemoved,
-    orderSucceeded,
-    orderUpdated
-} from "./ordersSlice";
+import {orderAdded, orderPending, orderRejected, orderRemoved, orderSucceeded, orderUpdated} from "./ordersSlice";
 import {PayloadStock} from "../stock/stockTypes";
-import * as crypto from "crypto";
 import {selectAllOrders} from "./orderSelectors";
+const { v4: uuidv4 } = require('uuid');
 
 const ordersQuery = (shopId: string, ...queryConstraints: QueryConstraint[]) => {
     const today = Timestamp.fromDate(getToday());
@@ -127,11 +120,11 @@ export const streamOrder = createAsyncThunk('orders/streamOrder',
     })
 
 export const addOrder = createAsyncThunk<
-    { shopId: string },
+    { shopId: string, order: Order },
     { shopId: string, orderForAdd: OrderForAdd },
     { state: RootState }
 >("orders/addOrder", async ({shopId, orderForAdd}, {getState, rejectWithValue}) => {
-    const order: PayloadOrder = {
+    const payloadOrder: PayloadOrder = {
         product_status: {},
         required_product_amount: {},
         stocksRef: [],
@@ -145,17 +138,17 @@ export const addOrder = createAsyncThunk<
     const unreceivedOrders = selectAllOrders(getState(), shopId).filter(o => o.status !== "received");
     const productIds: String[] = [];
 
-    for (const productId in order.product_amount) {
+    for (const productId in payloadOrder.product_amount) {
         // 商品一つ一つでproduct_statusを設定
-        const amount = order.product_amount[productId];
+        const amount = payloadOrder.product_amount[productId];
         for (let i = 0; i < amount; i++) {
-            order.product_status[`${productId}_${i+1}`] = {
+            payloadOrder.product_status[`${productId}_${i+1}`] = {
                 productId: productId,
                 status: "idle"
             }
         }
         // required_product_amount の初期値=この注文の商品数を設定
-        order.required_product_amount[productId] = amount;
+        payloadOrder.required_product_amount[productId] = amount;
         productIds.push(productId);
     }
 
@@ -165,7 +158,7 @@ export const addOrder = createAsyncThunk<
             const pid = productId as string;
 
             if (o.product_amount.hasOwnProperty(pid)) {
-                order.required_product_amount[pid] += o.product_amount[pid];
+                payloadOrder.required_product_amount[pid] += o.product_amount[pid];
             }
         }
     }
@@ -179,16 +172,16 @@ export const addOrder = createAsyncThunk<
         if (!lastOrderSnapshot.empty) {
             const lastOrder = lastOrderSnapshot.docs[0].data();
 
-            order.index = lastOrder.index + 1;
+            payloadOrder.index = lastOrder.index + 1;
         }
 
         const batch = writeBatch(db);
 
-        const orderId = crypto.randomUUID()
+        const orderId = uuidv4();
         const orderRef = doc(db, `shops/${shopId}/orders/${orderId}`);
 
-        for (const prodKey in order.product_amount) {
-            const amount = order.product_amount[prodKey];
+        for (const prodKey in payloadOrder.product_amount) {
+            const amount = payloadOrder.product_amount[prodKey];
             for (let i = 0; i < amount; i++) {
                 const stock: PayloadStock = {
                     orderRef: orderRef,
@@ -202,17 +195,22 @@ export const addOrder = createAsyncThunk<
                 const stockId = crypto.randomUUID();
                 const stockRef = doc(db, `shops/${shopId}/stocks/${stockId}`);
 
-                order.stocksRef.push(stockRef);
+                payloadOrder.stocksRef.push(stockRef);
 
                 batch.set(stockRef.withConverter(stockConverter), stock);
             }
         }
 
-        batch.set(orderRef.withConverter(orderConverter), order);
+        batch.set(orderRef.withConverter(orderConverter), payloadOrder);
 
         try {
             await batch.commit();
-            return {shopId: shopId}
+            const order: Order = {
+                ...payloadOrder,
+                id: orderId,
+                created_at: Timestamp.now()
+            }
+            return {shopId, order}
 
         } catch (e) {
             return rejectWithValue(e);

@@ -1,7 +1,7 @@
 import {ReactNode} from "react";
 import styled from "styled-components";
 import {Stack} from "@mui/material";
-import {SxProps} from "@mui/system";
+import {ResponsiveStyleValue, SxProps} from "@mui/system";
 import {Theme} from "@mui/material/styles/createTheme";
 
 const Container = styled.div<{ color: string }>`
@@ -38,15 +38,18 @@ type StickyNoteContainerProps = {
     children?: ReactNode,
     variant?: "surface" | "surface-variant",
     direction?: 'row' | 'row-reverse' | 'column' | 'column-reverse',
+    spacing?: ResponsiveStyleValue<number | string>,
     sx?: SxProps<Theme>
 }
 
 const StickyNote = (props: StickyNoteContainerProps) => {
-    const color = props.variant == "surface-variant" ? "#F7ECE5" : "#FFF8F5";
+    const {children, sx, spacing, variant, direction} = props;
+
+    const color = variant == "surface-variant" ? "#F7ECE5" : "#FFF8F5";
 
     return <Container color={color}>
-        <Stack sx={{width: "100%", ...props.sx}} direction={props.direction ?? 'column'}>
-            {props.children}
+        <Stack sx={{width: "100%", ...sx}} direction={direction ?? 'column'} spacing={spacing}>
+            {children}
         </Stack>
         <FoldIcon color={color}/>
     </Container>

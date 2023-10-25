@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {selectAllProduct, selectProductStatus,} from "../modules/redux/product/productsSlice";
-import {RootState, useAppDispatch, useAppSelector} from "../modules/redux/store";
+import {useAppDispatch, useAppSelector} from "../modules/redux/store";
 import {useParams} from "react-router-dom";
 import {Order, ProductAmount, Status} from "../modules/redux/order/orderTypes";
 import OrderForm from "../components/order/OrderForm";
@@ -12,19 +12,27 @@ import {
     DialogContent,
     DialogContentText,
     DialogTitle,
-    Grid,
-    Stack
+    Divider,
+    Grid, IconButton,
+    Stack,
+    Typography
 } from "@mui/material";
-import OrderList from "../components/order/OrderList";
 import ShopManager from "../components/order/ShopManager";
 import ReceivedOrderList from "../components/order/ReceivedOrderList";
 import {selectShopUnsubscribe} from "../modules/redux/shop/shopsSlice";
 import {useAuth} from "../AuthGuard";
-import {addOrder, deleteOrder, streamOrders, updateOrder} from "../modules/redux/order/ordersThunk";
-import {fetchProducts} from "../modules/redux/product/productsThunk";
-import {useSelector} from "react-redux";
-import {Timestamp} from "firebase/firestore";
+import {addOrder, deleteOrder, fetchOrders, updateOrder} from "../modules/redux/order/ordersThunk";
+import {streamProducts} from "../modules/redux/product/productsThunk";
 import {selectOrderStatus, selectReceivedOrder, selectUnreceivedOrder} from "../modules/redux/order/orderSelectors";
+import {selectAllStocks, selectStockStatus} from "../modules/redux/stock/stockSelectors";
+import {streamStocks} from "../modules/redux/stock/stocksThunk";
+import {Product} from "../modules/redux/product/productTypes";
+import StickyNote from "../components/StickyNote";
+import {getOrderLabel} from "../modules/util/orderUtils";
+import {MotionList, MotionListItem} from "../components/motion/motionList";
+import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
+import {NeumoContainer} from "../components/neumo";
+import StockTable from "../components/cashier/StockTable";
 
 const AdminCashierPage = () => {
     const [openDelete, setOpenDelete] = useState(false);
@@ -36,27 +44,31 @@ const AdminCashierPage = () => {
 
     const dispatch = useAppDispatch();
     const auth = useAuth();
-    const products = useSelector((state: RootState) => selectAllProduct(state, shopId));
+    const products = useAppSelector(state => selectAllProduct(state, shopId));
     const productStatus = useAppSelector(state => selectProductStatus(state, shopId));
-    const unreceivedOrders = useSelector((state: RootState) => selectUnreceivedOrder(state, shopId));
-    const receivedOrders = useSelector((state: RootState) => selectReceivedOrder(state, shopId));
-    const orderStatus = useSelector((state: RootState) => selectOrderStatus(state, shopId));
 
-    const shopUnsubscribe = useSelector(selectShopUnsubscribe);
+    const orderStatus = useAppSelector(state => selectOrderStatus(state, shopId));
+    const unreceivedOrders = useAppSelector(state => selectUnreceivedOrder(state, shopId));
+    const receivedOrders = useAppSelector(state => selectReceivedOrder(state, shopId));
+
+    const stockStatus = useAppSelector(state => selectStockStatus(state, shopId))
+    const stocks = useAppSelector(state => selectAllStocks(state, shopId));
+
+    const shopUnsubscribe = useAppSelector(selectShopUnsubscribe);
 
     const onChangeAmount = (productId: string, amount: number) => {
         setProductAmount({...productAmount, [productId]: amount});
     };
 
     useEffect(() => {
-        if (productStatus === "idle") {
-            dispatch(fetchProducts(shopId));
+        if (orderStatus === "idle") {
+            dispatch(fetchOrders(shopId));
         }
-    }, [productStatus, shopId, dispatch])
+    }, [orderStatus, shopId, dispatch])
 
     useEffect(() => {
-        if (orderStatus === "idle") {
-            const unsub = streamOrders(shopId, {dispatch})
+        if (productStatus === "idle") {
+            const unsub = streamProducts(shopId, {dispatch})
 
             return () => {
                 unsub()
@@ -64,6 +76,19 @@ const AdminCashierPage = () => {
         }
         // empty array でないと unsub() が2回呼ばれる
     }, []);
+
+    useEffect(() => {
+        if (stockStatus === "idle") {
+            console.log("start stream stocks")
+            const unsub = streamStocks(shopId, {dispatch})
+
+            return () => {
+
+                console.log("stop stream stocks")
+                unsub()
+            }
+        }
+    }, [])
 
     useEffect(() => {
         if (shopUnsubscribe != null) {
@@ -124,19 +149,34 @@ const AdminCashierPage = () => {
                 <Grid container spacing={4} sx={{padding: "30px 30px"}}>
                     <Grid item xs={12} sm={6} lg={5}>
                         <Stack spacing={4}>
-                            <OrderForm products={products} onChangeAmount={onChangeAmount} productAmount={productAmount}
-                                       onOrderAddClicked={onOrderAddClicked}/>
-                            <ShopManager/>
+                            <NeumoContainer key={"order-form-container"}>
+                                <OrderForm products={products} onChangeAmount={onChangeAmount} productAmount={productAmount}
+                                           onOrderAddClicked={onOrderAddClicked}/>
+                            </NeumoContainer>
+                            <NeumoContainer key={"shop-manager-container"}>
+                                <ShopManager/>
+                            </NeumoContainer>
                         </Stack>
                     </Grid>
                     <Grid item container xs={12} sm={6} lg={7} spacing={4}>
-                        <Grid item  md={12} lg={7}>
-                            <OrderList orders={unreceivedOrders} products={products}
-                                       onClickReceive={handleReceiveOrder}
-                                       onClickDelete={handleDeleteOrder}
-                                       onSwitchStatus={handleSwitchStatus}/>
+                        <Grid item md={12} lg={7}>
+                            <NeumoContainer key={"unreceived-orders-container"}>
+                                <MotionList layoutId={"unreceived-orders"} style={{display: "flex", flexDirection: "column", gap: "1rem"}}>
+                                    {unreceivedOrders.map(o =>
+                                        <MotionListItem key={o.id}>
+                                            <UnreceivedOrderItem order={o}
+                                                                 products={products}
+                                                                 onClickDelete={handleDeleteOrder}
+                                                                 onClickReceive={handleReceiveOrder}/>
+                                        </MotionListItem>
+                                    )}
+                                </MotionList>
+                            </NeumoContainer>
                         </Grid>
                         <Grid item md={12} lg={5}>
+                            <NeumoContainer key={"stock-table-container"}>
+                                <StockTable stocks={stocks} products={products}/>
+                            </NeumoContainer>
                             <ReceivedOrderList receivedOrders={receivedOrders} products={products}
                                                onClickUnreceive={handleUnreceiveOrder}/>
                         </Grid>
@@ -164,6 +204,35 @@ const AdminCashierPage = () => {
             </React.Fragment>
             : <CircularProgress/>
     )
+}
+
+const UnreceivedOrderItem = (props: {
+    order: Order,
+    products: Product[],
+    onClickDelete: (order: Order) => void,
+    onClickReceive: (order: Order) => void,
+}) => {
+    const {order, products, onClickReceive, onClickDelete} = props;
+
+    return <StickyNote direction={"row"} sx={{alignItems: "stretch", justifyContent: "space-between", padding: "0.375rem 0.5rem"}} spacing={1}>
+        <Stack direction={"row"} spacing={1} alignItems={"center"}>
+            <Typography variant={"body2"} fontWeight={"bold"} width={"20px"} textAlign={"center"}>
+                {order.index}
+            </Typography>
+            <Divider orientation={"vertical"} sx={{height: "100%"}}/>
+            <Typography variant={"body2"}>
+                {getOrderLabel(order, products)}
+            </Typography>
+        </Stack>
+        <Stack direction={"row"} spacing={1} alignItems={"center"}>
+            <Button variant={"outlined"} onClick={() => onClickReceive(order)}>
+                受取
+            </Button>
+            <IconButton>
+                <ExpandMoreRoundedIcon/>
+            </IconButton>
+        </Stack>
+    </StickyNote>
 }
 
 export default AdminCashierPage;

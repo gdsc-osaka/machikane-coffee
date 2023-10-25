@@ -1,7 +1,7 @@
 import {createSlice, PayloadAction, SerializedError} from "@reduxjs/toolkit";
 import {AsyncState, Unsubscribe} from "../stateType";
 import {Order} from "./orderTypes";
-import {deleteOrder, fetchOrders, streamOrder, updateOrder} from "./ordersThunk";
+import {addOrder, deleteOrder, fetchOrders, streamOrder, updateOrder} from "./ordersThunk";
 
 // それぞれのショップごとのOrderState
 type SingleOrderState = AsyncState<Order[]> & Unsubscribe;
@@ -107,20 +107,13 @@ const ordersSlice = createSlice({
             state[shopId].unsubscribe = unsubscribe;
         });
 
-        // builder.addCase(addOrder.fulfilled, (state, action) => {
-        //     const { shopId, order } = action.payload;
-        //
-        //     ensureInitialized(state, shopId);
-        //
-        //     // IDが同じ注文のindex
-        //     const sameOrderIndex = state[shopId].data.findIndex(e => e.id === order.id);
-        //
-        //     if (sameOrderIndex === -1) {
-        //         state[shopId].data.push(order);
-        //     } else {
-        //         state[shopId].data[sameOrderIndex] = order;
-        //     }
-        // })
+        builder.addCase(addOrder.fulfilled, (state, action) => {
+            const { shopId, order } = action.payload;
+
+            ensureInitialized(state, shopId);
+
+            state[shopId].data.push(order);
+        })
 
         builder.addCase(updateOrder.fulfilled, (state, action) => {
            const {order, shopId} = action.payload;
