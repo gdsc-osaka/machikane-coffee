@@ -1,6 +1,6 @@
 import {Stock} from "./stockTypes";
 import {AsyncState} from "../stateType";
-import {createSlice} from "@reduxjs/toolkit";
+import {createSlice, PayloadAction} from "@reduxjs/toolkit";
 
 type SingleStockState = AsyncState<Stock[]>;
 
@@ -23,6 +23,36 @@ function ensureInitialized(state: any, shopId: string) {
 const stocksSlice = createSlice({
     name: 'stocks',
     initialState: {} as StockState,
-    reducers: {},
+    reducers: {
+        stockAdded(state, action: PayloadAction<{shopId: string, stock: Stock}>) {
+            const {stock, shopId} = action.payload;
+
+            ensureInitialized(state, shopId);
+            state[shopId].data.push(stock);
+        },
+        stockUpdated(state, action: PayloadAction<{shopId: string, stock: Stock}>) {
+            const {stock, shopId} = action.payload;
+
+            ensureInitialized(state, shopId);
+            state[shopId].data.update(e => e.id === stock.id, stock);
+        },
+        stockRemoved(state, action: PayloadAction<{shopId: string, stockId: string}>) {
+            const {stockId, shopId} = action.payload;
+
+            ensureInitialized(state, shopId);
+            state[shopId].data.remove(e => e.id === stockId);
+        },
+        stockSucceeded(state, action: PayloadAction<{ shopId: string }>) {
+            const {shopId} = action.payload;
+
+            ensureInitialized(state, shopId);
+            state[shopId].status = 'succeeded';
+        }
+
+    },
     extraReducers: {}
 });
+
+export const {stockAdded, stockUpdated, stockRemoved, stockSucceeded} = stocksSlice.actions;
+
+export default stocksSlice.reducer
