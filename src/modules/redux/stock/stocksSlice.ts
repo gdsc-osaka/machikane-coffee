@@ -55,4 +55,5 @@ const stocksSlice = createSlice({
 
 export const {stockAdded, stockUpdated, stockRemoved, stockSucceeded} = stocksSlice.actions;
 
-export default stocksSlice.reducer
+const stockReducer = stocksSlice.reducer;
+export default stockReducer;

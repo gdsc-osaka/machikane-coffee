@@ -1,13 +1,13 @@
 import {ReactNode} from "react";
 import {useTheme} from "@mui/material";
-import {AnimatePresence, motion, useIsPresent} from "framer-motion";
+import {AnimatePresence, motion, MotionStyle, useIsPresent} from "framer-motion";
 
-export const MotionList = (props: {children: ReactNode, layoutId: string}) => {
+export const MotionList = (props: {children: ReactNode, layoutId: string, style?: MotionStyle}) => {
     // return <ul>
     //     {props.children}
     // </ul>;
 
-    return <motion.ul layout layoutId={props.layoutId}>
+    return <motion.ul layout layoutId={props.layoutId} style={props.style}>
         {props.children}
     </motion.ul>
 }
