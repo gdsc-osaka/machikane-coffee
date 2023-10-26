@@ -19,7 +19,15 @@ import {orderConverter, stockConverter} from "../../firebase/converters";
 import {createAsyncThunk, Dispatch} from "@reduxjs/toolkit";
 import {RootState} from "../store";
 import {Order, OrderForAdd, PayloadOrder} from "./orderTypes";
-import {orderAdded, orderPending, orderRejected, orderRemoved, orderSucceeded, orderUpdated} from "./ordersSlice";
+import {
+    orderAdded,
+    orderIdle,
+    orderPending,
+    orderRejected,
+    orderRemoved,
+    orderSucceeded,
+    orderUpdated
+} from "./ordersSlice";
 import {PayloadStock} from "../stock/stockTypes";
 import {selectAllOrders} from "./orderSelectors";
 const { v4: uuidv4 } = require('uuid');
@@ -78,7 +86,10 @@ export const streamOrders = (shopId: string, {dispatch}: { dispatch: Dispatch },
         });
     });
 
-    return unsubscribe;
+    return () => {
+        dispatch(orderIdle({shopId}))
+        unsubscribe();
+    };
 }
 
 export const streamOrder = createAsyncThunk('orders/streamOrder',

@@ -79,12 +79,9 @@ const AdminCashierPage = () => {
 
     useEffect(() => {
         if (stockStatus === "idle") {
-            console.log("start stream stocks")
             const unsub = streamStocks(shopId, {dispatch})
 
             return () => {
-
-                console.log("stop stream stocks")
                 unsub()
             }
         }

@@ -25,13 +25,13 @@ const productsSlice = createSlice({
     name: "products",
     initialState: {} as ProductState,
     reducers: {
-        productAdded(state, action: PayloadAction<{shopId: string, product: Product}>) {
+        productAdded(state, action: PayloadAction<{ shopId: string, product: Product }>) {
             const {product, shopId} = action.payload;
 
             ensureInitialized(state, shopId);
             state[shopId].data.push(product);
         },
-        productUpdated(state, action: PayloadAction<{shopId: string, product: Product}>) {
+        productUpdated(state, action: PayloadAction<{ shopId: string, product: Product }>) {
             const {product, shopId} = action.payload;
 
             ensureInitialized(state, shopId);
@@ -42,7 +42,7 @@ const productsSlice = createSlice({
          * @param state
          * @param action 消去する product の ID
          */
-        productRemoved(state, action: PayloadAction<{shopId: string, productId: string}>) {
+        productRemoved(state, action: PayloadAction<{ shopId: string, productId: string }>) {
             const {shopId, productId} = action.payload;
 
             ensureInitialized(state, shopId);
@@ -55,7 +55,7 @@ const productsSlice = createSlice({
          * @param action
          */
         productPending(state, action: PayloadAction<{ shopId: string }>) {
-            const { shopId } = action.payload;
+            const {shopId} = action.payload;
 
             ensureInitialized(state, shopId);
 
@@ -85,38 +85,53 @@ const productsSlice = createSlice({
             ensureInitialized(state, shopId);
 
             state[shopId].status = 'succeeded';
+        },
+        productIdle(state, action: PayloadAction<{ shopId: string }>) {
+            const {shopId} = action.payload;
+
+            ensureInitialized(state, shopId);
+
+            state[shopId].status = 'idle';
         }
     },
     extraReducers: builder => {
         builder.addCase(fetchProducts.fulfilled, (state, action) => {
-                const {shopId, products} = action.payload;
+            const {shopId, products} = action.payload;
 
-                ensureInitialized(state, shopId);
+            ensureInitialized(state, shopId);
 
-                state[shopId].status = 'succeeded';
-                state[shopId].data = products;
-            })
+            state[shopId].status = 'succeeded';
+            state[shopId].data = products;
+        })
 
         builder.addCase(addProduct.fulfilled, (state, action) => {
-                const {shopId, product} = action.payload;
+            const {shopId, product} = action.payload;
 
-                ensureInitialized(state, shopId);
+            ensureInitialized(state, shopId);
 
-                state[shopId].data.push(product);
-            })
+            state[shopId].data.push(product);
+        })
 
         builder.addCase(updateProduct.fulfilled, (state, action) => {
-                if (action.payload === undefined) return;
+            if (action.payload === undefined) return;
 
-                const {shopId, product} = action.payload;
+            const {shopId, product} = action.payload;
 
-                state[shopId].data.update(e => e.id === product.id, product);
-            })
+            state[shopId].data.update(e => e.id === product.id, product);
+        })
     },
 });
 
 const productReducer = productsSlice.reducer;
-export const {productAdded, productUpdated, productRemoved, productRejected, productPending, productSucceeded} = productsSlice.actions;
+export const {
+    productAdded,
+    productUpdated,
+    productRemoved,
+    productRejected,
+    productPending,
+    productSucceeded,
+    productIdle
+} = productsSlice.actions;
 
 export default productReducer;
 

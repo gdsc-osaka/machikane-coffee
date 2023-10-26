@@ -27,13 +27,13 @@ const ordersSlice = createSlice({
     name: "orders",
     initialState: {} as OrderState,
     reducers: {
-        orderAdded(state, action: PayloadAction<{shopId: string, order: Order}>) {
+        orderAdded(state, action: PayloadAction<{ shopId: string, order: Order }>) {
             const {order, shopId} = action.payload;
 
             ensureInitialized(state, shopId);
             state[shopId].data.push(order);
         },
-        orderUpdated(state, action: PayloadAction<{shopId: string, order: Order}>) {
+        orderUpdated(state, action: PayloadAction<{ shopId: string, order: Order }>) {
             const {order, shopId} = action.payload;
 
             ensureInitialized(state, shopId);
@@ -44,13 +44,13 @@ const ordersSlice = createSlice({
          * @param state
          * @param action 消去する order の ID
          */
-        orderRemoved(state, action: PayloadAction<{shopId: string, orderId: string}>) {
+        orderRemoved(state, action: PayloadAction<{ shopId: string, orderId: string }>) {
             const {shopId, orderId} = action.payload;
 
             ensureInitialized(state, shopId);
             state[shopId].data.remove(d => d.id === orderId);
         },
-        orderSucceeded(state, action: PayloadAction<{shopId: string}>) {
+        orderSucceeded(state, action: PayloadAction<{ shopId: string }>) {
             const {shopId} = action.payload;
 
             ensureInitialized(state, shopId);
@@ -63,7 +63,7 @@ const ordersSlice = createSlice({
          * @param action
          */
         orderPending(state, action: PayloadAction<{ shopId: string }>) {
-            const { shopId } = action.payload;
+            const {shopId} = action.payload;
 
             ensureInitialized(state, shopId);
             state[shopId].status = 'loading';
@@ -75,11 +75,17 @@ const ordersSlice = createSlice({
          */
         orderRejected(state, action: PayloadAction<{ shopId: string, error: SerializedError }>) {
             const {shopId, error} = action.payload;
-            
+
             ensureInitialized(state, shopId);
             state[shopId].status = 'failed';
             state[shopId].error = error.message;
-        }
+        },
+        orderIdle(state, action: PayloadAction<{ shopId: string }>) {
+            const {shopId} = action.payload;
+
+            ensureInitialized(state, shopId);
+            state[shopId].status = 'idle';
+        },
     },
     extraReducers: builder => {
         builder
@@ -93,7 +99,7 @@ const ordersSlice = createSlice({
                 const {shopId, orders} = action.payload;
 
                 ensureInitialized(state, shopId);
-                
+
                 state[shopId].status = 'succeeded'
                 state[shopId].data = orders.sort((a, b) => a.created_at.toDate().getTime() - b.created_at.toDate().getTime());
             })
@@ -108,7 +114,7 @@ const ordersSlice = createSlice({
         });
 
         builder.addCase(addOrder.fulfilled, (state, action) => {
-            const { shopId, order } = action.payload;
+            const {shopId, order} = action.payload;
 
             ensureInitialized(state, shopId);
 
@@ -116,16 +122,16 @@ const ordersSlice = createSlice({
         })
 
         builder.addCase(updateOrder.fulfilled, (state, action) => {
-           const {order, shopId} = action.payload;
-           
+            const {order, shopId} = action.payload;
+
             ensureInitialized(state, shopId);
-           
-           state[shopId].data.update(e => e.id === order.id, order); 
+
+            state[shopId].data.update(e => e.id === order.id, order);
         });
 
         builder.addCase(deleteOrder.fulfilled, (state, action) => {
             const {order, shopId} = action.payload;
-            
+
             state[shopId].data.remove(e => e.id === order.id);
         })
     },
@@ -133,4 +139,12 @@ const ordersSlice = createSlice({
 
 const orderReducer = ordersSlice.reducer;
 export default orderReducer;
-export const {orderAdded, orderUpdated, orderRemoved, orderSucceeded, orderRejected, orderPending} = ordersSlice.actions;
+export const {
+    orderAdded,
+    orderUpdated,
+    orderRemoved,
+    orderSucceeded,
+    orderRejected,
+    orderPending,
+    orderIdle
+} = ordersSlice.actions;

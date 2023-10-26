@@ -6,7 +6,7 @@ import {PayloadProduct, Product, ProductForAdd, ProductForUpdate} from "./produc
 import {getDownloadURL, ref, uploadBytes} from "firebase/storage";
 import {RootState} from "../store";
 import {
-    productAdded,
+    productAdded, productIdle,
     productPending,
     productRejected,
     productRemoved,
@@ -113,7 +113,7 @@ export const streamProducts = (shopId: string, {dispatch}: {dispatch: Dispatch})
 
     const q = productsRef(shopId);
 
-    return onSnapshot(q, (snapshot) => {
+    const unsub = onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
             if (change.doc.metadata.hasPendingWrites) {
                 return;
@@ -133,4 +133,9 @@ export const streamProducts = (shopId: string, {dispatch}: {dispatch: Dispatch})
             }
         });
     });
+
+    return () => {
+        dispatch(productIdle({shopId}))
+        unsub();
+    }
 }
