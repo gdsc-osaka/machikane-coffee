@@ -3,7 +3,6 @@ import {selectAllProduct, selectProductStatus,} from "../modules/redux/product/p
 import {useAppDispatch, useAppSelector} from "../modules/redux/store";
 import {useParams} from "react-router-dom";
 import {Order, ProductAmount, Status} from "../modules/redux/order/orderTypes";
-import OrderForm from "../components/order/OrderForm";
 import {
     Button,
     CircularProgress,
@@ -12,13 +11,10 @@ import {
     DialogContent,
     DialogContentText,
     DialogTitle,
-    Divider,
-    Grid, IconButton,
-    Stack,
-    Typography
+    Stack
 } from "@mui/material";
-import ShopManager from "../components/order/ShopManager";
-import ReceivedOrderList from "../components/order/ReceivedOrderList";
+import ShopManager from "../components/cashier/ShopManager";
+import ReceivedOrderListItem from "../components/cashier/ReceivedOrderListItem";
 import {selectShopUnsubscribe} from "../modules/redux/shop/shopsSlice";
 import {useAuth} from "../AuthGuard";
 import {addOrder, deleteOrder, fetchOrders, updateOrder} from "../modules/redux/order/ordersThunk";
@@ -26,13 +22,13 @@ import {streamProducts} from "../modules/redux/product/productsThunk";
 import {selectOrderStatus, selectReceivedOrder, selectUnreceivedOrder} from "../modules/redux/order/orderSelectors";
 import {selectAllStocks, selectStockStatus} from "../modules/redux/stock/stockSelectors";
 import {streamStocks} from "../modules/redux/stock/stocksThunk";
-import {Product} from "../modules/redux/product/productTypes";
-import StickyNote from "../components/StickyNote";
-import {getOrderLabel} from "../modules/util/orderUtils";
-import {MotionList, MotionListItem} from "../components/motion/motionList";
-import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
+import {MotionListItem} from "../components/motion/motionList";
 import {NeumoContainer} from "../components/neumo";
 import StockTable from "../components/cashier/StockTable";
+import ProductCounter from "../components/cashier/ProductCounter";
+import SubTotal from "../components/cashier/SubTotal";
+import {UnreceivedOrderItem} from "../components/cashier/UnreceivedOrderItem";
+import OrdersList from "../components/cashier/OrdersList";
 
 const AdminCashierPage = () => {
     const [openDelete, setOpenDelete] = useState(false);
@@ -137,48 +133,54 @@ const AdminCashierPage = () => {
         }
     }
 
-    const handleSwitchStatus = (order: Order, orderStatusId: string, status: Status) => {
-    }
-
     return (
         !auth.loading ?
             <React.Fragment>
-                <Grid container spacing={4} sx={{padding: "30px 30px"}}>
-                    <Grid item xs={12} sm={6} lg={5}>
-                        <Stack spacing={4}>
-                            <NeumoContainer key={"order-form-container"}>
-                                <OrderForm products={products} onChangeAmount={onChangeAmount} productAmount={productAmount}
-                                           onOrderAddClicked={onOrderAddClicked}/>
-                            </NeumoContainer>
-                            <NeumoContainer key={"shop-manager-container"}>
-                                <ShopManager/>
-                            </NeumoContainer>
-                        </Stack>
-                    </Grid>
-                    <Grid item container xs={12} sm={6} lg={7} spacing={4}>
-                        <Grid item md={12} lg={7}>
-                            <NeumoContainer key={"unreceived-orders-container"}>
-                                <MotionList layoutId={"unreceived-orders"} style={{display: "flex", flexDirection: "column", gap: "1rem"}}>
-                                    {unreceivedOrders.map(o =>
-                                        <MotionListItem key={o.id}>
-                                            <UnreceivedOrderItem order={o}
-                                                                 products={products}
-                                                                 onClickDelete={handleDeleteOrder}
-                                                                 onClickReceive={handleReceiveOrder}/>
-                                        </MotionListItem>
-                                    )}
-                                </MotionList>
-                            </NeumoContainer>
-                        </Grid>
-                        <Grid item md={12} lg={5}>
-                            <NeumoContainer key={"stock-table-container"}>
-                                <StockTable stocks={stocks} products={products}/>
-                            </NeumoContainer>
-                            <ReceivedOrderList receivedOrders={receivedOrders} products={products}
-                                               onClickUnreceive={handleUnreceiveOrder}/>
-                        </Grid>
-                    </Grid>
-                </Grid>
+                <Stack direction={'row'} spacing={4} sx={{padding: "30px 30px"}}
+                       alignItems={'flex-start'}>
+                    <Stack spacing={4}>
+                        <NeumoContainer key={"order-form-container"}>
+                            <Stack direction={"row"} spacing={3}>
+                                <ProductCounter products={products}
+                                                productAmount={productAmount}
+                                                onChangeAmount={onChangeAmount}/>
+                                <Stack justifyContent={"space-between"} alignItems={"stretch"}>
+                                    <SubTotal productAmount={productAmount}
+                                              products={products}
+                                              onClickButton={onOrderAddClicked}/>
+                                    <NeumoContainer key={"stock-table-container"} type={'pressed'}>
+                                        <StockTable stocks={stocks} products={products}/>
+                                    </NeumoContainer>
+                                </Stack>
+                            </Stack>
+                        </NeumoContainer>
+                        <NeumoContainer key={"shop-manager-container"}>
+                            <ShopManager/>
+                        </NeumoContainer>
+                    </Stack>
+                    {unreceivedOrders.length > 0 &&
+                        <OrdersList key={"unreceived-orders"} grid={1}>
+                            {unreceivedOrders.map(o =>
+                                <MotionListItem key={o.id}>
+                                    <UnreceivedOrderItem order={o}
+                                                         products={products}
+                                                         onClickDelete={handleDeleteOrder}
+                                                         onClickReceive={handleReceiveOrder}/>
+                                </MotionListItem>
+                            )}
+                        </OrdersList>
+                    }
+                    {receivedOrders.length > 0 &&
+                        <OrdersList key={"received-orders"} grid={1}>
+                            {receivedOrders.map(o =>
+                                <MotionListItem key={o.id}>
+                                    <ReceivedOrderListItem order={o}
+                                                           onClickUnreceive={handleUnreceiveOrder}/>
+                                </MotionListItem>
+                            )}
+                        </OrdersList>
+                    }
+                </Stack>
                 <Dialog open={openDelete}
                         onClose={handleCloseDelete}
                         aria-labelledby="order-delete-alert-dialog"
@@ -201,35 +203,6 @@ const AdminCashierPage = () => {
             </React.Fragment>
             : <CircularProgress/>
     )
-}
-
-const UnreceivedOrderItem = (props: {
-    order: Order,
-    products: Product[],
-    onClickDelete: (order: Order) => void,
-    onClickReceive: (order: Order) => void,
-}) => {
-    const {order, products, onClickReceive, onClickDelete} = props;
-
-    return <StickyNote direction={"row"} sx={{alignItems: "stretch", justifyContent: "space-between", padding: "0.375rem 0.5rem"}} spacing={1}>
-        <Stack direction={"row"} spacing={1} alignItems={"center"}>
-            <Typography variant={"body2"} fontWeight={"bold"} width={"20px"} textAlign={"center"}>
-                {order.index}
-            </Typography>
-            <Divider orientation={"vertical"} sx={{height: "100%"}}/>
-            <Typography variant={"body2"}>
-                {getOrderLabel(order, products)}
-            </Typography>
-        </Stack>
-        <Stack direction={"row"} spacing={1} alignItems={"center"}>
-            <Button variant={"outlined"} onClick={() => onClickReceive(order)}>
-                受取
-            </Button>
-            <IconButton>
-                <ExpandMoreRoundedIcon/>
-            </IconButton>
-        </Stack>
-    </StickyNote>
 }
 
 export default AdminCashierPage;

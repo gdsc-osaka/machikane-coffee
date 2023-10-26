@@ -8,7 +8,6 @@ import {MotionList, MotionListItem} from "../motion/motionList";
 type SubTotalProps = {
     productAmount: ProductAmount;
     products: Product[];
-    disabledButton: boolean;
     onClickButton: () => void;
 }
 
@@ -22,6 +21,8 @@ const SubTotal = (props: SubTotalProps) => {
         map[obj.id] = obj.price;
         return map;
     }, {});
+    const disabledButton = Object.keys(productAmount).findIndex(id => productAmount[id] > 0) == -1
+
 
     const isEmpty = ids.findIndex(id => productAmount[id] > 0) == -1
 
@@ -33,7 +34,8 @@ const SubTotal = (props: SubTotalProps) => {
     }
 
     return (
-        <MotionList layoutId={"sub-total"}>
+        <MotionList layoutId={"sub-total"}
+                    style={{padding: "1rem", display: "flex", flexDirection: "column", gap: "0.5rem"}}>
                 {ids.map(id => {
                     const amount = productAmount[id];
                     const product = products.find((product) => product.id == id);
@@ -71,7 +73,7 @@ const SubTotal = (props: SubTotalProps) => {
                 </MotionListItem>
                 <MotionListItem key={"subtotal-button"}>
                     <Button variant={"contained"}
-                            disabled={props.disabledButton}
+                            disabled={disabledButton}
                             onClick={props.onClickButton}
                             style={{marginTop: theme.spacing(2), width: "100%"}}>
                         注文

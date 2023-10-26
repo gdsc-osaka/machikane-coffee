@@ -1,8 +1,8 @@
 import {Stock} from "../../modules/redux/stock/stockTypes";
 import {Product} from "../../modules/redux/product/productTypes";
-import {Stack, Typography, useTheme} from "@mui/material";
+import {Stack, Typography} from "@mui/material";
 import styled from "styled-components";
-import {useMemo} from "react";
+import {ReactNode, useMemo} from "react";
 
 type TableDataType = {
     [k in string]: {
@@ -14,8 +14,6 @@ type TableDataType = {
 
 const StockTable = (props: {stocks: Stock[], products: Product[]}) => {
     const {stocks, products} = props;
-
-    const theme = useTheme();
 
     const tableData = useMemo(() => {
         const data: TableDataType = {};
@@ -54,27 +52,46 @@ const StockTable = (props: {stocks: Stock[], products: Product[]}) => {
 
     return <Stack spacing={1} >
         <Stack direction={"row"} spacing={1} alignItems={"center"} sx={{paddingLeft: "48px"}}>
-            <Typography variant={"body1"} fontWeight={"bold"} width={"50px"}>
+            <TableText variant={"label"}>
                 待機中
-            </Typography>
-            <Typography variant={"body1"} fontWeight={"bold"} width={"50px"}>
+            </TableText>
+            <TableText variant={"label"}>
                 作成中
-            </Typography>
+            </TableText>
+            <TableText variant={"label"}>
+                完成
+            </TableText>
         </Stack>
         {products.map(p => {
             const pid = p.id;
 
             return <Stack direction={"row"} spacing={1} alignItems={"center"}>
                 <RoundedImage alt={"product-icon"} src={p.thumbnail_url ?? ''}/>
-                <Typography variant={"body1"} fontWeight={"bold"} textAlign={"right"} width={"50px"}>
+                <TableText variant={"data"}>
                     {tableData[pid]?.idle ?? 0}
-                </Typography>
-                <Typography variant={"body1"} fontWeight={"bold"} textAlign={"right"} width={"50px"}>
+                </TableText>
+                <TableText variant={"data"}>
                     {tableData[pid]?.working ?? 0}
-                </Typography>
+                </TableText>
+                <TableText variant={"data"}>
+                    {tableData[pid]?.completed ?? 0}
+                </TableText>
             </Stack>
         })}
     </Stack>
+}
+
+const TableText = (props: {
+    children: ReactNode,
+    variant: 'label' | 'data'
+}) => {
+    const {children, variant} = props;
+
+    return <Typography fontSize={variant === 'label' ? '0.8rem' : '1.2rem'}
+                       fontWeight={variant === 'label' ? '' : "bold"}
+                       textAlign={"right"} width={"50px"}>
+        {children}
+    </Typography>
 }
 
 const RoundedImage = styled.img`
