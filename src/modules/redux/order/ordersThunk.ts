@@ -4,6 +4,7 @@ import {
     deleteDoc,
     doc,
     getDocs,
+    increment,
     limit,
     onSnapshot,
     orderBy,
@@ -18,7 +19,7 @@ import {db} from "../../firebase/firebase";
 import {orderConverter, stockConverter} from "../../firebase/converters";
 import {createAsyncThunk, Dispatch} from "@reduxjs/toolkit";
 import {RootState} from "../store";
-import {Order, OrderForAdd, PayloadOrder} from "./orderTypes";
+import {Order, OrderForAdd, OrderForUpdate, PayloadOrder} from "./orderTypes";
 import {
     orderAdded,
     orderIdle,
@@ -30,6 +31,10 @@ import {
 } from "./ordersSlice";
 import {PayloadStock} from "../stock/stockTypes";
 import {selectAllOrders} from "./orderSelectors";
+import {selectAllStocks} from "../stock/stockSelectors";
+import {selectAllProduct} from "../product/productsSlice";
+import {productRef} from "../product/productsThunk";
+import {ProductForUpdate} from "../product/productTypes";
 const { v4: uuidv4 } = require('uuid');
 
 const ordersQuery = (shopId: string, ...queryConstraints: QueryConstraint[]) => {
@@ -42,6 +47,8 @@ const orderQuery = (shopId: string, orderIndex: number, ...queryConstraints: Que
     return query(collection(db, `shops/${shopId}/orders`).withConverter(orderConverter),
         where("created_at", ">=", today), where("index", "==", orderIndex), ...queryConstraints);
 }
+
+const orderRef = (shopId: string, orderId: string) => doc(db, `shops/${shopId}/orders/${orderId}`)
 
 export const fetchOrders = createAsyncThunk<
     { shopId: string, orders: Order[] },
@@ -264,3 +271,52 @@ export const deleteOrder = createAsyncThunk<
         await deleteDoc(docRef);
         return {shopId, order};
     })
+
+export const receiveOrderIndividual = createAsyncThunk<
+    { shopId: string, order: Order },
+    { shopId: string, order: Order, productStatusKey: string },
+    { state: RootState }
+>('orders/receiveOrderIndividual', async ({shopId, order, productStatusKey}, {getState, dispatch}) => {
+    const state = getState();
+    const latestStocks = selectAllStocks(state, shopId);
+    const latestOrders = selectAllOrders(state, shopId);
+    const latestProducts = selectAllProduct(state, shopId);
+    const prodId = order.product_status[productStatusKey].productId;
+    const newerOrders = latestOrders /* このOrder以降のrequired_product_amountを更新すべきOrder */
+        .filter(o => o.created_at.seconds > order.created_at.seconds && Object.keys(o.product_amount).includes(prodId));
+
+    const batch = writeBatch(db);
+
+    // Update This Order
+    const newOrder = Object.assign({}, order);
+    newOrder.product_status[productStatusKey].status = 'received';
+    newOrder.required_product_amount[prodId] -= 1; // 商品の必要数を1減らす
+    batch.update(orderRef(shopId, newOrder.id), {
+        product_status: {
+            [productStatusKey]: {
+                status: 'received'
+            }
+        },
+        required_product_amount: {
+            [prodId]: increment(-1)
+        }
+    } as OrderForUpdate)
+
+    // Update Products
+    batch.update(productRef(shopId, prodId), {
+        stock: increment(-1)
+    } as ProductForUpdate)
+
+    // Update Other Orders
+    for (const newerOrder of newerOrders) {
+        batch.update(orderRef(shopId, newerOrder.id), {
+            required_product_amount: {
+                [prodId]: increment(-1),
+            }
+        } as OrderForUpdate)
+    }
+
+    // Update Stocks
+    const stockToUpdate = latestStocks /* 関係づけられているStockの内completedなもの */
+        .find(s => s.orderRef.id === order.id && s.status === 'completed')
+})

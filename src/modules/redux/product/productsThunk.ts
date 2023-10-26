@@ -16,7 +16,7 @@ import {
 } from "./productsSlice";
 
 const productsRef = (shopId: string) => collection(db, `shops/${shopId}/products`).withConverter(productConverter);
-const productRef = (shopId: string, productId: string) => doc(db, `shops/${shopId}/products/${productId}`).withConverter(productConverter)
+export const productRef = (shopId: string, productId: string) => doc(db, `shops/${shopId}/products/${productId}`).withConverter(productConverter)
 const getThumbnailPath = (shopId: string, productId: string) => `${shopId}/${productId}/thumbnail`;
 
 export const fetchProducts = createAsyncThunk("products/fetchProducts",

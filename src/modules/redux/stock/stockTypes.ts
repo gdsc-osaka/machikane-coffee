@@ -1,6 +1,6 @@
 import {DocumentReference, FieldValue, Timestamp} from "firebase/firestore";
 
-export type StockStatus = "idle" | "working" | "completed"
+export type StockStatus = "idle" | "working" | "completed" | "received"
 
 /**
  * 在庫ドキュメント

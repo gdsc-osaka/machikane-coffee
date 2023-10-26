@@ -1,8 +1,7 @@
 import {Order} from "../../modules/redux/order/orderTypes";
-import {Divider, IconButton, Stack, Typography} from "@mui/material";
+import {Button, Divider, Stack, Typography} from "@mui/material";
 import StickyNote from "../StickyNote";
 import React from "react";
-import UndoIcon from '@mui/icons-material/Undo';
 
 type ReceivedOrderListProps = {
     order: Order,
@@ -20,9 +19,9 @@ const ReceivedOrderListItem = (props: ReceivedOrderListProps) => {
                 {order.index}
             </Typography>
             <Divider orientation={"vertical"} sx={{height: "100%"}}/>
-            <IconButton color={"primary"} onClick={() => onClickUnreceive(order)}>
-                <UndoIcon/>
-            </IconButton>
+            <Button variant={"text"} onClick={() => onClickUnreceive(order)}>
+                未受取
+            </Button>
         </Stack>
     </StickyNote>
 }

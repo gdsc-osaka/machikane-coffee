@@ -2,6 +2,17 @@ import {Omit} from "@reduxjs/toolkit/dist/tsHelpers";
 import {Weaken} from "../../util/typeUtils";
 import {FieldValue} from "firebase/firestore";
 
+type ProductTemplate<N extends number | FieldValue> = {
+    id: string;
+    display_name: string;
+    span: number;
+    price: number;
+    shorter_name: string;
+    thumbnail_path: string;
+    thumbnail_url: string;
+    stock: N;
+};
+
 /**
  * 商品情報
  * @property id 商品ID. Firestoreには保存しない
@@ -11,16 +22,7 @@ import {FieldValue} from "firebase/firestore";
  * @property thumbnail_url サムネイルのURL. thumbnail_pathのgetDownloadUrl() の結果を入れる. Firestoreには保存しない
  * @property stock 在庫数
  */
-export type Product = {
-    id: string;
-    display_name: string;
-    span: number;
-    price: number;
-    shorter_name: string;
-    thumbnail_path: string;
-    thumbnail_url: string;
-    stock: number;
-};
+export type Product = ProductTemplate<number>
 
 /**
  * データをUIから入力するときに使用する
@@ -30,7 +32,7 @@ export type ProductForAdd = Omit<Product, "thumbnail_path" | "thumbnail_url" | "
 /**
  * データの更新時に使用する
  */
-export type ProductForUpdate = Partial<Product>;
+export type ProductForUpdate = Partial<ProductTemplate<number | FieldValue>>;
 /**
  * Stockの更新時に使用する
  */
