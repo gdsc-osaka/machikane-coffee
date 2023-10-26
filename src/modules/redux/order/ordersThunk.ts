@@ -363,6 +363,7 @@ export const receiveOrderIndividual = createAsyncThunk<
     }
 
     const stRef = stockRef(shopId, stock.id);
+    const orRef = orderRef(shopId, order.id);
 
     if (stock.status === 'completed') {
         batch.update(stRef, {
@@ -390,6 +391,14 @@ export const receiveOrderIndividual = createAsyncThunk<
             } as StockForUpdate)
 
             // Order.stocksRefを交換
+            batch.update(orRef, {
+                stocksRef: arrayRemove(stRef)
+            } as OrderForUpdate)
+
+            batch.update(orRef, {
+                stocksRef: arrayUnion(altStockRef)
+            } as OrderForUpdate)
+
             batch.update(altStockOrderRef, {
                 stocksRef: arrayRemove(altStockRef)
             } as OrderForUpdate)
