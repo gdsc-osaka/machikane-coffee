@@ -38,13 +38,13 @@ export type OrderStatuses<T extends Timestamp | FieldValue> = {
  * @param product_status 一つ一つの商品が受け取られたか否かを保存する
  * @param required_product_amount これ以前の注文も合わせた商品種ごとの必要な商品数
  */
-type OrderTemplate<T extends Timestamp | FieldValue, N extends number | FieldValue> = {
+type OrderTemplate<T extends Timestamp | FieldValue, N extends number | FieldValue, D extends DocumentReference[] | FieldValue> = {
     id: string;
     index: number;
     created_at: T;
     delay_seconds: N;
     status: "idle" | "received";
-    stocksRef: DocumentReference[];
+    stocksRef: D;
     product_status: {
         [k in string]: {
             productId: string;
@@ -58,7 +58,7 @@ type OrderTemplate<T extends Timestamp | FieldValue, N extends number | FieldVal
     product_amount: ProductAmount;
 };
 
-export type Order = OrderTemplate<Timestamp, number>;
+export type Order = OrderTemplate<Timestamp, number, DocumentReference[]>;
 
 /**
  * データの追加時、ユーザーが設定しなければいけないフィールドのみにした order
@@ -69,12 +69,12 @@ export type OrderForAdd = Omit<Order, "id" | "index" | "created_at" | "delay_sec
 /**
  * データの更新時に使用する Order
  */
-export type OrderForUpdate = Partial<OrderTemplate<FieldValue | Timestamp, FieldValue | number>>;
+export type OrderForUpdate = Partial<OrderTemplate<FieldValue | Timestamp, FieldValue | number, FieldValue | DocumentReference[]>>;
 
 /**
  * データを Firestore に送信するとき, 一部フィールドを FieldValue に変更するための型
  */
-export type PayloadOrder = Omit<OrderTemplate<FieldValue, number>, 'id'>
+export type PayloadOrder = Omit<OrderTemplate<FieldValue, number, DocumentReference[]>, 'id'>
 
 
 export function assertOrder(data: any): asserts data is Order {

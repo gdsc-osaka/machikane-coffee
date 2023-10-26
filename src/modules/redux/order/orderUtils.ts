@@ -16,3 +16,16 @@ export const isOrderCompleted = (order: Order, products: Product[]) => {
 
     return true;
 }
+
+/**
+ * Orderの商品が全て受け取られたかどうか
+ * @param order
+ */
+export const isOrderAllReceived = (order: Order) => {
+    for (const key in order.product_status) {
+        if (order.product_status[key].status !== 'received') {
+            return false;
+        }
+    }
+    return true;
+}

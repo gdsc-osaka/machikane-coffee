@@ -1,7 +1,7 @@
 import {createSlice, PayloadAction, SerializedError} from "@reduxjs/toolkit";
 import {AsyncState, Unsubscribe} from "../stateType";
 import {Order} from "./orderTypes";
-import {addOrder, deleteOrder, fetchOrders, streamOrder, updateOrder} from "./ordersThunk";
+import {addOrder, deleteOrder, fetchOrders, receiveOrderIndividual, streamOrder, updateOrder} from "./ordersThunk";
 
 // それぞれのショップごとのOrderState
 type SingleOrderState = AsyncState<Order[]> & Unsubscribe;
@@ -132,7 +132,15 @@ const ordersSlice = createSlice({
         builder.addCase(deleteOrder.fulfilled, (state, action) => {
             const {order, shopId} = action.payload;
 
+            ensureInitialized(state, shopId);
             state[shopId].data.remove(e => e.id === order.id);
+        });
+
+        builder.addCase(receiveOrderIndividual.fulfilled, (state, action) => {
+            const {shopId, order} = action.payload;
+
+            ensureInitialized(state, shopId);
+            state[shopId].data.update(e => e.id === order.id, order);
         })
     },
 });

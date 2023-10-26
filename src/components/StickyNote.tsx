@@ -28,7 +28,7 @@ const FoldIcon = (props: { color: string }) => {
             <path d="M30 28V3H5L30 28Z" fill="#FFFBFF"/>
             <defs>
                 <filter id="filter0_d_54558_1552" x="0" y="0" width="33" height="33" filterUnits="userSpaceOnUse"
-                        color-interpolation-filters="sRGB">
+                        colorInterpolationFilters="sRGB">
                     <feFlood floodOpacity="0" result="BackgroundImageFix"/>
                     <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
                                    result="hardAlpha"/>

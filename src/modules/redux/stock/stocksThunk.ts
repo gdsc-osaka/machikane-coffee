@@ -8,7 +8,7 @@ import {stockAdded, stockIdle, stockRemoved, stockSucceeded, stockUpdated} from 
 
 const stocksRef = (shopId: string) =>
     collection(db, `shops/${shopId}/stocks`).withConverter(stockConverter);
-const stockRef = (shopId: string, stockId: string) =>
+export const stockRef = (shopId: string, stockId: string) =>
     doc(db, `shops/${shopId}/stocks/${stockId}`).withConverter(stockConverter)
 
 export const streamStocks = (shopId: string, {dispatch}: { dispatch: Dispatch }, ...queryConstraints: QueryConstraint[]) => {

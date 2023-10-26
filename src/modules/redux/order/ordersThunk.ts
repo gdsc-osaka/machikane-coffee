@@ -1,5 +1,7 @@
 import {QueryConstraint} from "@firebase/firestore";
 import {
+    arrayRemove,
+    arrayUnion,
     collection,
     deleteDoc,
     doc,
@@ -18,6 +20,7 @@ import {getToday} from "../../util/dateUtils";
 import {db} from "../../firebase/firebase";
 import {orderConverter, stockConverter} from "../../firebase/converters";
 import {createAsyncThunk, Dispatch} from "@reduxjs/toolkit";
+import lodash from 'lodash';
 import {RootState} from "../store";
 import {Order, OrderForAdd, OrderForUpdate, PayloadOrder} from "./orderTypes";
 import {
@@ -29,12 +32,14 @@ import {
     orderSucceeded,
     orderUpdated
 } from "./ordersSlice";
-import {PayloadStock} from "../stock/stockTypes";
+import {PayloadStock, StockForUpdate} from "../stock/stockTypes";
 import {selectAllOrders} from "./orderSelectors";
 import {selectAllStocks} from "../stock/stockSelectors";
-import {selectAllProduct} from "../product/productsSlice";
 import {productRef} from "../product/productsThunk";
 import {ProductForUpdate} from "../product/productTypes";
+import {stockRef} from "../stock/stocksThunk";
+import {isOrderAllReceived} from "./orderUtils";
+
 const { v4: uuidv4 } = require('uuid');
 
 const ordersQuery = (shopId: string, ...queryConstraints: QueryConstraint[]) => {
@@ -276,11 +281,10 @@ export const receiveOrderIndividual = createAsyncThunk<
     { shopId: string, order: Order },
     { shopId: string, order: Order, productStatusKey: string },
     { state: RootState }
->('orders/receiveOrderIndividual', async ({shopId, order, productStatusKey}, {getState, dispatch}) => {
+>('orders/receiveOrderIndividual', async ({shopId, order, productStatusKey}, {getState, rejectWithValue}) => {
     const state = getState();
     const latestStocks = selectAllStocks(state, shopId);
     const latestOrders = selectAllOrders(state, shopId);
-    const latestProducts = selectAllProduct(state, shopId);
     const prodId = order.product_status[productStatusKey].productId;
     const newerOrders = latestOrders /* このOrder以降のrequired_product_amountを更新すべきOrder */
         .filter(o => o.created_at.seconds > order.created_at.seconds && Object.keys(o.product_amount).includes(prodId));
@@ -288,18 +292,21 @@ export const receiveOrderIndividual = createAsyncThunk<
     const batch = writeBatch(db);
 
     // Update This Order
-    const newOrder = Object.assign({}, order);
+    const newOrder = lodash.cloneDeep(order);
+    const allReceived = isOrderAllReceived(newOrder);
+    const orderStatus = allReceived ? 'received' : 'idle';
+
     newOrder.product_status[productStatusKey].status = 'received';
     newOrder.required_product_amount[prodId] -= 1; // 商品の必要数を1減らす
+    newOrder.status = orderStatus;
+
     batch.update(orderRef(shopId, newOrder.id), {
-        product_status: {
-            [productStatusKey]: {
-                status: 'received'
-            }
-        },
+        product_status: newOrder.product_status,
         required_product_amount: {
+            ...newOrder.required_product_amount,
             [prodId]: increment(-1)
-        }
+        },
+        status: orderStatus
     } as OrderForUpdate)
 
     // Update Products
@@ -317,6 +324,58 @@ export const receiveOrderIndividual = createAsyncThunk<
     }
 
     // Update Stocks
-    const stockToUpdate = latestStocks /* 関係づけられているStockの内completedなもの */
-        .find(s => s.orderRef.id === order.id && s.status === 'completed')
+    const stock = latestStocks /* 関係づけられているStockでproduct_idが一致するもの */
+        .find(s => s.orderRef.id === order.id && s.product_id === prodId)
+
+    if (stock === undefined) {
+        return rejectWithValue('注文データに関連付けられた在庫データが存在しません')
+    }
+
+    const stRef = stockRef(shopId, stock.id);
+
+    if (stock.status === 'completed') {
+        batch.update(stRef, {
+            status: 'received'
+        } as StockForUpdate)
+
+    } else {
+        /* 関連付けられているStockがcompletedでない場合 */
+
+        // latestStocksが日付降順であること前提
+        const altStock = latestStocks.find(s => s.status === 'completed' && s.product_id === prodId); /* 代わりとなる在庫 */
+
+        if (altStock) {
+            const altStockRef = stockRef(shopId, altStock.id);
+            const altStockOrderRef = altStock.orderRef;
+
+            // StockをUpdate
+            batch.update(altStockRef, {
+                status: 'received',
+                orderRef: orderRef(shopId, order.id)
+            } as StockForUpdate)
+
+            batch.update(stRef, {
+                orderRef: altStockOrderRef
+            } as StockForUpdate)
+
+            // Order.stocksRefを交換
+            batch.update(altStockOrderRef, {
+                stocksRef: arrayRemove(altStockRef)
+            } as OrderForUpdate)
+
+            batch.update(altStockOrderRef, {
+                stocksRef: arrayUnion(stRef)
+            } as OrderForUpdate)
+        } else {
+            return rejectWithValue(`完成済みの在庫が見つかりませんでした (product_id: ${prodId})`)
+        }
+    }
+
+    try {
+        await batch.commit();
+        return {shopId, order: newOrder}
+
+    } catch (e) {
+        return rejectWithValue(e);
+    }
 })

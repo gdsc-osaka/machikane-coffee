@@ -17,7 +17,13 @@ import ShopManager from "../components/cashier/ShopManager";
 import ReceivedOrderListItem from "../components/cashier/ReceivedOrderListItem";
 import {selectShopUnsubscribe} from "../modules/redux/shop/shopsSlice";
 import {useAuth} from "../AuthGuard";
-import {addOrder, deleteOrder, fetchOrders, updateOrder} from "../modules/redux/order/ordersThunk";
+import {
+    addOrder,
+    deleteOrder,
+    fetchOrders,
+    receiveOrderIndividual,
+    updateOrder
+} from "../modules/redux/order/ordersThunk";
 import {streamProducts} from "../modules/redux/product/productsThunk";
 import {selectOrderStatus, selectReceivedOrder, selectUnreceivedOrder} from "../modules/redux/order/orderSelectors";
 import {selectAllStocks, selectStockStatus} from "../modules/redux/stock/stockSelectors";
@@ -133,6 +139,10 @@ const AdminCashierPage = () => {
         }
     }
 
+    const handleReceiveIndividual = (order: Order, productStatusKey: string) => {
+        dispatch(receiveOrderIndividual({shopId, order, productStatusKey})).unwrap().catch(e => console.log(e))
+    }
+
     return (
         !auth.loading ?
             <React.Fragment>
@@ -165,7 +175,8 @@ const AdminCashierPage = () => {
                                     <UnreceivedOrderItem order={o}
                                                          products={products}
                                                          onClickDelete={handleDeleteOrder}
-                                                         onClickReceive={handleReceiveOrder}/>
+                                                         onClickReceive={handleReceiveOrder}
+                                                         onReceiveIndividual={handleReceiveIndividual}/>
                                 </MotionListItem>
                             )}
                         </OrdersList>

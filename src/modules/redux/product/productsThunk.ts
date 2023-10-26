@@ -89,7 +89,7 @@ export const updateProduct = createAsyncThunk<
             const oldProduct = selectProductById(getState(), shopId, productId);
 
             if (oldProduct !== null) {
-                const product: Product = {...oldProduct, ...productForUpdate};
+                const product: Product = {...oldProduct, ...productForUpdate, stock: oldProduct.stock}; // FIXME stock uses old data
                 const docRef = productRef(shopId, productId);
                 if (thumbnailFile !== undefined) {
                     // サムネアップロード

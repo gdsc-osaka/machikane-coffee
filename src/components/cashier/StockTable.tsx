@@ -9,6 +9,7 @@ type TableDataType = {
         idle: number,
         working: number,
         completed: number,
+        received: number,
     }
 }
 
@@ -26,6 +27,7 @@ const StockTable = (props: {stocks: Stock[], products: Product[]}) => {
                 idle: 0,
                 working: 0,
                 completed: 0,
+                received: 0
             }
         }
 
@@ -59,7 +61,7 @@ const StockTable = (props: {stocks: Stock[], products: Product[]}) => {
                 作成中
             </TableText>
             <TableText variant={"label"}>
-                完成
+                完成済
             </TableText>
         </Stack>
         {products.map(p => {
