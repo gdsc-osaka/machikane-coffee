@@ -14,7 +14,7 @@ import {useAuth} from "../AuthGuard";
 import toast from "react-hot-toast";
 import {fetchProducts} from "../modules/redux/product/productsThunk";
 import {streamShop, updateShop} from "../modules/redux/shop/shopsThunk";
-import {selectAllStocks, selectStockStatus} from "../modules/redux/stock/stockSelectors";
+import {selectStockStatus, selectIdleOrWorkingStocks} from "../modules/redux/stock/stockSelectors";
 import {streamStocks, updateStockStatus} from "../modules/redux/stock/stocksThunk";
 import {Stock, StockStatus} from "../modules/redux/stock/stockTypes";
 import styled from "styled-components";
@@ -33,7 +33,7 @@ const AdminBaristaPage = () => {
     const baristaIds = shop === undefined ? [] : Object.keys(shop.baristas).map((e) => parseInt(e));
 
     const stockStatus = useAppSelector(state => selectStockStatus(state, shopId));
-    const stocks = useAppSelector(state => selectAllStocks(state, shopId));
+    const stocks = useAppSelector(state => selectIdleOrWorkingStocks(state, shopId));
 
     const productStatus = useAppSelector(state => selectProductStatus(state, shopId))
     const products = useAppSelector(state => selectAllProduct(state, shopId));
@@ -129,7 +129,7 @@ const AdminBaristaPage = () => {
                                    onChange={(e, id) => handleBaristaId(id)}>
                     {baristaIds.map(id =>
                         // TODO disabled条件を付けるか否か? <ToggleButton value={id} disabled={baristas[id] === "active" && selectedId !== id}>
-                        <ToggleButton value={id}>
+                        <ToggleButton value={id} key={id}>
                             {selectedId === id ? <CheckRoundedIcon style={{marginRight: "0.5rem"}}/> : <React.Fragment/>}
                             {id}番
                         </ToggleButton>)}
@@ -138,12 +138,13 @@ const AdminBaristaPage = () => {
                     担当を離れるときは選択を解除してください
                 </Typography>
             </Stack>
-            <Typography variant={"h4"} fontWeight={"bold"} sx={{padding: "5px 0"}}>
-                未完成の注文一覧
-            </Typography>
+            {/*<Typography variant={"h4"} fontWeight={"bold"} sx={{padding: "5px 0"}}>*/}
+            {/*    未完成の注文一覧*/}
+            {/*</Typography>*/}
             <MotionList layoutId={"barista-order-list"} style={{
                 display: 'grid',
-                gridTemplateColumns: "1fr 1fr 1fr"
+                gridTemplateColumns: "1fr 1fr",
+                gap: '1rem'
             }}>
                 {stocks.map(stock => {
                     return <MotionListItem key={stock.id}>
@@ -165,33 +166,33 @@ const BaristaStockItem = (props: {
     const {stock, products, onChangeStatus} = props;
 
     const isWorking = stock.status === "working";
-    const product = products.find(p => p.id === stock.id);
+    const product = products.find(p => p.id === stock.product_id);
 
     if (product === undefined) {
         return <></>;
     }
 
-    return <StickyNote direction={"row"} sx={{justifyContent: "space-between"}}>
+    return <StickyNote variant={isWorking ? "surface-variant" : "surface"} direction={"row"} sx={{justifyContent: "space-between", padding: "0.375rem 1.5rem 0.375rem 0.5rem"}}>
         <Stack direction={"row"} alignItems={"center"} spacing={1}>
             <Icon alt={"product-icon"} src={product.thumbnail_url}/>
             <Typography variant={"body2"}>
                 {product.shorter_name}
             </Typography>
         </Stack>
-        <Stack>
+        <Stack direction={"row"}>
             {isWorking ?
-                <Button variant={"outlined"} onClick={() => onChangeStatus(stock, "working")}>
-                    作成
-                </Button>
-                :
                 <>
-                    <IconButton onClick={() => onChangeStatus(stock, "idle")}>
+                    <IconButton onClick={() => onChangeStatus(stock, "idle")} key={"undo"}>
                         <UndoRoundedIcon/>
                     </IconButton>
-                    <IconButton onClick={() => onChangeStatus(stock, "completed")}>
+                    <IconButton onClick={() => onChangeStatus(stock, "completed")} key={"check"}>
                         <CheckRoundedIcon/>
                     </IconButton>
                 </>
+                :
+                <Button variant={"outlined"} onClick={() => onChangeStatus(stock, "working")}>
+                    作成
+                </Button>
             }
 
         </Stack>
@@ -199,7 +200,8 @@ const BaristaStockItem = (props: {
 }
 
 const Icon = styled.img`
-    border-radius: 100px;
+  border-radius: 100px;
+  width: 40px
 `
 
 export default AdminBaristaPage

@@ -11,7 +11,7 @@ export const MotionList = (props: { children: ReactNode, layoutId: string, style
     </motion.ul>
 }
 
-export const MotionListItem = (props: { children: ReactNode, key: string, spacing?: number }) => {
+export const MotionListItem = (props: { children: ReactNode, spacing?: number }) => {
     const isPresent = useIsPresent();
 
     const animations = {
@@ -24,7 +24,6 @@ export const MotionListItem = (props: { children: ReactNode, key: string, spacin
     return <motion.li
         layout
         {...animations}
-        key={props.key}
         style={{
             position: isPresent ? "static" : "absolute"
         }}

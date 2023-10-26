@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import {selectAllProduct, selectProductStatus,} from "../modules/redux/product/productsSlice";
 import {useAppDispatch, useAppSelector} from "../modules/redux/store";
 import {useParams} from "react-router-dom";
-import {Order, ProductAmount, Status} from "../modules/redux/order/orderTypes";
+import {Order, ProductAmount} from "../modules/redux/order/orderTypes";
 import {
     Button,
     CircularProgress,
@@ -58,6 +58,10 @@ const AdminCashierPage = () => {
 
     const shopUnsubscribe = useAppSelector(selectShopUnsubscribe);
 
+    useEffect(() => {
+        // console.log(products)
+    }, [products])
+
     const onChangeAmount = (productId: string, amount: number) => {
         setProductAmount({...productAmount, [productId]: amount});
     };
@@ -69,25 +73,23 @@ const AdminCashierPage = () => {
     }, [orderStatus, shopId, dispatch])
 
     useEffect(() => {
-        if (productStatus === "idle") {
-            const unsub = streamProducts(shopId, {dispatch})
+        let prodUnsub = () => {};
+        let stockUnsub = () => {};
 
-            return () => {
-                unsub()
-            }
+        if (productStatus === "idle") {
+            prodUnsub = streamProducts(shopId, {dispatch})
+        }
+
+        if (stockStatus === "idle") {
+            stockUnsub = streamStocks(shopId, {dispatch})
+        }
+
+        return () => {
+            prodUnsub();
+            stockUnsub();
         }
         // empty array でないと unsub() が2回呼ばれる
     }, []);
-
-    useEffect(() => {
-        if (stockStatus === "idle") {
-            const unsub = streamStocks(shopId, {dispatch})
-
-            return () => {
-                unsub()
-            }
-        }
-    }, [])
 
     useEffect(() => {
         if (shopUnsubscribe != null) {
@@ -169,7 +171,7 @@ const AdminCashierPage = () => {
                         </NeumoContainer>
                     </Stack>
                     {unreceivedOrders.length > 0 &&
-                        <OrdersList key={"unreceived-orders"} grid={1}>
+                        <OrdersList layoutId={"unreceived-orders"} grid={1}>
                             {unreceivedOrders.map(o =>
                                 <MotionListItem key={o.id}>
                                     <UnreceivedOrderItem order={o}
@@ -182,7 +184,7 @@ const AdminCashierPage = () => {
                         </OrdersList>
                     }
                     {receivedOrders.length > 0 &&
-                        <OrdersList key={"received-orders"} grid={1}>
+                        <OrdersList layoutId={"received-orders"} grid={1}>
                             {receivedOrders.map(o =>
                                 <MotionListItem key={o.id}>
                                     <ReceivedOrderListItem order={o}
@@ -197,7 +199,7 @@ const AdminCashierPage = () => {
                         aria-labelledby="order-delete-alert-dialog"
                         aria-describedby="check-order-delete-alert">
                     <DialogTitle id={"order-delete-alert-title"}>
-                        {orderToDelete?.index}番の注文を消去しますか？
+                        {orderToDelete?.index}番の注文と関連する在庫データを消去しますか？
                     </DialogTitle>
                     <DialogContent>
                         <DialogContentText id="delete-dialog-description">

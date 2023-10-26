@@ -4,14 +4,14 @@ import {NeumoContainer} from "../neumo";
 
 const OrdersList = (props: {
     children: ReactNode,
-    key: string,
     grid: number,
+    layoutId: string,
 }) => {
-    const {children, key, grid} = props;
+    const {children, grid, layoutId} = props;
     const gridTemplateColumns = '1fr '.repeat(grid);
 
-    return <NeumoContainer key={`${key}-container`}>
-        <MotionList layoutId={key}
+    return <NeumoContainer>
+        <MotionList layoutId={layoutId}
                     style={{
                         display: 'grid', flexDirection: 'column', gap: '1rem',
                         gridTemplateColumns: gridTemplateColumns

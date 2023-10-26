@@ -1,6 +1,6 @@
 import {Product} from "../../modules/redux/product/productTypes";
 import styled from "styled-components";
-import {Card, IconButton, Stack, Typography} from "@mui/material";
+import {IconButton, Stack, Typography} from "@mui/material";
 import {Add, Remove} from '@mui/icons-material';
 import {ProductAmount} from "../../modules/redux/order/orderTypes";
 
@@ -12,7 +12,7 @@ const ProductCounter = (props: {
     const {products, productAmount, onChangeAmount} = props;
 
     return <Stack spacing={2}>
-        {products.map(product => <ProductCounterItem product={product}
+        {products.map(product => <ProductCounterItem product={product} key={`product-counter-item-${product.id}`}
                                                      amount={productAmount[product.id] ?? 0}
                                                      onChangeAmount={(amount) => onChangeAmount(product.id, amount)}/>)}
     </Stack>

@@ -4,6 +4,7 @@ import StickyNote from "../StickyNote";
 import {Button, Divider, IconButton, Stack, Typography} from "@mui/material";
 import {getOrderLabel} from "../../modules/util/orderUtils";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
+import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
 import React, {ReactNode, useMemo, useState} from "react";
 import {SxProps} from "@mui/system";
 import {Theme} from "@mui/material/styles/createTheme";
@@ -22,15 +23,14 @@ export const UnreceivedOrderItem = (props: {
         for (const prodId in order.product_amount) {
             const product = products.find(p => p.id === prodId);
 
-            if (product === undefined) {
-                return false;
-            }
+            if (product !== undefined) {
+                const needAmount = Object.values(order.product_status)
+                    .filter(s => s.status !== "received" && s.productId === prodId).length;
+                const stockAmount = product.stock;
 
-            const needAmount = order.product_amount[prodId];
-            const stockAmount = product.stock;
-
-            if (needAmount > stockAmount) {
-                return false;
+                if (needAmount > stockAmount) {
+                    return false;
+                }
             }
         }
 
@@ -40,23 +40,26 @@ export const UnreceivedOrderItem = (props: {
     const productStatusKeys = useMemo(() => Object.keys(order.product_status), [order])
 
     return <StickyNote direction={"row"}
-                       sx={{alignItems: "stretch", justifyContent: "space-between", padding: "0.375rem 0.5rem"}}
+                       sx={{alignItems: "stretch", padding: "0.375rem 0.5rem"}}
                        spacing={1}>
-        <Row>
+        <Row key={`unreceived-order-item-${order.id}-1`}>
             <Typography variant={"body2"} fontWeight={"bold"} width={"20px"} textAlign={"center"}>
                 {order.index}
             </Typography>
             <Divider orientation={"vertical"} sx={{height: "100%"}}/>
         </Row>
-        <Stack direction={"column"} spacing={1} alignItems={"stretch"}>
-            <Row sx={{justifyContent: 'space-between'}} spacing={2}>
+        <Stack direction={"column"} spacing={1} alignItems={"stretch"} width={"100%"}>
+            <Row sx={{justifyContent: 'space-between'}} spacing={2} key={`unreceived-order-item-${order.id}-2`}>
                 <Typography variant={"body2"}>
                     {getOrderLabel(order, products)}
                 </Typography>
-                <Row>
+                <Row key={`unreceived-order-item-${order.id}-3`} spacing={0}>
                     <Button variant={"outlined"} disabled={!canReceive} onClick={() => onClickReceive(order)}>
-                        受取
+                        {canReceive ? "受取" : "在庫不足"}
                     </Button>
+                    <IconButton onClick={() => onClickDelete(order)}>
+                        <DeleteRoundedIcon/>
+                    </IconButton>
                     <IconButton onClick={() => setExpanded(!expanded)} disabled={productStatusKeys.length < 2}>
                         <ExpandMoreRoundedIcon/>
                     </IconButton>
@@ -67,13 +70,15 @@ export const UnreceivedOrderItem = (props: {
                     {productStatusKeys.map(pStatusKey => {
                         const pStatus = order.product_status[pStatusKey];
                         const product = products.find(p => p.id === pStatus.productId);
+                        const isReceived = pStatus.status === 'received'
+                        const noStock = (product?.stock ?? 0) <= 0;
 
-                        return <Row sx={{justifyContent: 'space-between'}}>
+                        return <Row sx={{justifyContent: 'space-between'}} key={`unreceived-order-item-${order.id}-${pStatusKey}`}>
                             <Typography variant={"body2"}>
                                 {product?.shorter_name ?? '???'}
                             </Typography>
-                            <Button variant={"text"} disabled={(product?.stock ?? 0) <= 0} onClick={() => onReceiveIndividual(order, pStatusKey)}>
-                                個別受取
+                            <Button variant={"text"} disabled={noStock || isReceived} onClick={() => onReceiveIndividual(order, pStatusKey)}>
+                                {isReceived ? "受取済み" : noStock ? "在庫不足" : "個別受取"}
                             </Button>
                         </Row>
                     })}

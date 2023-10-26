@@ -1,33 +1,36 @@
 import {createAsyncThunk, Dispatch} from "@reduxjs/toolkit";
 import {Stock, StockForUpdate, StockStatus} from "./stockTypes";
-import {collection, doc, onSnapshot, serverTimestamp, Timestamp, updateDoc} from "firebase/firestore";
+import {collection, doc, increment, onSnapshot, serverTimestamp, Timestamp, writeBatch} from "firebase/firestore";
 import {db} from "../../firebase/firebase";
 import {stockConverter} from "../../firebase/converters";
 import {QueryConstraint} from "@firebase/firestore";
 import {stockAdded, stockIdle, stockRemoved, stockSucceeded, stockUpdated} from "./stocksSlice";
+import {productRef} from "../product/productsThunk";
+import {ProductForUpdate} from "../product/productTypes";
 
+const stocksCollection = (shopId: string) => collection(db, `shops/${shopId}/stocks`);
 const stocksRef = (shopId: string) =>
-    collection(db, `shops/${shopId}/stocks`).withConverter(stockConverter);
+    stocksCollection(shopId).withConverter(stockConverter);
 export const stockRef = (shopId: string, stockId: string) =>
     doc(db, `shops/${shopId}/stocks/${stockId}`).withConverter(stockConverter)
 
-export const streamStocks = (shopId: string, {dispatch}: { dispatch: Dispatch }, ...queryConstraints: QueryConstraint[]) => {
+export const streamStocks = (shopId: string, {dispatch}: { dispatch: Dispatch }) => {
     dispatch(stockSucceeded({shopId}))
 
-    const _query = stocksRef(shopId);
+    const _query = stocksCollection(shopId);
     const unsub = onSnapshot(_query, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
-            if (change.doc.metadata.hasPendingWrites) {
-                return;
-            }
-
             if (change.type === "added") {
-                const stock = change.doc.data();
+                if (change.doc.metadata.hasPendingWrites) {
+                    return;
+                }
+                const stock = stockConverter.fromFirestore(change.doc);
                 dispatch(stockAdded({shopId, stock}));
             }
             if (change.type === "modified") {
-                const stock = change.doc.data();
-                dispatch(stockUpdated({shopId, stock}));
+                const data = change.doc.data();
+                const stockForUpdate: StockForUpdate = {...data, id: change.doc.id};
+                dispatch(stockUpdated({shopId, stock: stockForUpdate}));
             }
             if (change.type === "removed") {
                 const stockId = change.doc.id;
@@ -81,12 +84,25 @@ export const updateStockStatus = createAsyncThunk<
 >('stocks/changeStockStatus', async ({shopId, stock, status, baristaId}, {rejectWithValue}) => {
     const stockForUpdate: StockForUpdate = {
         status: status,
-        start_working_at: serverTimestamp(),
         barista_id: baristaId
     }
 
+    if (status === 'working') {
+        stockForUpdate.start_working_at = serverTimestamp();
+    }
+
+    const batch = writeBatch(db);
+
+    batch.update(stockRef(shopId, stock.id), stockForUpdate)
+
+    if (status === 'completed') {
+        batch.update(productRef(shopId, stock.product_id), {
+            stock: increment(1)
+        } as ProductForUpdate)
+    }
+
     try {
-        await updateDoc(stockRef(shopId, stock.id), stockForUpdate);
+        await batch.commit();
 
         return {
             shopId,

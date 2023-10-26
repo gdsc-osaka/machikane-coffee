@@ -269,19 +269,50 @@ export const updateOrder = createAsyncThunk<
 export const deleteOrder = createAsyncThunk<
     { shopId: string, order: Order },
     { shopId: string, order: Order },
-    {}
+    { state: RootState }
 >('orders/deleteOrder',
-    async ({shopId, order}) => {
+    async ({shopId, order}, {getState, rejectWithValue}) => {
         const docRef = doc(db, `shops/${shopId}/orders/${order.id}`);
-        await deleteDoc(docRef);
-        return {shopId, order};
+
+        const latestStocks = selectAllStocks(getState(), shopId);
+
+        const batch = writeBatch(db);
+
+        for (const stockRef of order.stocksRef) {
+            batch.delete(stockRef);
+
+            const stock = latestStocks.find(s => s.id === stockRef.id);
+
+            if (stock && stock.status === "completed") {
+                batch.update(productRef(shopId, stock.product_id), {
+                    stock: increment(-1)
+                } as ProductForUpdate)
+            }
+        }
+        batch.delete(docRef);
+
+        try {
+            await batch.commit();
+            return {shopId, order};
+        } catch (e) {
+            return rejectWithValue(e)
+        }
+
     })
+
+// export const receiveOrder = createAsyncThunk<
+//     { shopId: string, order: Order },
+//     { shopId: string, order: Order },
+//     { state: RootState }
+// >('orders/receiveOrder', async ({shopId, order}, {getState, rejectWithValue, dispatch}) => {
+//
+// })
 
 export const receiveOrderIndividual = createAsyncThunk<
     { shopId: string, order: Order },
     { shopId: string, order: Order, productStatusKey: string },
     { state: RootState }
->('orders/receiveOrderIndividual', async ({shopId, order, productStatusKey}, {getState, rejectWithValue}) => {
+>('orders/receiveOrderIndividual', async ({shopId, order, productStatusKey}, {getState, rejectWithValue, dispatch}) => {
     const state = getState();
     const latestStocks = selectAllStocks(state, shopId);
     const latestOrders = selectAllOrders(state, shopId);
@@ -293,11 +324,11 @@ export const receiveOrderIndividual = createAsyncThunk<
 
     // Update This Order
     const newOrder = lodash.cloneDeep(order);
-    const allReceived = isOrderAllReceived(newOrder);
-    const orderStatus = allReceived ? 'received' : 'idle';
 
     newOrder.product_status[productStatusKey].status = 'received';
     newOrder.required_product_amount[prodId] -= 1; // 商品の必要数を1減らす
+    const allReceived = isOrderAllReceived(newOrder);
+    const orderStatus = allReceived ? 'received' : 'idle';
     newOrder.status = orderStatus;
 
     batch.update(orderRef(shopId, newOrder.id), {

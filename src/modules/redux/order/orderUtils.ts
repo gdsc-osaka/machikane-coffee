@@ -21,11 +21,4 @@ export const isOrderCompleted = (order: Order, products: Product[]) => {
  * Orderの商品が全て受け取られたかどうか
  * @param order
  */
-export const isOrderAllReceived = (order: Order) => {
-    for (const key in order.product_status) {
-        if (order.product_status[key].status !== 'received') {
-            return false;
-        }
-    }
-    return true;
-}
+export const isOrderAllReceived = (order: Order) => Object.values(order.product_status).find(s => s.status === 'idle') === undefined;

@@ -1,4 +1,4 @@
-import {collection, doc, getDocs, onSnapshot, setDoc, updateDoc} from "firebase/firestore";
+import {collection, doc, getDocs, onSnapshot, setDoc, Timestamp, updateDoc} from "firebase/firestore";
 import {db, storage} from "../../firebase/firebase";
 import {productConverter} from "../../firebase/converters";
 import {createAsyncThunk, Dispatch} from "@reduxjs/toolkit";
@@ -50,7 +50,7 @@ export const addProduct = createAsyncThunk('products/addProduct',
     }, {rejectWithValue}) => {
         try {
             const thumbnailPath = getThumbnailPath(shopId, productForAdd.id);
-            const payloadProduct: PayloadProduct = {...productForAdd, thumbnail_path: thumbnailPath, stock: 0};
+            const payloadProduct: PayloadProduct = {...productForAdd, thumbnail_path: thumbnailPath, stock: 0, created_at: Timestamp.now()};
             await setDoc(productRef(shopId, productForAdd.id), payloadProduct);
 
             const thumbnailRef = ref(storage, thumbnailPath);
@@ -110,17 +110,19 @@ export const updateProduct = createAsyncThunk<
 
 export const streamProducts = (shopId: string, {dispatch}: {dispatch: Dispatch}) => {
     dispatch(productSucceeded({shopId}));
+    console.log("streamProducts")
 
     const q = productsRef(shopId);
 
     const unsub = onSnapshot(q, (snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-            if (change.doc.metadata.hasPendingWrites) {
-                return;
-            }
-
+        snapshot.docChanges().forEach(async (change) => {
             if (change.type === "added") {
                 const product = change.doc.data();
+
+                if (product.thumbnail_url === undefined || product.thumbnail_url.length === 0) {
+                    product.thumbnail_url = await getDownloadURL(ref(storage, product.thumbnail_path));
+                }
+
                 dispatch(productAdded({shopId, product}));
             }
             if (change.type === "modified") {

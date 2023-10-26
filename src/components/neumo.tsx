@@ -11,11 +11,11 @@ const NeumoMotionDiv = styled(motion.div)<{ type?: NeumoType }>`
   padding: 20px;
 `
 
-export const NeumoContainer = (props: { children: ReactNode, key: string, type?: NeumoType }) => {
-    const {children, key, type} = props;
+export const NeumoContainer = (props: { children: ReactNode, type?: NeumoType }) => {
+    const {children, type} = props;
 
     return (
-        <NeumoMotionDiv layout key={key} style={{height: "auto"}}
+        <NeumoMotionDiv layout style={{height: "auto"}}
                         type={type}
                         initial={{opacity: 0}}
                         animate={{opacity: 1}}

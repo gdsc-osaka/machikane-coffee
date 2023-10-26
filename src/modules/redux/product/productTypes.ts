@@ -1,6 +1,6 @@
 import {Omit} from "@reduxjs/toolkit/dist/tsHelpers";
 import {Weaken} from "../../util/typeUtils";
-import {FieldValue} from "firebase/firestore";
+import {FieldValue, Timestamp} from "firebase/firestore";
 
 type ProductTemplate<N extends number | FieldValue> = {
     id: string;
@@ -11,6 +11,7 @@ type ProductTemplate<N extends number | FieldValue> = {
     thumbnail_path: string;
     thumbnail_url: string;
     stock: N;
+    created_at: Timestamp;
 };
 
 /**
@@ -27,7 +28,7 @@ export type Product = ProductTemplate<number>
 /**
  * データをUIから入力するときに使用する
  */
-export type ProductForAdd = Omit<Product, "thumbnail_path" | "thumbnail_url" | "stock">;
+export type ProductForAdd = Omit<Product, "thumbnail_path" | "thumbnail_url" | "stock" | "created_at">;
 
 /**
  * データの更新時に使用する

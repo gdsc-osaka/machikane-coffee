@@ -52,7 +52,7 @@ const StockTable = (props: {stocks: Stock[], products: Product[]}) => {
         // productsはproduct.stockで頻繁に更新されるのでdepsに入れない
     }, [products, stocks])
 
-    return <Stack spacing={1} >
+    return <Stack spacing={1}>
         <Stack direction={"row"} spacing={1} alignItems={"center"} sx={{paddingLeft: "48px"}}>
             <TableText variant={"label"}>
                 待機中
@@ -67,7 +67,7 @@ const StockTable = (props: {stocks: Stock[], products: Product[]}) => {
         {products.map(p => {
             const pid = p.id;
 
-            return <Stack direction={"row"} spacing={1} alignItems={"center"}>
+            return <Stack direction={"row"} spacing={1} alignItems={"center"} key={`stock-table-${pid}`}>
                 <RoundedImage alt={"product-icon"} src={p.thumbnail_url ?? ''}/>
                 <TableText variant={"data"}>
                     {tableData[pid]?.idle ?? 0}

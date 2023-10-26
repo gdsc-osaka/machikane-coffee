@@ -24,7 +24,7 @@ export type Stock = StockTemplate<Timestamp>;
 type StockFieldValue = StockTemplate<FieldValue>;
 
 export type StockFroAdd = Omit<StockFieldValue, "id" | "created_at" | "start_working_at" | "barista_id" | "status" | "orderRef" | "spend_to_make">;
-export type StockForUpdate = Partial<StockFieldValue>;
+export type StockForUpdate = Partial<StockTemplate<Timestamp | FieldValue>>;
 export type PayloadStock = Omit<StockFieldValue, 'id'>;
 
 export function assertStock(data: any): asserts data is Stock {
