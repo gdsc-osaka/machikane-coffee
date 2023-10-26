@@ -21,6 +21,7 @@ import {
     addOrder,
     deleteOrder,
     fetchOrders,
+    receiveOrder,
     receiveOrderIndividual,
     updateOrder
 } from "../modules/redux/order/ordersThunk";
@@ -118,7 +119,7 @@ const AdminCashierPage = () => {
     };
 
     const handleReceiveOrder = (order: Order) => {
-        dispatch(updateOrder({shopId, newOrder: {...order, status: "received"}}));
+        dispatch(receiveOrder({shopId, order}));
     }
 
     const handleUnreceiveOrder = (order: Order) => {

@@ -3,7 +3,6 @@ import {
     arrayRemove,
     arrayUnion,
     collection,
-    deleteDoc,
     doc,
     getDocs,
     increment,
@@ -14,6 +13,7 @@ import {
     serverTimestamp,
     Timestamp,
     where,
+    WriteBatch,
     writeBatch
 } from "firebase/firestore";
 import {getToday} from "../../util/dateUtils";
@@ -32,7 +32,7 @@ import {
     orderSucceeded,
     orderUpdated
 } from "./ordersSlice";
-import {PayloadStock, StockForUpdate} from "../stock/stockTypes";
+import {PayloadStock, Stock, StockForUpdate} from "../stock/stockTypes";
 import {selectAllOrders} from "./orderSelectors";
 import {selectAllStocks} from "../stock/stockSelectors";
 import {productRef} from "../product/productsThunk";
@@ -300,13 +300,40 @@ export const deleteOrder = createAsyncThunk<
 
     })
 
-// export const receiveOrder = createAsyncThunk<
-//     { shopId: string, order: Order },
-//     { shopId: string, order: Order },
-//     { state: RootState }
-// >('orders/receiveOrder', async ({shopId, order}, {getState, rejectWithValue, dispatch}) => {
-//
-// })
+export const receiveOrder = createAsyncThunk<
+    { shopId: string, order: Order },
+    { shopId: string, order: Order },
+    { state: RootState }
+>('orders/receiveOrder', async ({shopId, order}, {getState, rejectWithValue}) => {
+    const state = getState();
+    const latestStocks = selectAllStocks(state, shopId);
+    const latestOrders = selectAllOrders(state, shopId).filter(o => o.created_at.seconds > order.created_at.seconds);
+
+    const batch = writeBatch(db);
+    const newOrder = lodash.cloneDeep(order);
+
+    for (const productStatusKey in order.product_status) {
+        if (order.product_status[productStatusKey].status === 'idle') {
+            const prodId = order.product_status[productStatusKey].productId;
+            const newerOrders = latestOrders /* このOrder以降のrequired_product_amountを更新すべきOrder */
+                .filter(o => Object.keys(o.product_amount).includes(prodId));
+
+            receiveIndividualBatch({
+                batch, shopId, newOrder,
+                productStatusKey, latestStocks, newerOrders, rejectWithValue
+            })
+        }
+    }
+
+
+    try {
+        await batch.commit();
+        return {shopId, order: newOrder}
+
+    } catch (e) {
+        return rejectWithValue(e);
+    }
+})
 
 export const receiveOrderIndividual = createAsyncThunk<
     { shopId: string, order: Order },
@@ -322,15 +349,34 @@ export const receiveOrderIndividual = createAsyncThunk<
 
     const batch = writeBatch(db);
 
-    // Update This Order
     const newOrder = lodash.cloneDeep(order);
 
+    receiveIndividualBatch({
+        batch, shopId, newOrder,
+        productStatusKey, latestStocks, newerOrders, rejectWithValue
+    })
+
+    try {
+        await batch.commit();
+        return {shopId, order: newOrder}
+
+    } catch (e) {
+        return rejectWithValue(e);
+    }
+})
+
+function receiveIndividualBatch(args: {batch: WriteBatch, shopId: string, newOrder: Order, productStatusKey: string, latestStocks: Stock[], newerOrders: Order[], rejectWithValue: (msg: string) => void}) {
+    const {batch, rejectWithValue, shopId, newOrder, productStatusKey, latestStocks, newerOrders} = args;
+
+    const prodId = newOrder.product_status[productStatusKey].productId;
+
+    // Update This Order
     newOrder.product_status[productStatusKey].status = 'received';
     newOrder.required_product_amount[prodId] -= 1; // 商品の必要数を1減らす
     const allReceived = isOrderAllReceived(newOrder);
     const orderStatus = allReceived ? 'received' : 'idle';
     newOrder.status = orderStatus;
-
+-
     batch.update(orderRef(shopId, newOrder.id), {
         product_status: newOrder.product_status,
         required_product_amount: {
@@ -356,14 +402,14 @@ export const receiveOrderIndividual = createAsyncThunk<
 
     // Update Stocks
     const stock = latestStocks /* 関係づけられているStockでproduct_idが一致するもの */
-        .find(s => s.orderRef.id === order.id && s.product_id === prodId)
+        .find(s => s.orderRef.id === newOrder.id && s.product_id === prodId)
 
     if (stock === undefined) {
         return rejectWithValue('注文データに関連付けられた在庫データが存在しません')
     }
 
     const stRef = stockRef(shopId, stock.id);
-    const orRef = orderRef(shopId, order.id);
+    const orRef = orderRef(shopId, newOrder.id);
 
     if (stock.status === 'completed') {
         batch.update(stRef, {
@@ -383,7 +429,7 @@ export const receiveOrderIndividual = createAsyncThunk<
             // StockをUpdate
             batch.update(altStockRef, {
                 status: 'received',
-                orderRef: orderRef(shopId, order.id)
+                orderRef: orderRef(shopId, newOrder.id)
             } as StockForUpdate)
 
             batch.update(stRef, {
@@ -410,12 +456,4 @@ export const receiveOrderIndividual = createAsyncThunk<
             return rejectWithValue(`完成済みの在庫が見つかりませんでした (product_id: ${prodId})`)
         }
     }
-
-    try {
-        await batch.commit();
-        return {shopId, order: newOrder}
-
-    } catch (e) {
-        return rejectWithValue(e);
-    }
-})
+}
