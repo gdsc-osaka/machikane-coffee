@@ -432,6 +432,92 @@ export const receiveOrderIndividual = createAsyncThunk<
     }
 })
 
+export const unreceiveOrder = createAsyncThunk<
+    { shopId: string, order: OrderForUpdate },
+    { shopId: string, order: Order },
+    { state: RootState }
+>('orders/unreceiveOrder', async ({shopId, order}, {getState, rejectWithValue}) => {
+    const state = getState();
+    const latestOrders = selectAllOrders(state, shopId).filter(o => o.created_at.seconds > order.created_at.seconds);
+    const prodIds = Object.keys(order.product_amount);
+    const newerOrders = latestOrders /* このOrder以降のrequired_product_amountを更新すべきOrder */
+        .filter(o => o.created_at.seconds > order.created_at.seconds &&
+            Object.keys(o.product_amount).find(id => prodIds.includes(id)) !== undefined); /* orderのproductIdが一つでも含まれていれば更新対象 */
+
+    const batch = writeBatch(db);
+
+    console.log("Update Order")
+    // Update Order
+    const orderForUpdate: OrderForUpdate = {
+        product_status: {},
+        status: 'idle',
+        required_product_amount: {},
+    };
+    for (const pStatusKey in order.product_status) {
+        const prodStatus = order.product_status[pStatusKey];
+
+        orderForUpdate.product_status![pStatusKey] = {
+            ...prodStatus, status: 'idle'
+        }
+    }
+
+    console.log("Update Products and orderForUpdate.required_product_amount")
+    // Update Products and orderForUpdate.required_product_amount
+    for (const prodId in order.product_amount) {
+        console.log(prodId)
+        const amount = order.product_amount[prodId];
+        batch.update(productRef(shopId, prodId), {
+            stock: increment(amount)
+        } as ProductForUpdate)
+
+        console.log(`__${prodId}`)
+        // Update required_product_amount
+        try {
+
+            orderForUpdate.required_product_amount![prodId] = increment(amount);
+        } catch (e) {
+            console.error(e)
+        }
+        console.log(`____${prodId}`)
+    }
+
+    console.log("batch.update")
+    batch.update(orderRef(shopId, order.id), orderForUpdate);
+
+    console.log("Update Other Order")
+    // Update Other Orders (required_product_amountを増やす)
+    for (const newerOrder of newerOrders) {
+        let orderDiff = {};
+
+        for (const prodId in order.product_amount) {
+            orderDiff = {
+                ...orderDiff,
+                // ドット記法でprodIdだけ更新する
+                [`required_product_amount.${prodId}`]: increment(order.product_amount[prodId])
+            } // FIXME ドット記法にも型を対応する
+        }
+
+        batch.update(orderRef(shopId, newerOrder.id), orderDiff);
+    }
+
+    console.log("Update Stocks")
+    // Update Stocks
+    for (const stRef of order.stocksRef) {
+        batch.update(stRef, {
+            status: 'completed'
+        } as StockForUpdate)
+    }
+
+    try {
+        console.log(orderForUpdate);
+        await batch.commit();
+        return {shopId, order: {...orderForUpdate, id: order.id}};
+    } catch (e) {
+        console.error(e);
+        return rejectWithValue(e);
+    }
+});
+
 function receiveIndividualBatch(args: {batch: WriteBatch, shopId: string, newOrder: Order, productStatusKey: string, newerOrders: Order[]}) {
     const {batch, shopId, newOrder, productStatusKey, newerOrders} = args;
 
@@ -446,12 +532,9 @@ function receiveIndividualBatch(args: {batch: WriteBatch, shopId: string, newOrd
 
     batch.update(orderRef(shopId, newOrder.id), {
         product_status: newOrder.product_status,
-        required_product_amount: {
-            ...newOrder.required_product_amount,
-            [prodId]: increment(-1)
-        },
+        [`required_product_amount.${prodId}`]: increment(-1),
         status: orderStatus
-    } as OrderForUpdate)
+    }) // FIXME ドット記法にも型を対応する
 
     // Update Products
     batch.update(productRef(shopId, prodId), {
@@ -461,10 +544,8 @@ function receiveIndividualBatch(args: {batch: WriteBatch, shopId: string, newOrd
     // Update Other Orders
     for (const newerOrder of newerOrders) {
         batch.update(orderRef(shopId, newerOrder.id), {
-            required_product_amount: {
-                [prodId]: increment(-1),
-            }
-        } as OrderForUpdate)
+            [`required_product_amount.${prodId}`]: increment(-1)
+        }) // FIXME ドット記法にも型を対応する
     }
 }
 

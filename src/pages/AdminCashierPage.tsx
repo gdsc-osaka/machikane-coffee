@@ -23,7 +23,7 @@ import {
     fetchOrders,
     receiveOrder,
     receiveOrderIndividual,
-    updateOrder
+    unreceiveOrder
 } from "../modules/redux/order/ordersThunk";
 import {streamProducts} from "../modules/redux/product/productsThunk";
 import {selectOrderStatus, selectReceivedOrder, selectUnreceivedOrder} from "../modules/redux/order/orderSelectors";
@@ -123,7 +123,7 @@ const AdminCashierPage = () => {
     }
 
     const handleUnreceiveOrder = (order: Order) => {
-        dispatch(updateOrder({shopId, newOrder: {...order, status: "idle"}}));
+        dispatch(unreceiveOrder({shopId, order}));
     }
 
     const handleDeleteOrder = (order: Order) => {
