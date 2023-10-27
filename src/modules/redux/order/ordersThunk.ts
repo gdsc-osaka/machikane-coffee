@@ -85,7 +85,6 @@ export const streamOrders = (shopId: string, {dispatch}: { dispatch: Dispatch },
     const unsubscribe = onSnapshot(ordersRef(shopId), (snapshot) => {
         snapshot.docChanges().forEach((change) => {
             if (change.type === "added") {
-                console.log(change.doc.data());
                 if (change.doc.metadata.hasPendingWrites) {
                     return;
                 }
@@ -94,7 +93,6 @@ export const streamOrders = (shopId: string, {dispatch}: { dispatch: Dispatch },
             }
             if (change.type === "modified") {
                 const order = change.doc.data();
-                console.log(order);
                 dispatch(orderUpdated({shopId, order}));
             }
             if (change.type === "removed") {
@@ -335,8 +333,6 @@ export const receiveOrder = createAsyncThunk<
         }
     }
 
-    console.log(newOrder)
-
     const productIds = Array.from(stockAmountLeft.keys());
     const relatedStock = latestStocks.filter(s => s.orderRef.id === order.id && productIds.includes(s.product_id));
     const alterStocks = latestStocks.filter(s => s.orderRef.id !== order.id && productIds.includes(s.product_id) && s.status === 'completed');
@@ -355,6 +351,7 @@ export const receiveOrder = createAsyncThunk<
             const altStock = alterStocks.find(s => s.product_id === prodId);
 
             if (altStock) {
+                alterStocks.remove(s => s.id === altStock.id);
                 swapAndReceiveStockBatch(batch, shopId, st, altStock);
             }
 
