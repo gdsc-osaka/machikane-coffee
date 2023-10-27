@@ -21,7 +21,7 @@ import {streamOrder, streamOrders} from "../modules/redux/order/ordersThunk";
 import {streamProducts} from "../modules/redux/product/productsThunk";
 import {fetchShops, streamShop} from "../modules/redux/shop/shopsThunk";
 import {
-    selectAllIdleOrdersBeforeMe, selectAllOrders,
+    selectAllIdleOrdersBeforeMe,
     selectOrderById,
     selectOrderStatus,
     selectOrderUnsubscribe
@@ -37,7 +37,8 @@ type DialogState = {
 }
 
 const OrderPage = () => {
-    const [orderIndex, setOrderIndex] = useState<string>("");
+    const [rawOrderIndex, setRawOrderIndex] = useState<string>("");
+    const [orderIndex, setOrderIndex] = useState(0);
     const [orderId, setOrderId] = useState("");
     const [dialogState, setDialogState] = useState<DialogState>({
         open: false,
@@ -80,22 +81,25 @@ const OrderPage = () => {
     }, []);
 
     useEffect(() => {
-        if (orderStatus === "idle") {
-            // TODO: 自分の注文以前の未受け取り注文 にクエリする
-            const unsub = streamOrders(shopId, {dispatch})
-
-            return () => {
-                unsub();
-            }
-        }
-    }, [])
-
-    useEffect(() => {
         if (shopStatus === "idle") {
             dispatch(fetchShops());
             dispatch(streamShop(shopId));
         }
     }, [dispatch, shopStatus, shopId]);
+
+    useEffect(() => {
+        try {
+            // const unsub = streamOrder(shopId, orderIndex, {dispatch});
+            //
+            // if (unsub) {
+            //     return () => {
+            //         unsub();
+            //     }
+            // }
+        } catch (e) {
+            console.error(e);
+        }
+    }, [orderIndex, dispatch])
 
     useEffect(() => {
         if (shopId !== undefined && allShops.length !== 0 &&
@@ -117,7 +121,7 @@ const OrderPage = () => {
 
         if (!isNaN(oIndex) && oIndex !== 0) {
             const strOIndex = oIndex.toString();
-            setOrderIndex(strOIndex);
+            setRawOrderIndex(strOIndex);
             handleSubmit(strOIndex);
         }
     }, [paramOrderIndex])
@@ -125,10 +129,10 @@ const OrderPage = () => {
     const handleOrderIndex = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const num = Number(e.target.value);
         if (!isNaN(num) && num !== 0) {
-            setOrderIndex(num.toString());
+            setRawOrderIndex(num.toString());
 
         } else if (e.target.value === "") {
-            setOrderIndex("");
+            setRawOrderIndex("");
         }
     }
 
@@ -150,22 +154,7 @@ const OrderPage = () => {
         const num = Number(orderIndex);
 
         if (!isNaN(num)) {
-            await dispatch(streamOrder({shopId: shopId, orderIndex: num}))
-                .unwrap()
-                .then((payload) => {
-                    const {order} = payload;
-                    setOrderId(order.id);
-
-                    setSearchParams({[orderIndexParamKey]: orderIndex});
-                })
-                .catch((_) => {
-                    setDialogState({
-                        open: true,
-                        title: "該当する番号の注文が見つかりません",
-                        onOk: () => handleClose()
-                    });
-                });
-
+            setOrderIndex(num);
         }
     }
 
@@ -187,9 +176,9 @@ const OrderPage = () => {
             <TextField id={"order-index"} variant={"filled"}
                        label={"注文番号"} // helperText={"番号札に記入された数字を入力してください"}
                        type={"number"} required fullWidth
-                       value={orderIndex} onChange={handleOrderIndex} sx={{minWidth: "17rem"}}/>
+                       value={rawOrderIndex} onChange={handleOrderIndex} sx={{minWidth: "17rem"}}/>
             <Button variant={"contained"} sx={{minWidth: "100px"}}
-                    disabled={orderIndex === undefined} onClick={() => handleSubmit(orderIndex)}>
+                    disabled={rawOrderIndex === undefined} onClick={() => handleSubmit(rawOrderIndex)}>
                 確認
             </Button>
         </Stack>

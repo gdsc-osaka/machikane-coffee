@@ -131,15 +131,6 @@ const ordersSlice = createSlice({
                 state[shopId].data = orders.sort((a, b) => a.created_at.toDate().getTime() - b.created_at.toDate().getTime());
             })
 
-        builder.addCase(streamOrder.fulfilled, (state, action) => {
-            const {unsubscribe, shopId} = action.payload;
-
-            ensureInitialized(state, shopId);
-
-            state[shopId].status = 'succeeded'
-            state[shopId].unsubscribe = unsubscribe;
-        });
-
         builder.addCase(addOrder.fulfilled, (state, action) => {
             const {shopId, order} = action.payload;
 

@@ -53,7 +53,7 @@ const ordersQuery = (shopId: string, ...queryConstraints: QueryConstraint[]) => 
     return query(collection(db, `shops/${shopId}/orders`).withConverter(orderConverter),
         where("created_at", ">=", today), orderBy("created_at", "desc"), ...queryConstraints);
 }
-const orderQuery = (shopId: string, orderIndex: number, ...queryConstraints: QueryConstraint[]) => {
+const orderQueryByIndex = (shopId: string, orderIndex: number, ...queryConstraints: QueryConstraint[]) => {
     const today = Timestamp.fromDate(getToday());
     return query(collection(db, `shops/${shopId}/orders`).withConverter(orderConverter),
         where("created_at", ">=", today), where("index", "==", orderIndex), ...queryConstraints);
@@ -75,6 +75,16 @@ export const fetchOrders = createAsyncThunk<
 
         return {orders, shopId}
     });
+
+export const fetchOrderByIndex = createAsyncThunk<
+    { shopId: stinrg, order: Order },
+    { shopId: string, orderIndex: number },
+    {  }
+>("orders/fetchOrderByIndex",
+    async ({shopId, orderIndex}, {}) => {
+    const order = await getDocs(orderQueryByIndex(shopId, orderIndex))
+
+});
 
 /**
  * order をリアルタイム更新する. ユーザー側で使用されることを想定
@@ -108,43 +118,39 @@ export const streamOrders = (shopId: string, {dispatch}: { dispatch: Dispatch },
     };
 }
 
-export const streamOrder = createAsyncThunk('orders/streamOrder',
-    async ({shopId, orderIndex}: { shopId: string, orderIndex: number }, {dispatch, getState, rejectWithValue}) => {
-        dispatch(orderPending({shopId: shopId}))
-        const _query = orderQuery(shopId, orderIndex);
+export const streamOrder = async (shopId: string, orderIndex: number, {dispatch}: { dispatch: Dispatch }) => {
+    dispatch(orderPending({shopId: shopId}))
+    const _query = orderQueryByIndex(shopId, orderIndex);
 
-        try {
-            const snapshot = await getDocs(_query);
+    try {
+        const snapshot = await getDocs(_query);
 
-            if (snapshot.empty) {
-                return rejectWithValue(`Order not found.`);
-            }
-
-            const doc = snapshot.docs[0];
-
-            const unsubscribe = onSnapshot(doc.ref, (doc) => {
-                const state = getState() as RootState;
-                const order = doc.data();
-
-                if (order === undefined) return;
-
-                // 同じIDのOrderがないとき
-                if (state.order[shopId].data.findIndex(e => e.id === order.id) === -1) {
-                    dispatch(orderAdded({shopId, order}));
-                } else {
-                    dispatch(orderUpdated({shopId, order}));
-                }
-            });
-
-            return {unsubscribe: unsubscribe, shopId: shopId, order: doc.data()};
-
-        } catch (e) {
-            if (e instanceof Error) {
-                dispatch(orderRejected({shopId: shopId, error: e}))
-            }
-            return rejectWithValue(e);
+        if (snapshot.empty) {
+            return Promise.reject(`Order not found.`);
         }
-    })
+
+        const doc = snapshot.docs[0];
+
+        const unsubscribe = onSnapshot(doc.ref.withConverter(orderConverter), (doc) => {
+            const order = doc.data();
+
+            if (order) {
+                dispatch(orderUpdated({shopId, order}));
+            }
+        });
+
+        return () => {
+            dispatch(orderIdle({shopId}));
+            unsubscribe();
+        };
+
+    } catch (e) {
+        if (e instanceof Error) {
+            dispatch(orderRejected({shopId: shopId, error: e}))
+            return Promise.reject(e);
+        }
+    }
+}
 
 export const addOrder = createAsyncThunk<
     { shopId: string, order: Order },
