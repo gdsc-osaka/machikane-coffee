@@ -42,6 +42,12 @@ import {isOrderAllReceived} from "./orderUtils";
 
 const { v4: uuidv4 } = require('uuid');
 
+const ordersRef = (shopId: string) => {
+    const today = Timestamp.fromDate(getToday());
+    return query(collection(db, `shops/${shopId}/orders`),
+        where("created_at", ">=", today), orderBy("created_at", "desc"));
+}
+
 const ordersQuery = (shopId: string, ...queryConstraints: QueryConstraint[]) => {
     const today = Timestamp.fromDate(getToday());
     return query(collection(db, `shops/${shopId}/orders`).withConverter(orderConverter),
@@ -76,19 +82,19 @@ export const fetchOrders = createAsyncThunk<
 export const streamOrders = (shopId: string, {dispatch}: { dispatch: Dispatch }, ...queryConstraints: QueryConstraint[]) => {
     dispatch(orderSucceeded({shopId}))
 
-    const _query = ordersQuery(shopId, ...queryConstraints);
-    const unsubscribe = onSnapshot(_query, (snapshot) => {
+    const unsubscribe = onSnapshot(ordersRef(shopId), (snapshot) => {
         snapshot.docChanges().forEach((change) => {
-            if (change.doc.metadata.hasPendingWrites) {
-                return;
-            }
-
             if (change.type === "added") {
-                const order = change.doc.data();
+                console.log(change.doc.data());
+                if (change.doc.metadata.hasPendingWrites) {
+                    return;
+                }
+                const order = orderConverter.fromFirestore(change.doc);
                 dispatch(orderAdded({shopId, order}));
             }
             if (change.type === "modified") {
                 const order = change.doc.data();
+                console.log(order);
                 dispatch(orderUpdated({shopId, order}));
             }
             if (change.type === "removed") {
@@ -311,20 +317,56 @@ export const receiveOrder = createAsyncThunk<
 
     const batch = writeBatch(db);
     const newOrder = lodash.cloneDeep(order);
+    const stockAmountLeft = new Map<string, number>(); /* 必要な在庫数 */
 
     for (const productStatusKey in order.product_status) {
-        if (order.product_status[productStatusKey].status === 'idle') {
-            const prodId = order.product_status[productStatusKey].productId;
+        const productStatus = order.product_status[productStatusKey];
+        if (productStatus.status === 'idle') {
+            const prodId = productStatus.productId;
+            stockAmountLeft.set(prodId, (stockAmountLeft.get(prodId) ?? 0) + 1)
+
             const newerOrders = latestOrders /* このOrder以降のrequired_product_amountを更新すべきOrder */
                 .filter(o => Object.keys(o.product_amount).includes(prodId));
 
             receiveIndividualBatch({
                 batch, shopId, newOrder,
-                productStatusKey, latestStocks, newerOrders, rejectWithValue
+                productStatusKey, newerOrders
             })
         }
     }
 
+    console.log(newOrder)
+
+    const productIds = Array.from(stockAmountLeft.keys());
+    const relatedStock = latestStocks.filter(s => s.orderRef.id === order.id && productIds.includes(s.product_id));
+    const alterStocks = latestStocks.filter(s => s.orderRef.id !== order.id && productIds.includes(s.product_id) && s.status === 'completed');
+
+    for (const st of relatedStock) {
+        const prodId = st.product_id;
+
+        if (st.status === 'completed') {
+            // 関連付けられたStockが完成の場合
+            batch.update(stockRef(shopId, st.id), {
+                status: 'received'
+            } as StockForUpdate)
+
+        } else {
+            // 完成でない場合、他の注文ののStockを完成にする
+            const altStock = alterStocks.find(s => s.product_id === prodId);
+
+            if (altStock) {
+                swapAndReceiveStockBatch(batch, shopId, st, altStock);
+            }
+
+        }
+
+        stockAmountLeft.set(prodId, (stockAmountLeft.get(prodId) ?? 0) - 1)
+    }
+
+    // 在庫が足りない場合
+    if (Array.from(stockAmountLeft.values()).find(v => v > 0) !== undefined) {
+        return rejectWithValue('在庫が足りません');
+    }
 
     try {
         await batch.commit();
@@ -353,8 +395,36 @@ export const receiveOrderIndividual = createAsyncThunk<
 
     receiveIndividualBatch({
         batch, shopId, newOrder,
-        productStatusKey, latestStocks, newerOrders, rejectWithValue
+        productStatusKey, newerOrders
     })
+
+    // Update Stocks
+    const stock = latestStocks /* 関係づけられているStockでproduct_idが一致するもの */
+        .find(s => s.orderRef.id === newOrder.id && s.product_id === prodId)
+
+    if (stock === undefined) {
+        return rejectWithValue('注文データに関連付けられた在庫データが存在しません')
+    }
+
+    const stRef = stockRef(shopId, stock.id);
+
+    if (stock.status === 'completed') {
+        batch.update(stRef, {
+            status: 'received'
+        } as StockForUpdate)
+
+    } else {
+        /* 関連付けられているStockがcompletedでない場合 */
+
+        // latestStocksが日付降順であること前提
+        const altStock = latestStocks.find(s => s.status === 'completed' && s.product_id === prodId); /* 代わりとなる在庫 */
+
+        if (altStock) {
+            swapAndReceiveStockBatch(batch, shopId, stock, altStock);
+        } else {
+            return rejectWithValue(`完成済みの在庫が見つかりませんでした (product_id: ${prodId})`)
+        }
+    }
 
     try {
         await batch.commit();
@@ -365,8 +435,8 @@ export const receiveOrderIndividual = createAsyncThunk<
     }
 })
 
-function receiveIndividualBatch(args: {batch: WriteBatch, shopId: string, newOrder: Order, productStatusKey: string, latestStocks: Stock[], newerOrders: Order[], rejectWithValue: (msg: string) => void}) {
-    const {batch, rejectWithValue, shopId, newOrder, productStatusKey, latestStocks, newerOrders} = args;
+function receiveIndividualBatch(args: {batch: WriteBatch, shopId: string, newOrder: Order, productStatusKey: string, newerOrders: Order[]}) {
+    const {batch, shopId, newOrder, productStatusKey, newerOrders} = args;
 
     const prodId = newOrder.product_status[productStatusKey].productId;
 
@@ -376,7 +446,7 @@ function receiveIndividualBatch(args: {batch: WriteBatch, shopId: string, newOrd
     const allReceived = isOrderAllReceived(newOrder);
     const orderStatus = allReceived ? 'received' : 'idle';
     newOrder.status = orderStatus;
--
+
     batch.update(orderRef(shopId, newOrder.id), {
         product_status: newOrder.product_status,
         required_product_amount: {
@@ -399,61 +469,45 @@ function receiveIndividualBatch(args: {batch: WriteBatch, shopId: string, newOrd
             }
         } as OrderForUpdate)
     }
+}
 
-    // Update Stocks
-    const stock = latestStocks /* 関係づけられているStockでproduct_idが一致するもの */
-        .find(s => s.orderRef.id === newOrder.id && s.product_id === prodId)
-
-    if (stock === undefined) {
-        return rejectWithValue('注文データに関連付けられた在庫データが存在しません')
-    }
-
+/**
+ * Orderに紐づけられたstockを入れ替えてreceivedにする
+ * @param batch
+ * @param shopId
+ * @param stock 元のStock
+ * @param altStock 入れ替えるStock
+ */
+function swapAndReceiveStockBatch(batch: WriteBatch, shopId: string, stock: Stock, altStock: Stock) {
+    const altStockRef = stockRef(shopId, altStock.id);
     const stRef = stockRef(shopId, stock.id);
-    const orRef = orderRef(shopId, newOrder.id);
+    const altStockOrderRef = altStock.orderRef;
+    const stOrderRef = stock.orderRef;
 
-    if (stock.status === 'completed') {
-        batch.update(stRef, {
-            status: 'received'
-        } as StockForUpdate)
+    // StockをUpdate
+    batch.update(altStockRef, {
+        status: 'received',
+        orderRef: stock.orderRef
+    } as StockForUpdate)
 
-    } else {
-        /* 関連付けられているStockがcompletedでない場合 */
+    batch.update(stRef, {
+        orderRef: altStockOrderRef
+    } as StockForUpdate)
 
-        // latestStocksが日付降順であること前提
-        const altStock = latestStocks.find(s => s.status === 'completed' && s.product_id === prodId); /* 代わりとなる在庫 */
+    // Order.stocksRefを交換
+    batch.update(stOrderRef, {
+        stocksRef: arrayRemove(stRef)
+    } as OrderForUpdate)
 
-        if (altStock) {
-            const altStockRef = stockRef(shopId, altStock.id);
-            const altStockOrderRef = altStock.orderRef;
+    batch.update(stOrderRef, {
+        stocksRef: arrayUnion(altStockRef)
+    } as OrderForUpdate)
 
-            // StockをUpdate
-            batch.update(altStockRef, {
-                status: 'received',
-                orderRef: orderRef(shopId, newOrder.id)
-            } as StockForUpdate)
+    batch.update(altStockOrderRef, {
+        stocksRef: arrayRemove(altStockRef)
+    } as OrderForUpdate)
 
-            batch.update(stRef, {
-                orderRef: altStockOrderRef
-            } as StockForUpdate)
-
-            // Order.stocksRefを交換
-            batch.update(orRef, {
-                stocksRef: arrayRemove(stRef)
-            } as OrderForUpdate)
-
-            batch.update(orRef, {
-                stocksRef: arrayUnion(altStockRef)
-            } as OrderForUpdate)
-
-            batch.update(altStockOrderRef, {
-                stocksRef: arrayRemove(altStockRef)
-            } as OrderForUpdate)
-
-            batch.update(altStockOrderRef, {
-                stocksRef: arrayUnion(stRef)
-            } as OrderForUpdate)
-        } else {
-            return rejectWithValue(`完成済みの在庫が見つかりませんでした (product_id: ${prodId})`)
-        }
-    }
+    batch.update(altStockOrderRef, {
+        stocksRef: arrayUnion(stRef)
+    } as OrderForUpdate)
 }

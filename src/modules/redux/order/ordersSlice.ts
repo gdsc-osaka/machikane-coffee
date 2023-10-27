@@ -1,7 +1,17 @@
 import {createSlice, PayloadAction, SerializedError} from "@reduxjs/toolkit";
 import {AsyncState, Unsubscribe} from "../stateType";
-import {Order} from "./orderTypes";
-import {addOrder, deleteOrder, fetchOrders, receiveOrderIndividual, streamOrder, updateOrder} from "./ordersThunk";
+import {Order, OrderForUpdate} from "./orderTypes";
+import {
+    addOrder,
+    deleteOrder,
+    fetchOrders,
+    receiveOrder,
+    receiveOrderIndividual,
+    streamOrder,
+    updateOrder
+} from "./ordersThunk";
+import {DocumentReference, FieldValue, Timestamp} from "firebase/firestore";
+import {Stock} from "../stock/stockTypes";
 
 // それぞれのショップごとのOrderState
 type SingleOrderState = AsyncState<Order[]> & Unsubscribe;
@@ -33,11 +43,23 @@ const ordersSlice = createSlice({
             ensureInitialized(state, shopId);
             state[shopId].data.push(order);
         },
-        orderUpdated(state, action: PayloadAction<{ shopId: string, order: Order }>) {
+        orderUpdated(state, action: PayloadAction<{ shopId: string, order: OrderForUpdate }>) {
             const {order, shopId} = action.payload;
 
             ensureInitialized(state, shopId);
-            state[shopId].data.update(d => d.id === order.id, order);
+            const oldOrder = state[shopId].data.find(s => s.id === order.id);
+
+            if (oldOrder) {
+                state[shopId].data.update(e => e.id === order.id, {
+                    ...oldOrder, ...order,
+                    created_at: (order.created_at instanceof Timestamp) ? order.created_at : oldOrder.created_at,
+                    stocksRef: (!(order.stocksRef instanceof FieldValue) && order.stocksRef) ? (order.stocksRef as DocumentReference[]) : oldOrder.stocksRef,
+                    delay_seconds: (typeof order.delay_seconds === 'number') ? order.delay_seconds : oldOrder.delay_seconds,
+                    required_product_amount: order.required_product_amount as {[p in string]: number}
+                });
+            } else {
+                state[shopId].data.push(order as Order);
+            }
         },
         /**
          * 指定した ID の order を消去する
@@ -142,6 +164,14 @@ const ordersSlice = createSlice({
             ensureInitialized(state, shopId);
             state[shopId].data.update(e => e.id === order.id, order);
         })
+
+        builder.addCase(receiveOrder.fulfilled, (state, action) => {
+            const {shopId, order} = action.payload;
+
+            ensureInitialized(state, shopId);
+            state[shopId].data.update(e => e.id === order.id, order);
+        })
+
     },
 });
 

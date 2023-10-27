@@ -41,24 +41,12 @@ const stocksSlice = createSlice({
             ensureInitialized(state, shopId);
             const oldStock = state[shopId].data.find(s => s.id === stock.id);
 
-            console.log(oldStock)
-            console.log(stock)
             if (oldStock) {
-                let createdAt: Timestamp, start_working_at: Timestamp;
-
-                if (stock.created_at instanceof Timestamp) {
-                    createdAt = stock.created_at;
-                } else {
-                    createdAt = oldStock.created_at;
-                }
-
-                if (stock.start_working_at instanceof Timestamp) {
-                    start_working_at = stock.start_working_at;
-                } else {
-                    start_working_at = oldStock.start_working_at;
-                }
-
-                state[shopId].data.update(e => e.id === stock.id, {...oldStock, ...stock, created_at: createdAt, start_working_at: start_working_at});
+                state[shopId].data.update(e => e.id === stock.id, {
+                    ...oldStock, ...stock,
+                    created_at: (stock.created_at instanceof Timestamp) ? stock.created_at : oldStock.created_at,
+                    start_working_at: (stock.start_working_at instanceof Timestamp) ? stock.start_working_at : oldStock.start_working_at,
+                });
             } else {
                 state[shopId].data.push(stock as Stock);
             }

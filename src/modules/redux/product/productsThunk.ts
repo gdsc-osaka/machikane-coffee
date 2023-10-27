@@ -110,7 +110,6 @@ export const updateProduct = createAsyncThunk<
 
 export const streamProducts = (shopId: string, {dispatch}: {dispatch: Dispatch}) => {
     dispatch(productSucceeded({shopId}));
-    console.log("streamProducts")
 
     const q = productsRef(shopId);
 
