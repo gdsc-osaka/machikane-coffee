@@ -21,6 +21,8 @@ function sortByWorking(a: Stock, b: Stock) {
     }
 }
 
-export function selectIdleOrWorkingStocks(state: RootState, shopId: string) {
-    return selectAllStocks(state, shopId).filter(s => s.status === 'idle' || s.status === 'working').sort(sortByWorking);
+export function selectStocksForBarista(state: RootState, shopId: string, baristaId: number) {
+    return selectAllStocks(state, shopId)
+        .filter(s => s.status === 'idle' || (s.status === 'working' && s.barista_id === baristaId))
+        .sort(sortByWorking);
 }

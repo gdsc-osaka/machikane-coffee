@@ -14,7 +14,7 @@ import {useAuth} from "../AuthGuard";
 import toast from "react-hot-toast";
 import {fetchProducts} from "../modules/redux/product/productsThunk";
 import {streamShop, updateShop} from "../modules/redux/shop/shopsThunk";
-import {selectStockStatus, selectIdleOrWorkingStocks} from "../modules/redux/stock/stockSelectors";
+import {selectStockStatus, selectStocksForBarista} from "../modules/redux/stock/stockSelectors";
 import {streamStocks, updateStockStatus} from "../modules/redux/stock/stocksThunk";
 import {Stock, StockStatus} from "../modules/redux/stock/stockTypes";
 import styled from "styled-components";
@@ -33,7 +33,7 @@ const AdminBaristaPage = () => {
     const baristaIds = shop === undefined ? [] : Object.keys(shop.baristas).map((e) => parseInt(e));
 
     const stockStatus = useAppSelector(state => selectStockStatus(state, shopId));
-    const stocks = useAppSelector(state => selectIdleOrWorkingStocks(state, shopId));
+    const stocks = useAppSelector(state => selectStocksForBarista(state, shopId, selectedId));
 
     const productStatus = useAppSelector(state => selectProductStatus(state, shopId))
     const products = useAppSelector(state => selectAllProduct(state, shopId));
@@ -143,7 +143,7 @@ const AdminBaristaPage = () => {
             {/*</Typography>*/}
             <MotionList layoutId={"barista-order-list"} style={{
                 display: 'grid',
-                gridTemplateColumns: "1fr 1fr",
+                gridTemplateColumns: "1fr",
                 gap: '1rem'
             }}>
                 {stocks.map(stock => {
@@ -179,18 +179,24 @@ const BaristaStockItem = (props: {
                 {product.shorter_name}
             </Typography>
         </Stack>
-        <Stack direction={"row"}>
+        <Stack direction={"row"} spacing={1}>
             {isWorking ?
                 <>
-                    <IconButton onClick={() => onChangeStatus(stock, "idle")} key={"undo"}>
-                        <UndoRoundedIcon/>
-                    </IconButton>
-                    <IconButton onClick={() => onChangeStatus(stock, "completed")} key={"check"}>
-                        <CheckRoundedIcon/>
-                    </IconButton>
+                    {/*<IconButton onClick={() => onChangeStatus(stock, "idle")} key={"undo"}>*/}
+                    {/*    <UndoRoundedIcon/>*/}
+                    {/*</IconButton>*/}
+                    {/*<IconButton onClick={() => onChangeStatus(stock, "completed")} key={"check"}>*/}
+                    {/*    <CheckRoundedIcon/>*/}
+                    {/*</IconButton>*/}
+                    <Button variant={"outlined"} onClick={() => onChangeStatus(stock, "idle")} key={"undo"}>
+                        戻す
+                    </Button>
+                    <Button variant={"outlined"} onClick={() => onChangeStatus(stock, "completed")} key={"check"}>
+                        完成
+                    </Button>
                 </>
                 :
-                <Button variant={"outlined"} onClick={() => onChangeStatus(stock, "working")}>
+                <Button variant={"contained"} onClick={() => onChangeStatus(stock, "working")}>
                     作成
                 </Button>
             }
@@ -200,8 +206,8 @@ const BaristaStockItem = (props: {
 }
 
 const Icon = styled.img`
-  border-radius: 100px;
-  width: 40px
+  border-radius: 10px;
+  width: 50px
 `
 
 export default AdminBaristaPage
