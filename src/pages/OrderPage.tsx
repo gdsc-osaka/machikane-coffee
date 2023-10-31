@@ -49,7 +49,6 @@ const OrderPage = () => {
     const shopId = params.shopId ?? '';
     const [searchParams, setSearchParams] = useSearchParams();
     const paramOrderIndex = searchParams.get(orderIndexParamKey);
-    const now = useDate();
 
     // Order関連
     const order = useAppSelector(state => selectOrderById(state, shopId, orderId));
@@ -182,7 +181,7 @@ const OrderPage = () => {
                 <MotionListItem key={"order-card"}>
                     <div style={{paddingTop: "1rem"}}>
                         <OrderCard order={order} products={products} shopStatus={shop.status}
-                                   delaySec={order.delay_seconds + delaySec} now={now.getSeconds()}/>
+                                   delaySec={order.delay_seconds + delaySec}/>
                     </div>
                 </MotionListItem>
             }
@@ -218,10 +217,10 @@ const OrderCard = (props: {
     products: Product[],
     shopStatus: ShopStatus,
     delaySec: number,
-    now: number /*現在時刻を秒単位で*/
 }) => {
-    const {order, products, shopStatus, delaySec, now} = props;
+    const {order, products, shopStatus, delaySec} = props;
 
+    const now = useDate().getSeconds();
     const productTexts = Object.keys(order.product_amount)
         .map(key => {
             return {
@@ -234,7 +233,7 @@ const OrderCard = (props: {
     const status = useMemo(() => {
         if (order.status === "received") return "received";
 
-        return isOrderCompleted(order, products) ? 'completed' : 'idle';
+        return isOrderCompleted(order, products, 'required_product_amount') ? 'completed' : 'idle';
     }, [order, products])
 
     // 商品の完成予定時刻を秒単位で

@@ -1,17 +1,8 @@
 import {createSlice, PayloadAction, SerializedError} from "@reduxjs/toolkit";
 import {AsyncState, Unsubscribe} from "../stateType";
 import {Order, OrderForUpdate} from "./orderTypes";
-import {
-    addOrder,
-    deleteOrder,
-    fetchOrders,
-    receiveOrder,
-    receiveOrderIndividual,
-    streamOrder, unreceiveOrder,
-    updateOrder
-} from "./ordersThunk";
+import {fetchOrders} from "./ordersThunk";
 import {DocumentReference, FieldValue, Timestamp} from "firebase/firestore";
-import {Stock} from "../stock/stockTypes";
 
 // それぞれのショップごとのOrderState
 type SingleOrderState = AsyncState<Order[]> & Unsubscribe;
@@ -59,6 +50,7 @@ const ordersSlice = createSlice({
 
             ensureInitialized(state, shopId);
             const oldOrder = state[shopId].data.find(s => s.id === order.id);
+            console.log(order);
 
             if (oldOrder) {
                 state[shopId].data.update(o => o.id === order.id, mergeOrderForUpdateAndOrder(order, oldOrder));

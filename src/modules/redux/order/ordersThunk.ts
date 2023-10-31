@@ -122,7 +122,7 @@ export const streamOrders = (shopId: string, {dispatch}: { dispatch: Dispatch },
 export const streamOrder = (shopId: string, orderId: string, {dispatch}: { dispatch: Dispatch }) => {
     dispatch(orderSucceeded({shopId: shopId}))
 
-    const unsubscribe = onSnapshot(orderRef(shopId, orderId), (doc) => {
+    const unsubscribe = onSnapshot(orderRef(shopId, orderId).withConverter(orderConverter), (doc) => {
         const order = doc.data();
 
         if (order) {
