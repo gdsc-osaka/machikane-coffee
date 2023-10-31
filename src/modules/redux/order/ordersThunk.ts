@@ -541,8 +541,7 @@ export const unreceiveOrder = createAsyncThunk<
 
     // Update Order
     batch.update(orderRef(shopId, order.id), {
-        status: 'idle',
-        [`product_status.${prodIds}`]: 'idle',
+        ...orderForUpdate,
         ...reqProdAmDiff
     });
 
