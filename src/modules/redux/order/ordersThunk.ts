@@ -3,10 +3,9 @@ import {
     arrayRemove,
     arrayUnion,
     collection,
-    doc, FieldValue,
+    doc,
     getDocs,
     increment,
-    limit,
     onSnapshot,
     orderBy,
     query,
@@ -93,21 +92,18 @@ export const fetchOrderByIndex = async ({shopId, orderIndex}: {shopId: string, o
 export const streamOrders = (shopId: string, {dispatch}: { dispatch: Dispatch }, ...queryConstraints: QueryConstraint[]) => {
     dispatch(orderSucceeded({shopId}))
 
-    const unsubscribe = onSnapshot(ordersRef(shopId), (snapshot) => {
+    const unsubscribe = onSnapshot(ordersQuery(shopId), (snapshot) => {
         snapshot.docChanges().forEach((change) => {
             if (change.type === "added") {
                 if (change.doc.metadata.hasPendingWrites) {
                     return;
                 }
-                const order = orderConverter.fromFirestore(change.doc);
+                const order = change.doc.data();
                 dispatch(orderAdded({shopId, order}));
             }
             if (change.type === "modified") {
                 const order = change.doc.data();
 
-                console.log("updated")
-                console.log(order);
-                console.log(change.doc.metadata.hasPendingWrites);
                 dispatch(orderUpdated({shopId, order}));
             }
             if (change.type === "removed") {
@@ -303,7 +299,6 @@ export const receiveOrder = createAsyncThunk<
     { shopId: string, order: Order },
     { state: RootState }
 >('orders/receiveOrder', async ({shopId, order}, {getState, rejectWithValue}) => {
-    console.log("a");
     const state = getState();
     const latestStocks = selectAllStocks(state, shopId);
     const ordersAfterThis = selectAllOrders(state, shopId) /* この注文以降の注文 */
@@ -335,7 +330,6 @@ export const receiveOrder = createAsyncThunk<
         }
     }
 
-    console.log("b");
     // Update Products + calculate reqProdAmoDiff
     const reqProdAmoDiff: OrderForUpdate = {};
     for (const productId in stockAmountLeft) {
@@ -354,7 +348,6 @@ export const receiveOrder = createAsyncThunk<
         }
     }
 
-    console.log("c");
     // Update This Order
     try {
         batch.update(orderRef(shopId, order.id), {
@@ -366,7 +359,6 @@ export const receiveOrder = createAsyncThunk<
         console.error(e);
     }
 
-    console.log("d");
     // Update Other Orders
     for (const orderAfterThis of ordersAfterThis) {
         try {
@@ -376,8 +368,6 @@ export const receiveOrder = createAsyncThunk<
         }
     }
 
-    console.log("e");
-    console.log(stockAmountLeft)
     // Update Stocks
     const productIds = Object.keys(stockAmountLeft);
     const relatedStock = latestStocks
@@ -417,16 +407,10 @@ export const receiveOrder = createAsyncThunk<
 
     // Stockが足りない場合
     if (Object.values(stockAmountLeft).find(e => e > 0) !== undefined) {
-        console.log(stockAmountLeft)
         return rejectWithValue('在庫が足りません');
     }
 
-    console.log("f");
     try {
-        console.log({
-            ...reqProdAmoDiff,
-            ...prodStatusDiff,
-        });
         await batch.commit();
         return {shopId, order: order}
 

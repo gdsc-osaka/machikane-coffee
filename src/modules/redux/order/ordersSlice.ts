@@ -51,7 +51,6 @@ const ordersSlice = createSlice({
         orderAdded(state, action: PayloadAction<{ shopId: string, order: Order }>) {
             const {order, shopId} = action.payload;
 
-            console.log("added")
             ensureInitialized(state, shopId);
             state[shopId].data.push(order);
         },

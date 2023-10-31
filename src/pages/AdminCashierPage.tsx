@@ -21,11 +21,17 @@ import {
     addOrder,
     deleteOrder,
     receiveOrder,
-    receiveOrderIndividual, streamOrders,
+    receiveOrderIndividual,
+    streamOrders,
     unreceiveOrder
 } from "../modules/redux/order/ordersThunk";
 import {streamProducts} from "../modules/redux/product/productsThunk";
-import {selectOrderStatus, selectReceivedOrder, selectUnreceivedOrder} from "../modules/redux/order/orderSelectors";
+import {
+    selectAllOrders,
+    selectOrderStatus,
+    selectReceivedOrder,
+    selectUnreceivedOrder
+} from "../modules/redux/order/orderSelectors";
 import {selectAllStocks, selectStockStatus} from "../modules/redux/stock/stockSelectors";
 import {streamStocks} from "../modules/redux/stock/stocksThunk";
 import {MotionListItem} from "../components/motion/motionList";
