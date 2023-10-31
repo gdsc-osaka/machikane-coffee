@@ -1,16 +1,26 @@
 import {createAsyncThunk, Dispatch} from "@reduxjs/toolkit";
 import {Stock, StockForUpdate, StockStatus} from "./stockTypes";
-import {collection, doc, increment, onSnapshot, serverTimestamp, Timestamp, writeBatch} from "firebase/firestore";
+import {
+    collection,
+    doc,
+    increment,
+    onSnapshot,
+    query,
+    serverTimestamp,
+    Timestamp, where,
+    writeBatch
+} from "firebase/firestore";
 import {db} from "../../firebase/firebase";
 import {stockConverter} from "../../firebase/converters";
-import {QueryConstraint} from "@firebase/firestore";
 import {stockAdded, stockIdle, stockRemoved, stockSucceeded, stockUpdated} from "./stocksSlice";
 import {productRef} from "../product/productsThunk";
 import {ProductForUpdate} from "../product/productTypes";
+import {today} from "../../util/dateUtils";
 
-const stocksCollection = (shopId: string) => collection(db, `shops/${shopId}/stocks`);
-const stocksRef = (shopId: string) =>
-    stocksCollection(shopId).withConverter(stockConverter);
+const stocksCollection = (shopId: string) => query(
+    collection(db, `shops/${shopId}/stocks`),
+    where("created_at", ">=", today),
+);
 export const stockRef = (shopId: string, stockId: string) =>
     doc(db, `shops/${shopId}/stocks/${stockId}`).withConverter(stockConverter)
 

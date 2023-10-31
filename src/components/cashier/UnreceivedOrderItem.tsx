@@ -2,12 +2,12 @@ import {Order} from "../../modules/redux/order/orderTypes";
 import {Product} from "../../modules/redux/product/productTypes";
 import StickyNote from "../StickyNote";
 import {Button, Divider, IconButton, Stack, Typography} from "@mui/material";
-import {getOrderLabel} from "../../modules/util/orderUtils";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
 import React, {ReactNode, useMemo, useState} from "react";
 import {SxProps} from "@mui/system";
 import {Theme} from "@mui/material/styles/createTheme";
+import {getOrderLabel} from "../../modules/util/orderUtils";
 
 export const UnreceivedOrderItem = (props: {
     order: Order,
@@ -25,7 +25,7 @@ export const UnreceivedOrderItem = (props: {
 
             if (product !== undefined) {
                 const needAmount = Object.values(order.product_status)
-                    .filter(s => s.status !== "received" && s.productId === prodId).length;
+                    .filter(s => s.status !== "received" && s.product_id === prodId).length;
                 const stockAmount = product.stock;
 
                 if (needAmount > stockAmount) {
@@ -69,7 +69,7 @@ export const UnreceivedOrderItem = (props: {
                 <>
                     {productStatusKeys.map(pStatusKey => {
                         const pStatus = order.product_status[pStatusKey];
-                        const product = products.find(p => p.id === pStatus.productId);
+                        const product = products.find(p => p.id === pStatus.product_id);
                         const isReceived = pStatus.status === 'received'
                         const noStock = (product?.stock ?? 0) <= 0;
 

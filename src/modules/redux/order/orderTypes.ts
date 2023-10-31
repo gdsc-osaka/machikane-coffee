@@ -7,27 +7,14 @@ export type ProductAmount = {
     [K in string]: number
 };
 
-export type Status = "idle" | "working" | "completed"
-
 /**
  * 商品IDと提供の状況 (受け取り済み、完成済み)
  * @property product_id 商品ID
- * @property status 初期状態(idle), 作成中(working), 完成済み(completed) のいずれか
- * @property barista_id 担当中のbaristaのid
- * @property start_working_at statusがworkingになった時刻
+ * @property status 初期状態(idle),受取済(received)のいずれか
  */
-export type OrderStatus<T extends Timestamp | FieldValue> = {
+export type ProductStatus = {
     product_id: string;
-    status: Status;
-    barista_id: number;
-    start_working_at: T;
-}
-
-/**
- * OrderStatus のマップ. キーは任意の文字列
- */
-export type OrderStatuses<T extends Timestamp | FieldValue> = {
-    [K in string]: OrderStatus<T>
+    status: "idle" | "received";
 }
 
 /**
@@ -46,13 +33,10 @@ type OrderTemplate<T extends Timestamp | FieldValue, N extends number | FieldVal
     status: "idle" | "received";
     stocksRef: D;
     product_status: {
-        [k in string]: {
-            productId: string;
-            status: "idle" | "received"
-        }
+        [k in string]: ProductStatus
     }
     required_product_amount: {
-        [p in string]: N
+        [product_id in string]: N
     }
     // データ追加時は以下のみ
     product_amount: ProductAmount;
@@ -69,7 +53,9 @@ export type OrderForAdd = Omit<Order, "id" | "index" | "created_at" | "delay_sec
 /**
  * データの更新時に使用する Order
  */
-export type OrderForUpdate = Partial<OrderTemplate<FieldValue | Timestamp, FieldValue | number, FieldValue | DocumentReference[]>>;
+export type OrderForUpdate = Partial<OrderTemplate<FieldValue | Timestamp, FieldValue | number, FieldValue | DocumentReference[]>> & {
+    [k in `required_product_amount.${string}`]: FieldValue
+};
 
 /**
  * データを Firestore に送信するとき, 一部フィールドを FieldValue に変更するための型

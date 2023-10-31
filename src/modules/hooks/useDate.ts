@@ -1,6 +1,10 @@
 import {useEffect, useState} from "react";
 
-export const useDate = (updateSec?: number) => {
+/**
+ * Dateをリアルタイムで取得する
+ * @param updateSec 更新する間隔(秒単位). デフォルトは1秒
+ */
+export const useDate = (updateSec: number = 1) => {
     const [time, setTime] = useState(new Date());
 
     useEffect(() => {

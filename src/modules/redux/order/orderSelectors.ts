@@ -2,7 +2,7 @@ import {RootState} from "../store";
 import {Order} from "./orderTypes";
 import {selectAllProduct} from "../product/productsSlice";
 import {Product} from "../product/productTypes";
-import {isOrderCompleted} from "./orderUtils";
+import {isOrderCompleted} from "../../util/orderUtils";
 
 /**
  * createdが新しい方が先にソートする

@@ -16,47 +16,48 @@ import {
     WriteBatch,
     writeBatch
 } from "firebase/firestore";
-import {getToday} from "../../util/dateUtils";
+import {getToday, today} from "../../util/dateUtils";
 import {db} from "../../firebase/firebase";
 import {orderConverter, stockConverter} from "../../firebase/converters";
 import {createAsyncThunk, Dispatch} from "@reduxjs/toolkit";
 import lodash from 'lodash';
 import {RootState} from "../store";
 import {Order, OrderForAdd, OrderForUpdate, PayloadOrder} from "./orderTypes";
-import {
-    orderAdded,
-    orderIdle,
-    orderPending,
-    orderRejected,
-    orderRemoved,
-    orderSucceeded,
-    orderUpdated
-} from "./ordersSlice";
+import {orderAdded, orderIdle, orderPending, orderRemoved, orderSucceeded, orderUpdated} from "./ordersSlice";
 import {PayloadStock, Stock, StockForUpdate} from "../stock/stockTypes";
 import {selectAllOrders} from "./orderSelectors";
 import {selectAllStocks} from "../stock/stockSelectors";
 import {productRef} from "../product/productsThunk";
 import {ProductForUpdate} from "../product/productTypes";
 import {stockRef} from "../stock/stocksThunk";
-import {isOrderAllReceived} from "./orderUtils";
+import {isOrderAllReceived} from "../../util/orderUtils";
 
 const { v4: uuidv4 } = require('uuid');
 
 const ordersRef = (shopId: string) => {
-    const today = Timestamp.fromDate(getToday());
-    return query(collection(db, `shops/${shopId}/orders`),
-        where("created_at", ">=", today), orderBy("created_at", "desc"));
+    return query(
+        collection(db, `shops/${shopId}/orders`),
+        where("created_at", ">=", today),
+        orderBy("created_at", "desc")
+    );
 }
 
 const ordersQuery = (shopId: string, ...queryConstraints: QueryConstraint[]) => {
     const today = Timestamp.fromDate(getToday());
-    return query(collection(db, `shops/${shopId}/orders`).withConverter(orderConverter),
-        where("created_at", ">=", today), orderBy("created_at", "desc"), ...queryConstraints);
+    return query(
+        collection(db, `shops/${shopId}/orders`).withConverter(orderConverter),
+        where("created_at", ">=", today),
+        orderBy("created_at", "desc"),
+        ...queryConstraints
+    );
 }
-const orderQueryByIndex = (shopId: string, orderIndex: number, ...queryConstraints: QueryConstraint[]) => {
+const orderQueryByIndex = (shopId: string, orderIndex: number) => {
     const today = Timestamp.fromDate(getToday());
-    return query(collection(db, `shops/${shopId}/orders`).withConverter(orderConverter),
-        where("created_at", ">=", today), where("index", "==", orderIndex), ...queryConstraints);
+    return query(
+        collection(db, `shops/${shopId}/orders`).withConverter(orderConverter),
+        where("created_at", ">=", today),
+        where("index", "==", orderIndex)
+    );
 }
 
 const orderRef = (shopId: string, orderId: string) => doc(db, `shops/${shopId}/orders/${orderId}`)
@@ -76,15 +77,14 @@ export const fetchOrders = createAsyncThunk<
         return {orders, shopId}
     });
 
-export const fetchOrderByIndex = createAsyncThunk<
-    { shopId: stinrg, order: Order },
-    { shopId: string, orderIndex: number },
-    {  }
->("orders/fetchOrderByIndex",
-    async ({shopId, orderIndex}, {}) => {
-    const order = await getDocs(orderQueryByIndex(shopId, orderIndex))
+export const fetchOrderByIndex = async ({shopId, orderIndex}: {shopId: string, orderIndex: number}) => {
+    const snapshot = await getDocs(orderQueryByIndex(shopId, orderIndex));
 
-});
+    if (snapshot.empty) return undefined;
+
+    const orders = snapshot.docs.map(d => d.data());
+    return orders[0];
+};
 
 /**
  * order をリアルタイム更新する. ユーザー側で使用されることを想定
@@ -118,38 +118,21 @@ export const streamOrders = (shopId: string, {dispatch}: { dispatch: Dispatch },
     };
 }
 
-export const streamOrder = async (shopId: string, orderIndex: number, {dispatch}: { dispatch: Dispatch }) => {
-    dispatch(orderPending({shopId: shopId}))
-    const _query = orderQueryByIndex(shopId, orderIndex);
+export const streamOrder = (shopId: string, orderId: string, {dispatch}: { dispatch: Dispatch }) => {
+    dispatch(orderSucceeded({shopId: shopId}))
 
-    try {
-        const snapshot = await getDocs(_query);
+    const unsubscribe = onSnapshot(orderRef(shopId, orderId), (doc) => {
+        const order = doc.data();
 
-        if (snapshot.empty) {
-            return Promise.reject(`Order not found.`);
+        if (order) {
+            dispatch(orderUpdated({shopId, order}));
         }
+    });
 
-        const doc = snapshot.docs[0];
-
-        const unsubscribe = onSnapshot(doc.ref.withConverter(orderConverter), (doc) => {
-            const order = doc.data();
-
-            if (order) {
-                dispatch(orderUpdated({shopId, order}));
-            }
-        });
-
-        return () => {
-            dispatch(orderIdle({shopId}));
-            unsubscribe();
-        };
-
-    } catch (e) {
-        if (e instanceof Error) {
-            dispatch(orderRejected({shopId: shopId, error: e}))
-            return Promise.reject(e);
-        }
-    }
+    return () => {
+        dispatch(orderIdle({shopId}));
+        unsubscribe();
+    };
 }
 
 export const addOrder = createAsyncThunk<
@@ -176,7 +159,7 @@ export const addOrder = createAsyncThunk<
         const amount = payloadOrder.product_amount[productId];
         for (let i = 0; i < amount; i++) {
             payloadOrder.product_status[`${productId}_${i+1}`] = {
-                productId: productId,
+                product_id: productId,
                 status: "idle"
             }
         }
@@ -326,7 +309,7 @@ export const receiveOrder = createAsyncThunk<
     for (const productStatusKey in order.product_status) {
         const productStatus = order.product_status[productStatusKey];
         if (productStatus.status === 'idle') {
-            const prodId = productStatus.productId;
+            const prodId = productStatus.product_id;
             stockAmountLeft.set(prodId, (stockAmountLeft.get(prodId) ?? 0) + 1)
 
             const newerOrders = latestOrders /* このOrder以降のrequired_product_amountを更新すべきOrder */
@@ -388,7 +371,7 @@ export const receiveOrderIndividual = createAsyncThunk<
     const state = getState();
     const latestStocks = selectAllStocks(state, shopId);
     const latestOrders = selectAllOrders(state, shopId);
-    const prodId = order.product_status[productStatusKey].productId;
+    const prodId = order.product_status[productStatusKey].product_id;
     const newerOrders = latestOrders /* このOrder以降のrequired_product_amountを更新すべきOrder */
         .filter(o => o.created_at.seconds > order.created_at.seconds && Object.keys(o.product_amount).includes(prodId));
 
@@ -527,7 +510,7 @@ export const unreceiveOrder = createAsyncThunk<
 function receiveIndividualBatch(args: {batch: WriteBatch, shopId: string, newOrder: Order, productStatusKey: string, newerOrders: Order[]}) {
     const {batch, shopId, newOrder, productStatusKey, newerOrders} = args;
 
-    const prodId = newOrder.product_status[productStatusKey].productId;
+    const prodId = newOrder.product_status[productStatusKey].product_id;
 
     // Update This Order
     newOrder.product_status[productStatusKey].status = 'received';
@@ -540,7 +523,7 @@ function receiveIndividualBatch(args: {batch: WriteBatch, shopId: string, newOrd
         product_status: newOrder.product_status,
         [`required_product_amount.${prodId}`]: increment(-1),
         status: orderStatus
-    }) // FIXME ドット記法にも型を対応する
+    } as OrderForUpdate)
 
     // Update Products
     batch.update(productRef(shopId, prodId), {
@@ -551,7 +534,7 @@ function receiveIndividualBatch(args: {batch: WriteBatch, shopId: string, newOrd
     for (const newerOrder of newerOrders) {
         batch.update(orderRef(shopId, newerOrder.id), {
             [`required_product_amount.${prodId}`]: increment(-1)
-        }) // FIXME ドット記法にも型を対応する
+        } as OrderForUpdate) // FIXME ドット記法にも型を対応する
     }
 }
 
