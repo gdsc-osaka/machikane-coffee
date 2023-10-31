@@ -492,9 +492,14 @@ export const unreceiveOrder = createAsyncThunk<
     console.log("Update Stocks")
     // Update Stocks
     for (const stRef of order.stocksRef) {
-        batch.update(stRef, {
-            status: 'completed'
-        } as StockForUpdate)
+        console.log(stRef)
+        try {
+            batch.update(doc(db, stRef.path), {
+                status: 'completed'
+            } as StockForUpdate)
+        } catch (e) {
+            console.error(e);
+        }
     }
 
     try {
