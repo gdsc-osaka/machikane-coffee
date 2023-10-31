@@ -436,10 +436,30 @@ export const receiveOrderIndividual = createAsyncThunk<
 
     const newOrder = lodash.cloneDeep(order);
 
-    receiveIndividualBatch({
-        batch, shopId, newOrder,
-        productStatusKey, newerOrders
-    })
+    // Update This Order
+    newOrder.product_status[productStatusKey].status = 'received';
+    newOrder.required_product_amount[prodId] -= 1; // 商品の必要数を1減らす
+    const allReceived = isOrderAllReceived(newOrder);
+    const orderStatus = allReceived ? 'received' : 'idle';
+    newOrder.status = orderStatus;
+
+    batch.update(orderRef(shopId, newOrder.id), {
+        product_status: newOrder.product_status,
+        [`required_product_amount.${prodId}`]: increment(-1),
+        status: orderStatus
+    }) // FIXME OrderForUpdateを使う
+
+    // Update Products
+    batch.update(productRef(shopId, prodId), {
+        stock: increment(-1)
+    } as ProductForUpdate)
+
+    // Update Other Orders
+    for (const newerOrder of newerOrders) {
+        batch.update(orderRef(shopId, newerOrder.id), {
+            [`required_product_amount.${prodId}`]: increment(-1),
+        }) // FIXME OrderForUpdateを使う
+    }
 
     // Update Stocks
     const stock = latestStocks /* 関係づけられているStockでproduct_idが一致するもの */
@@ -492,13 +512,12 @@ export const unreceiveOrder = createAsyncThunk<
 
     const batch = writeBatch(db);
 
-    console.log("Update Order")
-    // Update Order
+    // Orderの差分を作成
     const orderForUpdate: OrderForUpdate = {
-        product_status: {},
         status: 'idle',
-        required_product_amount: {},
+        product_status: {}
     };
+
     for (const pStatusKey in order.product_status) {
         const prodStatus = order.product_status[pStatusKey];
 
@@ -507,49 +526,35 @@ export const unreceiveOrder = createAsyncThunk<
         }
     }
 
-    console.log("Update Products and orderForUpdate.required_product_amount")
-    // Update Products and orderForUpdate.required_product_amount
+    // Update Products & required_product_amount の差分を作成
+    const reqProdAmDiff: OrderForUpdate = {}; /* order と newerOrder で使う required_product_amount の差分 */
+
     for (const prodId in order.product_amount) {
-        console.log(prodId)
         const amount = order.product_amount[prodId];
+
         batch.update(productRef(shopId, prodId), {
             stock: increment(amount)
         } as ProductForUpdate)
 
-        console.log(`__${prodId}`)
-        // Update required_product_amount
-        try {
-
-            orderForUpdate.required_product_amount![prodId] = increment(amount);
-        } catch (e) {
-            console.error(e)
-        }
-        console.log(`____${prodId}`)
+        reqProdAmDiff[`required_product_amount.${prodId}`] = increment(amount);
     }
 
-    console.log("batch.update")
-    batch.update(orderRef(shopId, order.id), orderForUpdate);
+    // Update Order
+    batch.update(orderRef(shopId, order.id), {
+        status: 'idle',
+        [`product_status.${prodIds}`]: 'idle',
+        ...reqProdAmDiff
+    });
 
-    console.log("Update Other Order")
     // Update Other Orders (required_product_amountを増やす)
     for (const newerOrder of newerOrders) {
-        let orderDiff = {};
-
-        for (const prodId in order.product_amount) {
-            orderDiff = {
-                ...orderDiff,
-                // ドット記法でprodIdだけ更新する
-                [`required_product_amount.${prodId}`]: increment(order.product_amount[prodId])
-            } // FIXME ドット記法にも型を対応する
-        }
-
-        batch.update(orderRef(shopId, newerOrder.id), orderDiff);
+        batch.update(orderRef(shopId, newerOrder.id), {
+            ...reqProdAmDiff
+        });
     }
 
-    console.log("Update Stocks")
     // Update Stocks
     for (const stRef of order.stocksRef) {
-        console.log(stRef)
         try {
             batch.update(doc(db, stRef.path), {
                 status: 'completed'
@@ -560,7 +565,6 @@ export const unreceiveOrder = createAsyncThunk<
     }
 
     try {
-        console.log(orderForUpdate);
         await batch.commit();
         return {shopId, order: {...orderForUpdate, id: order.id}};
     } catch (e) {
@@ -568,37 +572,6 @@ export const unreceiveOrder = createAsyncThunk<
         return rejectWithValue(e);
     }
 });
-
-function receiveIndividualBatch(args: {batch: WriteBatch, shopId: string, newOrder: Order, productStatusKey: string, newerOrders: Order[]}) {
-    const {batch, shopId, newOrder, productStatusKey, newerOrders} = args;
-
-    const prodId = newOrder.product_status[productStatusKey].product_id;
-
-    // Update This Order
-    newOrder.product_status[productStatusKey].status = 'received';
-    newOrder.required_product_amount[prodId] -= 1; // 商品の必要数を1減らす
-    const allReceived = isOrderAllReceived(newOrder);
-    const orderStatus = allReceived ? 'received' : 'idle';
-    newOrder.status = orderStatus;
-
-    batch.update(orderRef(shopId, newOrder.id), {
-        product_status: newOrder.product_status,
-        [`required_product_amount.${prodId}`]: increment(-1),
-        status: orderStatus
-    }) // FIXME OrderForUpdateを使う
-
-    // Update Products
-    batch.update(productRef(shopId, prodId), {
-        stock: increment(-1)
-    } as ProductForUpdate)
-
-    // Update Other Orders
-    for (const newerOrder of newerOrders) {
-        batch.update(orderRef(shopId, newerOrder.id), {
-            [`required_product_amount.${prodId}`]: increment(-1),
-        }) // FIXME OrderForUpdateを使う
-    }
-}
 
 /**
  * Orderに紐づけられたstockを入れ替えてreceivedにする
