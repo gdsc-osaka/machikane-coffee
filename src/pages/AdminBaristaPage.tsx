@@ -7,7 +7,7 @@ import {BaristaMap, ShopForAdd} from "../modules/redux/shop/shopTypes";
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
 import UndoRoundedIcon from '@mui/icons-material/UndoRounded';
 import StickyNote from "../components/StickyNote";
-import {selectAllProduct, selectProductStatus} from "../modules/redux/product/productsSlice";
+import {selectAllProducts, selectProductStatus} from "../modules/redux/product/productsSlice";
 import {MotionList, MotionListItem} from "src/components/motion/motionList";
 import {Product} from "../modules/redux/product/productTypes";
 import {useAuth} from "../AuthGuard";
@@ -36,7 +36,7 @@ const AdminBaristaPage = () => {
     const stocks = useAppSelector(state => selectStocksForBarista(state, shopId, selectedId));
 
     const productStatus = useAppSelector(state => selectProductStatus(state, shopId))
-    const products = useAppSelector(state => selectAllProduct(state, shopId));
+    const products = useAppSelector(state => selectAllProducts(state, shopId));
 
     const shopUnsubscribe = useAppSelector(selectShopUnsubscribe);
 

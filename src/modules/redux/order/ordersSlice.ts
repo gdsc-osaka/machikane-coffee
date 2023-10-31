@@ -51,6 +51,7 @@ const ordersSlice = createSlice({
         orderAdded(state, action: PayloadAction<{ shopId: string, order: Order }>) {
             const {order, shopId} = action.payload;
 
+            console.log("added")
             ensureInitialized(state, shopId);
             state[shopId].data.push(order);
         },
@@ -131,52 +132,52 @@ const ordersSlice = createSlice({
                 state[shopId].data = orders.sort((a, b) => a.created_at.toDate().getTime() - b.created_at.toDate().getTime());
             })
 
-        builder.addCase(addOrder.fulfilled, (state, action) => {
-            const {shopId, order} = action.payload;
-
-            ensureInitialized(state, shopId);
-
-            state[shopId].data.push(order);
-        })
-
-        builder.addCase(updateOrder.fulfilled, (state, action) => {
-            const {order, shopId} = action.payload;
-
-            ensureInitialized(state, shopId);
-
-            state[shopId].data.update(e => e.id === order.id, order);
-        });
-
-        builder.addCase(deleteOrder.fulfilled, (state, action) => {
-            const {order, shopId} = action.payload;
-
-            ensureInitialized(state, shopId);
-            state[shopId].data.remove(e => e.id === order.id);
-        });
-
-        builder.addCase(receiveOrderIndividual.fulfilled, (state, action) => {
-            const {shopId, order} = action.payload;
-
-            ensureInitialized(state, shopId);
-            state[shopId].data.update(e => e.id === order.id, order);
-        })
-
-        builder.addCase(receiveOrder.fulfilled, (state, action) => {
-            const {shopId, order} = action.payload;
-
-            ensureInitialized(state, shopId);
-            state[shopId].data.update(e => e.id === order.id, order);
-        })
-        builder.addCase(unreceiveOrder.fulfilled, (state, action) => {
-            const {shopId, order} = action.payload;
-
-            ensureInitialized(state, shopId);
-            const oldOrder = state[shopId].data.find(s => s.id === order.id);
-
-            if (oldOrder) {
-                state[shopId].data.update(o => o.id === order.id, mergeOrderForUpdateAndOrder(order, oldOrder));
-            }
-        })
+        // builder.addCase(addOrder.fulfilled, (state, action) => {
+        //     const {shopId, order} = action.payload;
+        //
+        //     ensureInitialized(state, shopId);
+        //
+        //     state[shopId].data.push(order);
+        // })
+        //
+        // builder.addCase(updateOrder.fulfilled, (state, action) => {
+        //     const {order, shopId} = action.payload;
+        //
+        //     ensureInitialized(state, shopId);
+        //
+        //     state[shopId].data.update(e => e.id === order.id, order);
+        // });
+        //
+        // builder.addCase(deleteOrder.fulfilled, (state, action) => {
+        //     const {order, shopId} = action.payload;
+        //
+        //     ensureInitialized(state, shopId);
+        //     state[shopId].data.remove(e => e.id === order.id);
+        // });
+        //
+        // builder.addCase(receiveOrderIndividual.fulfilled, (state, action) => {
+        //     const {shopId, order} = action.payload;
+        //
+        //     ensureInitialized(state, shopId);
+        //     state[shopId].data.update(e => e.id === order.id, order);
+        // })
+        //
+        // builder.addCase(receiveOrder.fulfilled, (state, action) => {
+        //     const {shopId, order} = action.payload;
+        //
+        //     ensureInitialized(state, shopId);
+        //     state[shopId].data.update(e => e.id === order.id, order);
+        // })
+        // builder.addCase(unreceiveOrder.fulfilled, (state, action) => {
+        //     const {shopId, order} = action.payload;
+        //
+        //     ensureInitialized(state, shopId);
+        //     const oldOrder = state[shopId].data.find(s => s.id === order.id);
+        //
+        //     if (oldOrder) {
+        //         state[shopId].data.update(o => o.id === order.id, mergeOrderForUpdateAndOrder(order, oldOrder));
+        //     }
+        // })
     },
 });
 

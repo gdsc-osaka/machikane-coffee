@@ -1,6 +1,6 @@
 import {RootState} from "../store";
 import {Order} from "./orderTypes";
-import {selectAllProduct} from "../product/productsSlice";
+import {selectAllProducts} from "../product/productsSlice";
 import {Product} from "../product/productTypes";
 import {isOrderCompleted} from "../../util/orderUtils";
 
@@ -20,7 +20,7 @@ function sortByCompleted(a: Order, b: Order, products: Product[]) {
 export const selectAllOrders = (state: RootState, shopId: string) =>
     state.order[shopId]?.data.slice().sort(sortByCreated) ?? [];
 export const selectAllOrdersByCompleted = (state: RootState, shopId: string) =>
-    state.order[shopId]?.data.slice().sort(sortByCreated).sort((a, b) => sortByCompleted(a, b, selectAllProduct(state, shopId))) ?? [];
+    state.order[shopId]?.data.slice().sort(sortByCreated).sort((a, b) => sortByCompleted(a, b, selectAllProducts(state, shopId))) ?? [];
 export const selectAllOrdersInverse = (state: RootState, shopId: string) =>
     state.order[shopId]?.data.slice().sort((a, b) => sortByCreated(b, a)) ?? [];
 /**

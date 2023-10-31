@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {selectAllProduct, selectProductStatus,} from "../modules/redux/product/productsSlice";
+import {selectAllProducts, selectProductStatus,} from "../modules/redux/product/productsSlice";
 import {useAppDispatch, useAppSelector} from "../modules/redux/store";
 import {useParams} from "react-router-dom";
 import {Order, ProductAmount} from "../modules/redux/order/orderTypes";
@@ -20,9 +20,8 @@ import {useAuth} from "../AuthGuard";
 import {
     addOrder,
     deleteOrder,
-    fetchOrders,
     receiveOrder,
-    receiveOrderIndividual,
+    receiveOrderIndividual, streamOrders,
     unreceiveOrder
 } from "../modules/redux/order/ordersThunk";
 import {streamProducts} from "../modules/redux/product/productsThunk";
@@ -47,7 +46,7 @@ const AdminCashierPage = () => {
 
     const dispatch = useAppDispatch();
     const auth = useAuth();
-    const products = useAppSelector(state => selectAllProduct(state, shopId));
+    const products = useAppSelector(state => selectAllProducts(state, shopId));
     const productStatus = useAppSelector(state => selectProductStatus(state, shopId));
 
     const orderStatus = useAppSelector(state => selectOrderStatus(state, shopId));
@@ -69,25 +68,31 @@ const AdminCashierPage = () => {
 
     useEffect(() => {
         if (orderStatus === "idle") {
-            dispatch(fetchOrders(shopId));
+            const unsub = streamOrders(shopId, {dispatch});
+
+            return () => {
+                unsub();
+            }
         }
-    }, [orderStatus, shopId, dispatch])
+    }, [])
 
     useEffect(() => {
-        let prodUnsub = () => {};
-        let stockUnsub = () => {};
-
         if (productStatus === "idle") {
-            prodUnsub = streamProducts(shopId, {dispatch})
-        }
+            const unsub = streamProducts(shopId, {dispatch});
 
+            return () => {
+                unsub();
+            }
+        }
+    }, []);
+
+    useEffect(() => {
         if (stockStatus === "idle") {
-            stockUnsub = streamStocks(shopId, {dispatch})
-        }
+            const unsub = streamStocks(shopId, {dispatch})
 
-        return () => {
-            prodUnsub();
-            stockUnsub();
+            return () => {
+                unsub();
+            }
         }
         // empty array でないと unsub() が2回呼ばれる
     }, []);

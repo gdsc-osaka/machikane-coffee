@@ -7,6 +7,8 @@ export type ProductAmount = {
     [K in string]: number
 };
 
+type Status = "idle" | "received";
+
 /**
  * 商品IDと提供の状況 (受け取り済み、完成済み)
  * @property product_id 商品ID
@@ -14,7 +16,7 @@ export type ProductAmount = {
  */
 export type ProductStatus = {
     product_id: string;
-    status: "idle" | "received";
+    status: Status;
 }
 
 /**
@@ -30,7 +32,7 @@ type OrderTemplate<T extends Timestamp | FieldValue, N extends number | FieldVal
     index: number;
     created_at: T;
     delay_seconds: N;
-    status: "idle" | "received";
+    status: Status;
     stocksRef: D;
     product_status: {
         [k in string]: ProductStatus
@@ -40,7 +42,7 @@ type OrderTemplate<T extends Timestamp | FieldValue, N extends number | FieldVal
     }
     // データ追加時は以下のみ
     product_amount: ProductAmount;
-};
+} & DotNotation<N>;
 
 export type Order = OrderTemplate<Timestamp, number, DocumentReference[]>;
 
@@ -53,8 +55,11 @@ export type OrderForAdd = Omit<Order, "id" | "index" | "created_at" | "delay_sec
 /**
  * データの更新時に使用する Order
  */
-export type OrderForUpdate = Partial<OrderTemplate<FieldValue | Timestamp, FieldValue | number, FieldValue | DocumentReference[]>> & {
-    [k in `required_product_amount.${string}`]: FieldValue
+export type OrderForUpdate = Partial<OrderTemplate<FieldValue | Timestamp, FieldValue | number, FieldValue | DocumentReference[]>>;
+type DotNotation<N extends FieldValue | number> = {
+    [k in `product_status.${string}`]: ProductStatus
+} & {
+    [k in `required_product_amount.${string}`]: N
 };
 
 /**

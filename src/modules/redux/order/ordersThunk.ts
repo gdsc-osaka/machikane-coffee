@@ -3,7 +3,7 @@ import {
     arrayRemove,
     arrayUnion,
     collection,
-    doc,
+    doc, FieldValue,
     getDocs,
     increment,
     limit,
@@ -30,7 +30,8 @@ import {selectAllStocks} from "../stock/stockSelectors";
 import {productRef} from "../product/productsThunk";
 import {ProductForUpdate} from "../product/productTypes";
 import {stockRef} from "../stock/stocksThunk";
-import {isOrderAllReceived} from "../../util/orderUtils";
+import {isOrderAllReceived, isOrderCompleted} from "../../util/orderUtils";
+import {selectAllProducts} from "../product/productsSlice";
 
 const { v4: uuidv4 } = require('uuid');
 
@@ -103,6 +104,10 @@ export const streamOrders = (shopId: string, {dispatch}: { dispatch: Dispatch },
             }
             if (change.type === "modified") {
                 const order = change.doc.data();
+
+                console.log("updated")
+                console.log(order);
+                console.log(change.doc.metadata.hasPendingWrites);
                 dispatch(orderUpdated({shopId, order}));
             }
             if (change.type === "removed") {
@@ -151,7 +156,8 @@ export const addOrder = createAsyncThunk<
         delay_seconds: 0
     }
 
-    const unreceivedOrders = selectAllOrders(getState(), shopId).filter(o => o.status !== "received");
+    const allOrders = selectAllOrders(getState(), shopId);
+    const unreceivedOrders = allOrders.filter(o => o.status !== "received");
     const productIds: String[] = [];
 
     for (const productId in payloadOrder.product_amount) {
@@ -181,14 +187,13 @@ export const addOrder = createAsyncThunk<
 
 
     try {
-        // TODO: Transaction を使う
-        const lastOrderSnapshot = await getDocs(ordersQuery(shopId, limit(1)));
+        // // TODO: Transaction を使う
+        // const lastOrderSnapshot = await getDocs(ordersQuery(shopId, limit(1)));
 
-        // 今日この注文以前に注文があった場合、最新の注文の index + 1 を今回の注文の番号にする & 待ち時間を変更する
-        if (!lastOrderSnapshot.empty) {
-            const lastOrder = lastOrderSnapshot.docs[0].data();
+        const lastOrders = allOrders.sort((a, b) => b.created_at.seconds - a.created_at.seconds);
 
-            payloadOrder.index = lastOrder.index + 1;
+        if (lastOrders.length !== 0) {
+            payloadOrder.index = lastOrders[0].index + 1;
         }
 
         const batch = writeBatch(db);
@@ -298,42 +303,104 @@ export const receiveOrder = createAsyncThunk<
     { shopId: string, order: Order },
     { state: RootState }
 >('orders/receiveOrder', async ({shopId, order}, {getState, rejectWithValue}) => {
+    console.log("a");
     const state = getState();
     const latestStocks = selectAllStocks(state, shopId);
-    const latestOrders = selectAllOrders(state, shopId).filter(o => o.created_at.seconds > order.created_at.seconds);
+    const ordersAfterThis = selectAllOrders(state, shopId) /* この注文以降の注文 */
+        .filter(o => o.created_at.seconds > order.created_at.seconds);
+    const latestProducts = selectAllProducts(state, shopId);
+
+    if (!isOrderCompleted(order, latestProducts)) {
+        return rejectWithValue('Order is not completed.')
+    }
 
     const batch = writeBatch(db);
-    const newOrder = lodash.cloneDeep(order);
-    const stockAmountLeft = new Map<string, number>(); /* 必要な在庫数 */
 
+    const stockAmountLeft = Object.assign({}, order.product_amount); /* 残りの必要な在庫数 */
+    const prodStatusDiff: OrderForUpdate = {};
     for (const productStatusKey in order.product_status) {
         const productStatus = order.product_status[productStatusKey];
-        if (productStatus.status === 'idle') {
+
+        if (productStatus.status === 'received') {
             const prodId = productStatus.product_id;
-            stockAmountLeft.set(prodId, (stockAmountLeft.get(prodId) ?? 0) + 1)
+            stockAmountLeft[prodId] -= 1;
 
-            const newerOrders = latestOrders /* このOrder以降のrequired_product_amountを更新すべきOrder */
-                .filter(o => Object.keys(o.product_amount).includes(prodId));
-
-            receiveIndividualBatch({
-                batch, shopId, newOrder,
-                productStatusKey, newerOrders
-            })
+            if (stockAmountLeft[prodId] === 0) {
+                delete stockAmountLeft[prodId];
+                prodStatusDiff[`product_status.${productStatusKey}`] = {
+                    product_id: prodId,
+                    status: 'received'
+                }
+            }
         }
     }
 
-    const productIds = Array.from(stockAmountLeft.keys());
-    const relatedStock = latestStocks.filter(s => s.orderRef.id === order.id && productIds.includes(s.product_id));
-    const alterStocks = latestStocks.filter(s => s.orderRef.id !== order.id && productIds.includes(s.product_id) && s.status === 'completed');
+    console.log("b");
+    // Update Products + calculate reqProdAmoDiff
+    const reqProdAmoDiff: OrderForUpdate = {};
+    for (const productId in stockAmountLeft) {
+        const amLeft = stockAmountLeft[productId];
+
+        if (amLeft > 0) {
+            const incre = increment(-amLeft);
+            reqProdAmoDiff[`required_product_amount.${productId}`] = incre;
+            try {
+                batch.update(productRef(shopId, productId), {
+                    stock: incre
+                } as ProductForUpdate)
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    }
+
+    console.log("c");
+    // Update This Order
+    try {
+        batch.update(orderRef(shopId, order.id), {
+            ...reqProdAmoDiff,
+            ...prodStatusDiff,
+            status: "received"
+        } as OrderForUpdate);
+    } catch (e) {
+        console.error(e);
+    }
+
+    console.log("d");
+    // Update Other Orders
+    for (const orderAfterThis of ordersAfterThis) {
+        try {
+            batch.update(orderRef(shopId, orderAfterThis.id), reqProdAmoDiff);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    console.log("e");
+    console.log(stockAmountLeft)
+    // Update Stocks
+    const productIds = Object.keys(stockAmountLeft);
+    const relatedStock = latestStocks
+        .filter(s => s.orderRef.id === order.id && productIds.includes(s.product_id));
+    const alterStocks = latestStocks
+        .filter(s => s.orderRef.id !== order.id && productIds.includes(s.product_id)
+            && s.status === 'completed');
 
     for (const st of relatedStock) {
         const prodId = st.product_id;
 
         if (st.status === 'completed') {
             // 関連付けられたStockが完成の場合
-            batch.update(stockRef(shopId, st.id), {
-                status: 'received'
-            } as StockForUpdate)
+
+            // Stockが足りてるか確認するため
+            stockAmountLeft[prodId] -= 1;
+            try {
+                batch.update(stockRef(shopId, st.id), {
+                    status: 'received'
+                } as StockForUpdate)
+            } catch (e) {
+                console.error(e);
+            }
 
         } else {
             // 完成でない場合、他の注文ののStockを完成にする
@@ -342,23 +409,29 @@ export const receiveOrder = createAsyncThunk<
             if (altStock) {
                 alterStocks.remove(s => s.id === altStock.id);
                 swapAndReceiveStockBatch(batch, shopId, st, altStock);
+                // Stockが足りてるか確認するため
+                stockAmountLeft[prodId] -= 1;
             }
-
         }
-
-        stockAmountLeft.set(prodId, (stockAmountLeft.get(prodId) ?? 0) - 1)
     }
 
-    // 在庫が足りない場合
-    if (Array.from(stockAmountLeft.values()).find(v => v > 0) !== undefined) {
+    // Stockが足りない場合
+    if (Object.values(stockAmountLeft).find(e => e > 0) !== undefined) {
+        console.log(stockAmountLeft)
         return rejectWithValue('在庫が足りません');
     }
 
+    console.log("f");
     try {
+        console.log({
+            ...reqProdAmoDiff,
+            ...prodStatusDiff,
+        });
         await batch.commit();
-        return {shopId, order: newOrder}
+        return {shopId, order: order}
 
     } catch (e) {
+        console.error(e);
         return rejectWithValue(e);
     }
 })
@@ -528,7 +601,7 @@ function receiveIndividualBatch(args: {batch: WriteBatch, shopId: string, newOrd
         product_status: newOrder.product_status,
         [`required_product_amount.${prodId}`]: increment(-1),
         status: orderStatus
-    } as OrderForUpdate)
+    }) // FIXME OrderForUpdateを使う
 
     // Update Products
     batch.update(productRef(shopId, prodId), {
@@ -538,8 +611,8 @@ function receiveIndividualBatch(args: {batch: WriteBatch, shopId: string, newOrd
     // Update Other Orders
     for (const newerOrder of newerOrders) {
         batch.update(orderRef(shopId, newerOrder.id), {
-            [`required_product_amount.${prodId}`]: increment(-1)
-        } as OrderForUpdate) // FIXME ドット記法にも型を対応する
+            [`required_product_amount.${prodId}`]: increment(-1),
+        }) // FIXME OrderForUpdateを使う
     }
 }
 
@@ -553,33 +626,37 @@ function receiveIndividualBatch(args: {batch: WriteBatch, shopId: string, newOrd
 function swapAndReceiveStockBatch(batch: WriteBatch, shopId: string, stock: Stock, altStock: Stock) {
     const altStockRef = stockRef(shopId, altStock.id);
     const stRef = stockRef(shopId, stock.id);
-    const altStockOrderRef = altStock.orderRef;
-    const stOrderRef = stock.orderRef;
+    const altStockOrderRef = orderRef(shopId, altStock.orderRef.id);
+    const stOrderRef = orderRef(shopId, stock.orderRef.id);
 
     // StockをUpdate
-    batch.update(altStockRef, {
-        status: 'received',
-        orderRef: stock.orderRef
-    } as StockForUpdate)
+    try {
+        batch.update(altStockRef, {
+            status: 'received',
+            orderRef: stock.orderRef
+        } as StockForUpdate)
 
-    batch.update(stRef, {
-        orderRef: altStockOrderRef
-    } as StockForUpdate)
+        batch.update(stRef, {
+            orderRef: altStockOrderRef
+        } as StockForUpdate)
 
-    // Order.stocksRefを交換
-    batch.update(stOrderRef, {
-        stocksRef: arrayRemove(stRef)
-    } as OrderForUpdate)
+        // Order.stocksRefを交換
+        batch.update(stOrderRef, {
+            stocksRef: arrayRemove(stRef)
+        } as OrderForUpdate)
 
-    batch.update(stOrderRef, {
-        stocksRef: arrayUnion(altStockRef)
-    } as OrderForUpdate)
+        batch.update(stOrderRef, {
+            stocksRef: arrayUnion(altStockRef)
+        } as OrderForUpdate)
 
-    batch.update(altStockOrderRef, {
-        stocksRef: arrayRemove(altStockRef)
-    } as OrderForUpdate)
+        batch.update(altStockOrderRef, {
+            stocksRef: arrayRemove(altStockRef)
+        } as OrderForUpdate)
 
-    batch.update(altStockOrderRef, {
-        stocksRef: arrayUnion(stRef)
-    } as OrderForUpdate)
+        batch.update(altStockOrderRef, {
+            stocksRef: arrayUnion(stRef)
+        } as OrderForUpdate)
+    } catch (e) {
+        console.error(e);
+    }
 }

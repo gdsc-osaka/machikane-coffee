@@ -5,7 +5,7 @@ import {useNavigate, useParams, useSearchParams} from "react-router-dom";
 import {Order} from "../modules/redux/order/orderTypes";
 import StickyNote from "../components/StickyNote";
 import {Product} from "../modules/redux/product/productTypes";
-import {selectAllProduct, selectProductStatus} from "../modules/redux/product/productsSlice";
+import {selectAllProducts, selectProductStatus} from "../modules/redux/product/productsSlice";
 import {ShopStatus} from "../modules/redux/shop/shopTypes";
 import {
     selectAllShops,
@@ -56,7 +56,7 @@ const OrderPage = () => {
     const orderStatus = useAppSelector(state => selectOrderStatus(state, shopId))
 
     // Product関連
-    const products = useAppSelector(state => selectAllProduct(state, shopId));
+    const products = useAppSelector(state => selectAllProducts(state, shopId));
     const productStatus = useAppSelector(state => selectProductStatus(state, shopId))
 
     // Shop関連
