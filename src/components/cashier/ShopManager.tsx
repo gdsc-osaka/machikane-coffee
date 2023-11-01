@@ -35,7 +35,7 @@ const ShopManager = () => {
             const unsub = streamShop(shopId, {dispatch});
             return () => unsub();
         }
-    }, [dispatch, shopStatus, shopId]);
+    }, [shopId]);
 
     useEffect(() => {
         if (shop !== undefined) {

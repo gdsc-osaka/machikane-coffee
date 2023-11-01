@@ -80,7 +80,7 @@ const OrderPage = () => {
             const unsub = streamShop(shopId, {dispatch});
             return () => unsub();
         }
-    }, [dispatch, shopStatus, shopId]);
+    }, [shopId]);
 
     useEffect(() => {
         if (orderStatus === 'idle' && orderId !== '') {

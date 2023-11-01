@@ -46,15 +46,13 @@ const AdminBaristaPage = () => {
             const unsub = streamShop(shopId, {dispatch});
             return () => unsub();
         }
-    }, [dispatch, shopStatus, shopId]);
+    }, [shopId]);
 
     useEffect(() => {
         if (stockStatus === "idle") {
             const unsub = streamStocks(shopId, {dispatch})
 
-            return () => {
-                unsub()
-            }
+            return () => unsub()
         }
         // empty array でないと unsub() が2回呼ばれる
     }, []);

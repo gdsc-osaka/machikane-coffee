@@ -39,7 +39,7 @@ const TimerPage = () => {
             const unsub = streamShop(shopId, {dispatch});
             return () => unsub();
         }
-    }, [dispatch, shopStatus, shopId]);
+    }, [shopId]);
   useEffect(() => {
       if (orderStatus === "idle" || orderStatus === "failed") {
           streamOrders(shopId, {dispatch});
