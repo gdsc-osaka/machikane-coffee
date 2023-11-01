@@ -85,6 +85,7 @@ export const {shopAdded, shopUpdated, shopRemoved, shopSucceeded, shopIdle} = sh
  */
 export const selectShopById = (state: RootState, shopId: string) => state.shop.data.find(e => e.id === shopId);
 export const selectAllShops = (state: RootState) => state.shop.data;
+export const selectPublicShops = (state: RootState) => selectAllShops(state).filter(s => s.status !== 'inactive');
 export const selectShopStatus = (state: RootState) => state.shop.status;
 /**
  * 店が pause_ordering のとき, 何秒遅延しているかを返します. shopId に一致する Shop がない場合, 0 を返します.

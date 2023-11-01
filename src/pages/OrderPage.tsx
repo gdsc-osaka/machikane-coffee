@@ -7,7 +7,12 @@ import StickyNote from "../components/StickyNote";
 import {Product} from "../modules/redux/product/productTypes";
 import {selectAllProducts} from "../modules/redux/product/productsSlice";
 import {ShopStatus} from "../modules/redux/shop/shopTypes";
-import {selectAllShops, selectShopById, selectShopDelaySeconds} from "../modules/redux/shop/shopsSlice";
+import {
+    selectAllShops,
+    selectShopById,
+    selectShopDelaySeconds,
+    selectShopStatus
+} from "../modules/redux/shop/shopsSlice";
 import DelayContainer from "../components/User/delayContainer";
 import MyMarkdown from "src/components/MyMarkdown";
 import {MotionList, MotionListItem} from "../components/motion/motionList";
@@ -18,6 +23,7 @@ import {isOrderCompleted} from "../modules/util/orderUtils";
 import {useDate} from "../modules/hooks/useDate";
 import {MotionDivider} from "../components/motion/MotionDivider";
 import {useStreamEffect} from "../modules/hooks/useStreamEffect";
+import {useAuth} from "../AuthGuard";
 
 // queryParamで使うキー
 const orderIndexParamKey = 'order';
@@ -44,6 +50,7 @@ const OrderPage = () => {
     const shopId = params.shopId ?? '';
     const [searchParams, setSearchParams] = useSearchParams();
     const paramOrderIndex = searchParams.get(orderIndexParamKey);
+    const authState = useAuth();
 
     // Order関連
     const order = useAppSelector(state => selectOrderById(state, shopId, orderId));
@@ -54,6 +61,7 @@ const OrderPage = () => {
 
     // Shop関連
     const shop = useAppSelector((state: RootState) => selectShopById(state, shopId));
+    const shopStatus = useAppSelector(state => selectShopStatus(state));
     const allShops = useAppSelector(selectAllShops);
     const delaySec = useAppSelector(state => selectShopDelaySeconds(state, shopId));
 
@@ -70,9 +78,8 @@ const OrderPage = () => {
     }, [orderId])
 
     useEffect(() => {
-        if (shopId !== undefined && allShops.length !== 0 &&
-            !allShops.map(s => s.id).includes(shopId)) {
-            // 存在しないshop id なら
+        // shopIdに該当するshopが存在しないあるいはadmin権限がないユーザーがinactiveのショップを開いた場合
+        if (shopStatus === 'succeeded' && (shop === undefined || (shop.status === 'inactive' && authState.role === 'user'))) {
             setDialogState({
                 open: true,
                 title: "該当するIDの店舗が見つかりません",
@@ -82,7 +89,7 @@ const OrderPage = () => {
                 }
             })
         }
-    }, [shopId, allShops]);
+    }, [shopStatus, shop])
 
     useEffect(() => {
         const oIndex = Number(paramOrderIndex);

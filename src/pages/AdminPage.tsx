@@ -1,9 +1,18 @@
 import React, {useEffect, useState} from "react";
-import {Button, Card, InputAdornment, Link as LinkText, Stack, Typography} from "@mui/material";
+import {
+    Button,
+    Card,
+    InputAdornment,
+    Link as LinkText,
+    Stack,
+    ToggleButton,
+    ToggleButtonGroup,
+    Typography
+} from "@mui/material";
 import {useAppDispatch, useAppSelector} from "../modules/redux/store";
 import {selectAllShops, selectShopStatus} from "../modules/redux/shop/shopsSlice";
 import TextField from "@mui/material/TextField";
-import {Shop} from "../modules/redux/shop/shopTypes";
+import {Shop, ShopStatus} from "../modules/redux/shop/shopTypes";
 import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import CoffeeOutlinedIcon from '@mui/icons-material/CoffeeOutlined';
@@ -24,6 +33,12 @@ import {addShop, fetchShops, updateShop} from "../modules/redux/shop/shopsThunk"
 type ShopFormType = {
     display_name: string;
     message: string;
+    status: ShopStatus;
+}
+
+const shopStatusKV: {[k in string]: string} = {
+    active: '表示',
+    inactive: '非表示'
 }
 
 function getFileExt(file: File) {
@@ -38,6 +53,7 @@ const AdminPage = () => {
     const [shopForm, setShopForm] = useState<ShopFormType>({
         display_name: "",
         message: "",
+        status: 'active',
     });
     const [productForm, setProductForm] = useState<ProductFormType>({
         display_name: "",
@@ -75,7 +91,8 @@ const AdminPage = () => {
         const defaultShopForm: ShopFormType = {...selectedShop};
 
         return defaultShopForm.display_name !== newShopForm.display_name ||
-            defaultShopForm.message !== newShopForm.message;
+            defaultShopForm.message !== newShopForm.message ||
+            defaultShopForm.status !== newShopForm.status;
     }
 
     useEffect(() => {
@@ -237,13 +254,20 @@ const AdminPage = () => {
                                     </Link>
                                 </LinkText>
                             </Stack>
-                            <Typography variant={"h6"}>
-                                店舗詳細
-                            </Typography>
                             <Stack spacing={2} width={"100%"}>
-                                <TextField label={"名前"} value={shopForm.display_name} id={"shop-display-name"}
-                                           onChange={e => setShopForm({...shopForm, display_name: e.target.value})}
-                                           sx={{width: "231px"}}/>
+                                <Stack direction={"row"} spacing={2} alignItems={"center"}>
+                                    <TextField label={"名前"} value={shopForm.display_name} id={"shop-display-name"}
+                                               onChange={e => setShopForm({...shopForm, display_name: e.target.value})}
+                                               sx={{width: "231px"}}/>
+                                    <ToggleButtonGroup exclusive value={shopForm.status}
+                                                       onChange={(e, val) => setShopForm(prev => {
+                                                           return {...prev, status: val}
+                                                       })}>
+                                        {Object.keys(shopStatusKV).map(status => <ToggleButton value={status} id={status} sx={{width: '4rem'}}>
+                                            {shopStatusKV[status]}
+                                        </ToggleButton>)}
+                                    </ToggleButtonGroup>
+                                </Stack>
                                 <MarkdownTextField label={"メッセージ"} value={shopForm.message}
                                                    helperText={"Markdownが使用可能です"} id={"shop-message"}
                                                    onChange={e => setShopForm({

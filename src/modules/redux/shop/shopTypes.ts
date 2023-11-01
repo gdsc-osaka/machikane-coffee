@@ -1,6 +1,6 @@
 import {Timestamp} from "firebase/firestore";
 
-export type ShopStatus = "active" | "pause_ordering"
+export type ShopStatus = "active" | "pause_ordering" | "inactive"
 
 /**
  * ドリップ係の番号とそのステータスのマップ
