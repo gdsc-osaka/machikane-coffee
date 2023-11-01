@@ -237,7 +237,7 @@ const OrderCard = (props: {
     //
     //     return order.created_at.seconds + untilCount;
     // }, [order, products])
-    const completeAt = order.complete_at.seconds;
+    const completeAt = order.complete_at.seconds + order.delay_seconds;
 
     const untilSec = completeAt - nowSec;
     const untilMin = untilSec > 0 ? Math.floor(untilSec / 60) : -1;

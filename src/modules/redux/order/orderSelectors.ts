@@ -40,21 +40,6 @@ export const selectReceivedOrder = (state: RootState, shopId: string) =>
 export const selectUnreceivedOrder = (state: RootState, shopId: string) =>
     selectAllOrdersByCompleted(state, shopId).filter(e => e.status !== "received");
 /**
- * 商品の遅延時間を含め、最大の完成する時刻を返します
- * 注文がない場合, 現在時刻を返します
- */
-export const selectMaxCompleteAt = (state: RootState, shopId: string): Date => {
-    // const orders = selectAllOrders(state, shopId);
-    // if (orders.length === 0) {
-    //     return new Date();
-    // }
-    // const getTrueCompleteAt = (a: Order) => a.complete_at.toDate().addSeconds(a.delay_seconds);
-    // // 完成時間を昇順でソート
-    // orders.sort((a, b) => getTrueCompleteAt(b).getTime() - getTrueCompleteAt(a).getTime());
-    // return getTrueCompleteAt(orders[0]);
-    return new Date()
-}
-/**
  * streamOrdersのunsubscribeを取得
  */
 export const selectOrderUnsubscribe = (state: RootState, shopId: string) =>
