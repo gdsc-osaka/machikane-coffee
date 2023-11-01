@@ -15,7 +15,6 @@ import {
 } from "@mui/material";
 import ShopManager from "../components/cashier/ShopManager";
 import ReceivedOrderListItem from "../components/cashier/ReceivedOrderListItem";
-import {selectShopUnsubscribe} from "../modules/redux/shop/shopsSlice";
 import {useAuth} from "../AuthGuard";
 import {
     addOrder,
@@ -61,8 +60,6 @@ const AdminCashierPage = () => {
     const stockStatus = useAppSelector(state => selectStockStatus(state, shopId))
     const stocks = useAppSelector(state => selectAllStocks(state, shopId));
 
-    const shopUnsubscribe = useAppSelector(selectShopUnsubscribe);
-
     const onChangeAmount = (productId: string, amount: number) => {
         setProductAmount({...productAmount, [productId]: amount});
     };
@@ -97,12 +94,6 @@ const AdminCashierPage = () => {
         }
         // empty array でないと unsub() が2回呼ばれる
     }, []);
-
-    useEffect(() => {
-        if (shopUnsubscribe != null) {
-            shopUnsubscribe();
-        }
-    }, [shopUnsubscribe]);
 
     const onOrderAddClicked = async () => {
         const trueProductAmount = Object.assign({}, productAmount);

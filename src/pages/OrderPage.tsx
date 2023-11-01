@@ -77,7 +77,8 @@ const OrderPage = () => {
     useEffect(() => {
         if (shopStatus === "idle") {
             dispatch(fetchShops());
-            dispatch(streamShop(shopId));
+            const unsub = streamShop(shopId, {dispatch});
+            return () => unsub();
         }
     }, [dispatch, shopStatus, shopId]);
 

@@ -31,10 +31,11 @@ const ShopManager = () => {
     const [status, setStatus] = useState<ShopStatus>("active");
 
     useEffect(() => {
-        if (shopStatus === "idle" || shopStatus === "failed") {
-            dispatch(streamShop(shopId));
+        if (shopStatus === "idle") {
+            const unsub = streamShop(shopId, {dispatch});
+            return () => unsub();
         }
-    }, [dispatch, shopStatus]);
+    }, [dispatch, shopStatus, shopId]);
 
     useEffect(() => {
         if (shop !== undefined) {

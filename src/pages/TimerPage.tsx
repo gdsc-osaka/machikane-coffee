@@ -34,11 +34,12 @@ const TimerPage = () => {
     const waitHou = Math.floor(waitMin / 60);
 
   // データを取得
-  useEffect(() => {
-      if (shopStatus === "idle" || shopStatus === "failed") {
-          dispatch(streamShop(shopId));
-      }
-  }, [dispatch, shopStatus, shopId]);
+    useEffect(() => {
+        if (shopStatus === "idle") {
+            const unsub = streamShop(shopId, {dispatch});
+            return () => unsub();
+        }
+    }, [dispatch, shopStatus, shopId]);
   useEffect(() => {
       if (orderStatus === "idle" || orderStatus === "failed") {
           streamOrders(shopId, {dispatch});

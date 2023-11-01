@@ -1,7 +1,7 @@
 import {Button, CircularProgress, Divider, Stack, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
 import React, {useEffect, useState} from "react";
 import {useAppDispatch, useAppSelector} from "../modules/redux/store";
-import {selectShopById, selectShopStatus, selectShopUnsubscribe} from "../modules/redux/shop/shopsSlice";
+import {selectShopById, selectShopStatus} from "../modules/redux/shop/shopsSlice";
 import {useParams} from "react-router-dom";
 import {BaristaMap, ShopForAdd} from "../modules/redux/shop/shopTypes";
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
@@ -38,14 +38,13 @@ const AdminBaristaPage = () => {
     const productStatus = useAppSelector(state => selectProductStatus(state, shopId))
     const products = useAppSelector(state => selectAllProducts(state, shopId));
 
-    const shopUnsubscribe = useAppSelector(selectShopUnsubscribe);
-
     // const current_time =  Number(Math.floor(useDate(1).getTime()));
 
     // データを取得
     useEffect(() => {
         if (shopStatus === "idle") {
-            dispatch(streamShop(shopId));
+            const unsub = streamShop(shopId, {dispatch});
+            return () => unsub();
         }
     }, [dispatch, shopStatus, shopId]);
 
@@ -67,19 +66,15 @@ const AdminBaristaPage = () => {
     }, [productStatus, dispatch, shopId]);
 
     // windowが閉じられたとき or refreshされたとき, selectedIdをinactiveに戻す & unsubscribe
-    useEffect(() => {
-        window.addEventListener("beforeunload", (_) => {
-            // ISSUE#21
-            // if (shop !== undefined) {
-            //     console.log("updateshop")
-            //     dispatch(updateShop({shopId, rawShop: {...shop, baristas: {...shop.baristas, [selectedId]: "inactive"}}}));
-            // }
-
-            if (shopUnsubscribe !== null) {
-                shopUnsubscribe();
-            }
-        })
-    }, [])
+    // useEffect(() => {
+    //     window.addEventListener("beforeunload", (_) => {
+    //         // ISSUE#21
+    //         if (shop !== undefined) {
+    //             console.log("updateshop")
+    //             dispatch(updateShop({shopId, rawShop: {...shop, baristas: {...shop.baristas, [selectedId]: "inactive"}}}));
+    //         }
+    //     })
+    // }, [])
 
     // バリスタIDの変更
     const handleBaristaId = (

@@ -1,4 +1,4 @@
-import {createAsyncThunk} from "@reduxjs/toolkit";
+import {createAsyncThunk, Dispatch} from "@reduxjs/toolkit";
 import {Shop, ShopForAdd, ShopStatus} from "./shopTypes";
 import {RootState} from "../store";
 import {
@@ -19,7 +19,7 @@ import {
 import {db} from "../../firebase/firebase";
 import {orderConverter, shopConverter} from "../../firebase/converters";
 import {getToday} from "../../util/dateUtils";
-import {selectShopById, shopAdded, shopRemoved, shopUpdated} from "./shopsSlice";
+import {selectShopById, shopAdded, shopIdle, shopRemoved, shopSucceeded, shopUpdated} from "./shopsSlice";
 
 const shopsRef = collection(db, "shops").withConverter(shopConverter);
 const shopRef = (shopId: string) => doc(db, `shops/${shopId}`).withConverter(shopConverter);
@@ -31,26 +31,23 @@ export const fetchShops = createAsyncThunk("shops/fetchShops",
 /**
  * shopをリアルタイム更新する.
  */
-export const streamShop = createAsyncThunk('orders/streamShops',
-    (shopId: string, {dispatch, getState}) => {
-        const unsubscribe = onSnapshot(shopRef(shopId), (snapshot) => {
-            const state: RootState = getState() as RootState;
+export const streamShop = (shopId: string, {dispatch}: {dispatch: Dispatch}) => {
+    dispatch(shopSucceeded());
+
+    const unsubscribe = onSnapshot(shopRef(shopId), (snapshot) => {
+        if (snapshot.exists()) {
             const shop = snapshot.data();
+            dispatch(shopUpdated(shop));
+        } else {
+            dispatch(shopRemoved(shopId));
+        }
+    });
 
-            if (shop !== undefined) {
-                if (state.shop.data.findIndex(e => e.id === shop.id) === -1) {
-                    // 同じドキュメントが存在しなければ
-                    dispatch(shopAdded(shop));
-                } else {
-                    dispatch(shopUpdated(shop));
-                }
-            } else {
-                dispatch(shopRemoved(shopId));
-            }
-        });
-
-        return unsubscribe;
-    })
+    return () => {
+        dispatch(shopIdle())
+        unsubscribe();
+    };
+}
 export const addShop = createAsyncThunk("shops/addShop",
     async ({shopId, shopForAdd}: { shopId: string, shopForAdd: ShopForAdd }) => {
         const shop: Shop = {

@@ -10,8 +10,7 @@ const shopsSlice = createSlice({
         data: [],
         status: "idle",
         error: undefined,
-        unsubscribe: null,
-    } as AsyncState<Shop[]> & Unsubscribe,
+    } as AsyncState<Shop[]>,
     reducers: {
         shopAdded(state, action: PayloadAction<Shop>) {
             state.data.push(action.payload);
@@ -28,6 +27,12 @@ const shopsSlice = createSlice({
         shopRemoved(state, action: PayloadAction<string>) {
             const id = action.payload;
             state.data.remove(e => e.id === id);
+        },
+        shopSucceeded(state) {
+            state.status = 'succeeded'
+        },
+        shopIdle(state) {
+            state.status = 'idle'
         },
     },
     extraReducers: builder => {
@@ -71,7 +76,7 @@ const shopsSlice = createSlice({
 
 const shopReducer = shopsSlice.reducer;
 export default shopReducer;
-export const {shopAdded, shopUpdated, shopRemoved} = shopsSlice.actions;
+export const {shopAdded, shopUpdated, shopRemoved, shopSucceeded, shopIdle} = shopsSlice.actions;
 
 /**
  * shopId と一致する Shop エンティティを返す
@@ -95,8 +100,3 @@ export const selectShopDelaySeconds = (state: RootState, shopId: string) => {
         return 0;
     }
 }
-/**
- * streamShopsのunsubscribeを取得
- * @param state
- */
-export const selectShopUnsubscribe = (state: RootState) => state.shop.unsubscribe;
