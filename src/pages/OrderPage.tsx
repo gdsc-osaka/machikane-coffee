@@ -180,7 +180,7 @@ const OrderPage = () => {
         </Stack>
         <MotionList layoutId={"order-page-stack"}>
             {(order !== undefined && shop !== undefined) &&
-                <MotionListItem key={"order-card"}>
+                <MotionListItem>
                     <div style={{paddingTop: "1rem"}}>
                         <OrderCard order={order} products={products} shopStatus={shop.status}
                                    delaySec={order.delay_seconds + delaySec}/>
@@ -188,7 +188,7 @@ const OrderPage = () => {
                 </MotionListItem>
             }
             {shop !== undefined && shop.message !== '' &&
-                <MotionListItem key={"shop-message"}>
+                <MotionListItem>
                     <ShopMessage message={shop.message}/>
                 </MotionListItem>
             }
@@ -265,57 +265,58 @@ const OrderCard = (props: {
         <Stack spacing={3} sx={{width: "100%", padding: "1rem 1.5rem"}}>
             <Stack direction={"row"} justifyContent={"space-between"}>
                 <Stack spacing={1}>
-                    <Typography variant={"caption"} key={"head-1"}>
+                    <Typography variant={"caption"}>
                         完成予定まで
                     </Typography>
                     {status === 'idle' && (untilSec > 0 ?
                         <Stack direction={"row"} spacing={0.7} alignItems={"flex-end"}>
                             {untilHou > 0 &&
                                 <React.Fragment>
-                                    <Typography variant={"h3"} sx={{fontWeight: "bold"}} color={fontColor} key={"until-hou"}>
+                                    <Typography variant={"h3"} sx={{fontWeight: "bold"}} color={fontColor}>
                                         {untilHou}
                                     </Typography>
                                     <Typography variant={"h4"} sx={{paddingBottom: "0.25rem", fontWeight: "800"}}
-                                                color={fontColor} key={"until-hou-label"}>
+                                                color={fontColor}>
                                         時間
                                     </Typography>
                                 </React.Fragment>}
                             {untilMin > 0 &&
                                 <React.Fragment>
-                                    <Typography variant={"h3"} sx={{fontWeight: "bold"}} color={fontColor} key={"until-min"}>
+                                    <Typography variant={"h3"} sx={{fontWeight: "bold"}} color={fontColor}>
                                         {untilMin}
                                     </Typography>
                                     <Typography variant={"h4"} sx={{paddingBottom: "0.25rem", fontWeight: "800"}}
-                                                color={fontColor} key={"until-min-label"}>
+                                                color={fontColor}>
                                         分
                                     </Typography>
                                 </React.Fragment>}
                             {untilSec > 0 &&
                                 <React.Fragment>
                                     <Typography variant={"h3"} sx={{paddingLeft: "0.2rem", fontWeight: "bold"}}
-                                                color={fontColor} key={"until-sec"}>
+                                                color={fontColor}>
                                         {untilSec % 60}
                                     </Typography>
                                     <Typography variant={"h4"} sx={{paddingBottom: "0.25rem", fontWeight: "800"}}
-                                                color={fontColor} key={"until-sec-label"}>
+                                                color={fontColor}>
                                         秒
                                     </Typography>
                                 </React.Fragment>}
                         </Stack>
                         :
-                        <Typography sx={{fontWeight: "bold"}} key={"almost-complete"}>
-                            まもなく完成します･･･
+                        <Typography sx={{fontWeight: "bold"}} lineHeight={"175%"}>
+                            まもなく完成します
+                            <br/>お店の前までお越しください
                         </Typography>)
                     }
                     {status === 'completed' &&
-                        <Typography sx={{fontWeight: "bold"}} key={"completed"}>
+                        <Typography sx={{fontWeight: "bold"}} lineHeight={"175%"}>
                             完成済みです
                             <br/>受け取りをお待ちしております
                         </Typography>
 
                     }
                     {status === 'received' &&
-                        <Typography sx={{fontWeight: "bold"}} key={"received"}>
+                        <Typography sx={{fontWeight: "bold"}} lineHeight={"175%"}>
                             商品は受け取り済みです
                             <br/>ご利用いただきありがとうございました
                         </Typography>
@@ -347,7 +348,7 @@ const OrderCard = (props: {
             }
             {/*見出しとTypographyの間隔が、通知設定の物と合わないので仕方なくこの書き方*/}
             <Stack spacing={productTexts.length === 1 ? 0 : 1}>
-                <Typography variant={"caption"} key={"products"}>
+                <Typography variant={"caption"}>
                     商品
                 </Typography>
                 <Stack sx={{minHeight: "38px"}} justifyContent={"center"} spacing={1}>
