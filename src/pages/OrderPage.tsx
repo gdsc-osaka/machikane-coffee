@@ -23,6 +23,9 @@ import {selectOrderById, selectOrderStatus} from "../modules/redux/order/orderSe
 import {orderAdded} from "../modules/redux/order/ordersSlice";
 import {isOrderCompleted} from "../modules/util/orderUtils";
 import {useDate} from "../modules/hooks/useDate";
+import {streamStocksOfOrder} from "../modules/redux/stock/stocksThunk";
+import {selectStocksOfOrder, selectStockStatus} from "../modules/redux/stock/stockSelectors";
+import {Stock} from "../modules/redux/stock/stockTypes";
 
 // queryParamで使うキー
 const orderIndexParamKey = 'order';
@@ -64,6 +67,10 @@ const OrderPage = () => {
     const allShops = useAppSelector(selectAllShops);
     const delaySec = useAppSelector(state => selectShopDelaySeconds(state, shopId));
 
+    // Stock関連
+    const stockStatus = useAppSelector(state => selectStockStatus(state, shopId));
+    const stocks = useAppSelector(state => selectStocksOfOrder(state, shopId, orderId));
+
     useEffect(() => {
         if (productStatus === "idle") {
             const unsub = streamProducts(shopId, {dispatch})
@@ -82,11 +89,19 @@ const OrderPage = () => {
     }, [dispatch, shopStatus, shopId]);
 
     useEffect(() => {
-        if (orderStatus === 'idle' && orderId !== '') {
-            const unsub = streamOrder(shopId, orderId, {dispatch});
+        if (orderId !== '') {
+            let unsubOrder = () => {}, unsubStock = () => {};
 
+            if (orderStatus === 'idle') {
+                unsubOrder = streamOrder(shopId, orderId, {dispatch});
+            }
+
+            if (stockStatus === 'idle') {
+                unsubStock = streamStocksOfOrder(shopId, orderId, {dispatch});
+            }
             return () => {
-                unsub();
+                unsubStock();
+                unsubOrder();
             }
         }
     }, [orderId])
@@ -180,7 +195,10 @@ const OrderPage = () => {
             {(order !== undefined && shop !== undefined) &&
                 <MotionListItem key={"order-card"}>
                     <div style={{paddingTop: "1rem"}}>
-                        <OrderCard order={order} products={products} shopStatus={shop.status}
+                        <OrderCard order={order}
+                                   products={products}
+                                   stocks={stocks}
+                                   shopStatus={shop.status}
                                    delaySec={order.delay_seconds + delaySec}/>
                     </div>
                 </MotionListItem>
@@ -215,10 +233,11 @@ const ShopMessage = (props: { message: string }) => {
 const OrderCard = (props: {
     order: Order,
     products: Product[],
+    stocks: Stock[],
     shopStatus: ShopStatus,
     delaySec: number,
 }) => {
-    const {order, products, shopStatus, delaySec} = props;
+    const {order, products, stocks, shopStatus, delaySec} = props;
 
     const now = useDate();
     const nowSec = Math.floor(now.getTime() / 1000);
@@ -345,7 +364,7 @@ const OrderCard = (props: {
             }
             {/*見出しとTypographyの間隔が、通知設定の物と合わないので仕方なくこの書き方*/}
             <Stack spacing={productTexts.length === 1 ? 0 : 1}>
-                <Typography variant={"caption"} key={"products"}>
+                <Typography variant={"caption"}>
                     商品
                 </Typography>
                 <Stack sx={{minHeight: "38px"}} justifyContent={"center"} spacing={1}>

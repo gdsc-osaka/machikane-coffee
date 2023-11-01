@@ -1,15 +1,6 @@
 import {createAsyncThunk, Dispatch} from "@reduxjs/toolkit";
 import {Stock, StockForUpdate, StockStatus} from "./stockTypes";
-import {
-    collection,
-    doc,
-    increment,
-    onSnapshot,
-    query,
-    serverTimestamp,
-    Timestamp, where,
-    writeBatch
-} from "firebase/firestore";
+import {collection, doc, increment, onSnapshot, query, serverTimestamp, where, writeBatch} from "firebase/firestore";
 import {db} from "../../firebase/firebase";
 import {stockConverter} from "../../firebase/converters";
 import {stockAdded, stockIdle, stockRemoved, stockSucceeded, stockUpdated} from "./stocksSlice";
@@ -23,6 +14,11 @@ const stocksCollection = (shopId: string) => query(
 );
 export const stockRef = (shopId: string, stockId: string) =>
     doc(db, `shops/${shopId}/stocks/${stockId}`).withConverter(stockConverter)
+
+const stocksQueryByOrder = (shopId: string, orderId: string) => query(
+    collection(db, `shops/${shopId}/stocks`).withConverter(stockConverter),
+    where('orderRef', '==', doc(db, `shops/${shopId}/orders/${orderId}`)),
+)
 
 export const streamStocks = (shopId: string, {dispatch}: { dispatch: Dispatch }) => {
     dispatch(stockSucceeded({shopId}))
@@ -45,6 +41,36 @@ export const streamStocks = (shopId: string, {dispatch}: { dispatch: Dispatch })
             if (change.type === "removed") {
                 const stockId = change.doc.id;
                 dispatch(stockRemoved({shopId, stockId}));
+            }
+        });
+    });
+
+    return () => {
+        dispatch(stockIdle({shopId}));
+        unsub();
+    }
+}
+
+export const streamStocksOfOrder = (shopId: string, orderId: string, {dispatch}: {dispatch: Dispatch}) => {
+    dispatch(stockSucceeded({shopId}));
+    const q = stocksQueryByOrder(shopId, orderId);
+
+    const unsub = onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach(change => {
+            if (change.doc.metadata.hasPendingWrites) {
+                return;
+            }
+
+            const stock = change.doc.data();
+
+            if (change.type === 'added') {
+                dispatch(stockAdded({shopId, stock}))
+            }
+            if (change.type === 'modified') {
+                dispatch(stockUpdated({shopId, stock}))
+            }
+            if (change.type === 'removed') {
+                dispatch(stockRemoved({shopId, stockId: stock.id}))
             }
         });
     });

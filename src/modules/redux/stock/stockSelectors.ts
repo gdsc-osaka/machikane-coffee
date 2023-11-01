@@ -9,6 +9,10 @@ export function selectAllStocks(state: RootState, shopId: string) {
     return state.stock[shopId]?.data ?? [];
 }
 
+export function selectStocksOfOrder(state: RootState, shopId: string, orderId: string) {
+    return selectAllStocks(state, shopId).filter(s => s.orderRef.id === orderId);
+}
+
 function sortByWorking(a: Stock, b: Stock) {
     if (a.status === b.status) {
         return 0;
