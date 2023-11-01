@@ -5,25 +5,19 @@ import {useNavigate, useParams, useSearchParams} from "react-router-dom";
 import {Order} from "../modules/redux/order/orderTypes";
 import StickyNote from "../components/StickyNote";
 import {Product} from "../modules/redux/product/productTypes";
-import {selectAllProducts, selectProductStatus} from "../modules/redux/product/productsSlice";
+import {selectAllProducts} from "../modules/redux/product/productsSlice";
 import {ShopStatus} from "../modules/redux/shop/shopTypes";
-import {
-    selectAllShops,
-    selectShopById,
-    selectShopDelaySeconds,
-    selectShopStatus
-} from "../modules/redux/shop/shopsSlice";
+import {selectAllShops, selectShopById, selectShopDelaySeconds} from "../modules/redux/shop/shopsSlice";
 import DelayContainer from "../components/User/delayContainer";
 import MyMarkdown from "src/components/MyMarkdown";
 import {MotionList, MotionListItem} from "../components/motion/motionList";
 import {fetchOrderByIndex, streamOrder} from "../modules/redux/order/ordersThunk";
-import {streamProducts} from "../modules/redux/product/productsThunk";
-import {fetchShops, streamShop} from "../modules/redux/shop/shopsThunk";
 import {selectOrderById, selectOrderStatus} from "../modules/redux/order/orderSelectors";
 import {orderAdded} from "../modules/redux/order/ordersSlice";
 import {isOrderCompleted} from "../modules/util/orderUtils";
 import {useDate} from "../modules/hooks/useDate";
 import {MotionDivider} from "../components/motion/MotionDivider";
+import {useStreamEffect} from "../modules/hooks/useStreamEffect";
 
 // queryParamで使うキー
 const orderIndexParamKey = 'order';
@@ -57,31 +51,13 @@ const OrderPage = () => {
 
     // Product関連
     const products = useAppSelector(state => selectAllProducts(state, shopId));
-    const productStatus = useAppSelector(state => selectProductStatus(state, shopId))
 
     // Shop関連
     const shop = useAppSelector((state: RootState) => selectShopById(state, shopId));
-    const shopStatus = useAppSelector(selectShopStatus);
     const allShops = useAppSelector(selectAllShops);
     const delaySec = useAppSelector(state => selectShopDelaySeconds(state, shopId));
 
-    useEffect(() => {
-        if (productStatus === "idle") {
-            const unsub = streamProducts(shopId, {dispatch})
-
-            return () => {
-                unsub();
-            }
-        }
-    }, []);
-
-    useEffect(() => {
-        if (shopStatus === "idle") {
-            dispatch(fetchShops());
-            const unsub = streamShop(shopId, {dispatch});
-            return () => unsub();
-        }
-    }, [shopId]);
+    useStreamEffect(shopId, "shop", "product");
 
     useEffect(() => {
         if (orderStatus === 'idle' && orderId !== '') {

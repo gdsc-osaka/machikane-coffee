@@ -26,10 +26,12 @@ export const stockRef = (shopId: string, stockId: string) =>
 
 export const streamStocks = (shopId: string, {dispatch}: { dispatch: Dispatch }) => {
     dispatch(stockSucceeded({shopId}))
+    console.log("stream stocks")
 
     const _query = stocksCollection(shopId);
     const unsub = onSnapshot(_query, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
+            console.log(change.doc)
             if (change.type === "added") {
                 if (change.doc.metadata.hasPendingWrites) {
                     return;
@@ -92,6 +94,8 @@ export const updateStockStatus = createAsyncThunk<
     {shopId: string, stock: Stock, status: StockStatus, baristaId: number},
     {}
 >('stocks/changeStockStatus', async ({shopId, stock, status, baristaId}, {rejectWithValue}) => {
+    try {
+
     const stockForUpdate: StockForUpdate = {
         status: status,
         barista_id: baristaId
@@ -112,7 +116,6 @@ export const updateStockStatus = createAsyncThunk<
 
     batch.update(stockRef(shopId, stock.id), stockForUpdate)
 
-    try {
         await batch.commit();
 
         return {

@@ -92,10 +92,12 @@ export const fetchOrderByIndex = async ({shopId, orderIndex}: {shopId: string, o
  * order をリアルタイム更新する. ユーザー側で使用されることを想定
  */
 export const streamOrders = (shopId: string, {dispatch}: { dispatch: Dispatch }, ...queryConstraints: QueryConstraint[]) => {
-    dispatch(orderSucceeded({shopId}))
+    dispatch(orderSucceeded({shopId}));
+    console.log("streamOrders")
 
     const unsubscribe = onSnapshot(ordersQuery(shopId), (snapshot) => {
         snapshot.docChanges().forEach((change) => {
+            console.log(change.doc)
             if (change.type === "added") {
                 if (change.doc.metadata.hasPendingWrites) {
                     return;

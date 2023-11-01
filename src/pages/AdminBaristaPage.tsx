@@ -1,24 +1,24 @@
 import {Button, CircularProgress, Divider, Stack, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
-import React, {useEffect, useState} from "react";
+import React, {useState} from "react";
 import {useAppDispatch, useAppSelector} from "../modules/redux/store";
-import {selectShopById, selectShopStatus} from "../modules/redux/shop/shopsSlice";
+import {selectShopById} from "../modules/redux/shop/shopsSlice";
 import {useParams} from "react-router-dom";
 import {BaristaMap, ShopForAdd} from "../modules/redux/shop/shopTypes";
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
 import StickyNote from "../components/StickyNote";
-import {selectAllProducts, selectProductStatus} from "../modules/redux/product/productsSlice";
+import {selectAllProducts} from "../modules/redux/product/productsSlice";
 import {MotionList, MotionListItem} from "src/components/motion/motionList";
 import {Product} from "../modules/redux/product/productTypes";
 import {useAuth} from "../AuthGuard";
 import toast from "react-hot-toast";
-import {fetchProducts} from "../modules/redux/product/productsThunk";
-import {streamShop, updateShop} from "../modules/redux/shop/shopsThunk";
-import {selectStockStatus, selectStocksForBarista} from "../modules/redux/stock/stockSelectors";
-import {streamStocks, updateStockStatus} from "../modules/redux/stock/stocksThunk";
+import {updateShop} from "../modules/redux/shop/shopsThunk";
+import {selectStocksForBarista} from "../modules/redux/stock/stockSelectors";
+import {updateStockStatus} from "../modules/redux/stock/stocksThunk";
 import {Stock, StockStatus} from "../modules/redux/stock/stockTypes";
 import styled from "styled-components";
 import {fullToHalf} from "../modules/util/stringUtils";
 import {useDate} from "../modules/hooks/useDate";
+import {useStreamEffect} from "../modules/hooks/useStreamEffect";
 
 const AdminBaristaPage = () => {
     const [selectedId, setSelectedId] = useState(0);
@@ -28,41 +28,31 @@ const AdminBaristaPage = () => {
     const params = useParams();
 
     const shopId = params.shopId ?? '';
-    const shopStatus = useAppSelector(selectShopStatus);
     const shop = useAppSelector(state => selectShopById(state, shopId));
     const baristas = shop?.baristas ?? {};
     const baristaIds = shop === undefined ? [] : Object.keys(shop.baristas).map((e) => parseInt(e));
 
-    const stockStatus = useAppSelector(state => selectStockStatus(state, shopId));
     const stocks = useAppSelector(state => selectStocksForBarista(state, shopId, selectedId));
 
-    const productStatus = useAppSelector(state => selectProductStatus(state, shopId))
     const products = useAppSelector(state => selectAllProducts(state, shopId));
 
     // const current_time =  Number(Math.floor(useDate(1).getTime()));
 
     // データを取得
-    useEffect(() => {
-        if (shopStatus === "idle") {
-            const unsub = streamShop(shopId, {dispatch});
-            return () => unsub();
-        }
-    }, [shopId]);
-
-    useEffect(() => {
-        if (stockStatus === "idle") {
-            const unsub = streamStocks(shopId, {dispatch})
-
-            return () => unsub()
-        }
-        // empty array でないと unsub() が2回呼ばれる
-    }, []);
-
-    useEffect(() => {
-        if (productStatus === "idle") {
-            dispatch(fetchProducts(shopId));
-        }
-    }, [productStatus, dispatch, shopId]);
+    // useEffect(() => {
+    //     let unsubProduct = () => {}, unsubStock = () => {}, unsubShop = () => {};
+    //
+    //     if (productStatus === 'idle') unsubProduct = streamProducts(shopId, {dispatch})
+    //     if (stockStatus === 'idle') unsubStock = streamStocks(shopId, {dispatch})
+    //     if (shopStatus === 'idle') unsubShop = streamShop(shopId, {dispatch})
+    //
+    //     return () => {
+    //         unsubProduct();
+    //         unsubStock();
+    //         unsubShop();
+    //     }
+    // }, [])
+    useStreamEffect(shopId, "product", "stock", "shop");
 
     // windowが閉じられたとき or refreshされたとき, selectedIdをinactiveに戻す & unsubscribe
     // useEffect(() => {
@@ -170,8 +160,6 @@ const BaristaStockItem = (props: {
     if (product === undefined) {
         return <></>;
     }
-
-    console.log(new Date(now).toLocaleTimeString() + ", " + stock.start_working_at.toDate().toLocaleTimeString());
 
     const secSpentToMake = (now - stock.start_working_at.toMillis()) / 1000; /* 作成し始めてから何秒経過したか */
     const elapsedMin = Math.floor(secSpentToMake / 60);
