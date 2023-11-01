@@ -43,7 +43,10 @@ const ordersSlice = createSlice({
             const {order, shopId} = action.payload;
 
             ensureInitialized(state, shopId);
-            state[shopId].data.push(order);
+
+            if (state[shopId].data.find(o => o.id === order.id) === undefined) {
+                state[shopId].data.push(order);
+            }
         },
         orderUpdated(state, action: PayloadAction<{ shopId: string, order: OrderForUpdate }>) {
             const {order, shopId} = action.payload;

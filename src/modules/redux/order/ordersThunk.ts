@@ -149,20 +149,31 @@ export const addOrder = createAsyncThunk<
         product_amount: orderForAdd.product_amount,
         index: 1,
         created_at: serverTimestamp(),
-        delay_seconds: 0
+        delay_seconds: 0,
+        complete_at: Timestamp.now(),
     }
 
-    const allOrders = selectAllOrders(getState(), shopId);
+    const state = getState();
+    const allOrders = selectAllOrders(state, shopId);
+    const products = selectAllProducts(state, shopId);
     const unreceivedOrders = allOrders.filter(o => o.status !== "received");
     const productIds: String[] = [];
+    let requireToMakeSec = 0;
 
     for (const productId in payloadOrder.product_amount) {
         // 商品一つ一つでproduct_statusを設定
         const amount = payloadOrder.product_amount[productId];
+        const product = products.find(p => p.id === productId);
+
         for (let i = 0; i < amount; i++) {
             payloadOrder.product_status[`${productId}_${i+1}`] = {
                 product_id: productId,
                 status: "idle"
+            }
+
+            if (product) {
+                console.log(product)
+                requireToMakeSec += product.span;
             }
         }
         // required_product_amount の初期値=この注文の商品数を設定
@@ -187,9 +198,20 @@ export const addOrder = createAsyncThunk<
         // const lastOrderSnapshot = await getDocs(ordersQuery(shopId, limit(1)));
 
         const lastOrders = allOrders.sort((a, b) => b.created_at.seconds - a.created_at.seconds);
+        const lastIdleOrders = lastOrders.filter(o => o.status == 'idle');
+
+        const now = new Date();
 
         if (lastOrders.length !== 0) {
-            payloadOrder.index = lastOrders[0].index + 1;
+            const lastOrder = lastOrders[0];
+            payloadOrder.index = lastOrder.index + 1;
+        }
+
+        if (lastIdleOrders.length !== 0 && lastIdleOrders[0].complete_at.toMillis() > now.getTime()) {
+            const lastIdleOrder = lastIdleOrders[0];
+            payloadOrder.complete_at = Timestamp.fromMillis(lastIdleOrder.complete_at.toMillis() + requireToMakeSec * 1000);
+        } else {
+            payloadOrder.complete_at = Timestamp.fromDate(new Date().addSeconds(requireToMakeSec))
         }
 
         const batch = writeBatch(db);
@@ -312,7 +334,7 @@ export const receiveOrder = createAsyncThunk<
     const batch = writeBatch(db);
 
     const stockAmountLeft = Object.assign({}, order.product_amount); /* 残りの必要な在庫数 */
-    const prodStatusDiff: OrderForUpdate = {};
+    const orderForUpdate: OrderForUpdate = {};
     for (const productStatusKey in order.product_status) {
         const productStatus = order.product_status[productStatusKey];
 
@@ -322,7 +344,7 @@ export const receiveOrder = createAsyncThunk<
 
             if (stockAmountLeft[prodId] === 0) {
                 delete stockAmountLeft[prodId];
-                prodStatusDiff[`product_status.${productStatusKey}`] = {
+                orderForUpdate[`product_status.${productStatusKey}`] = {
                     product_id: prodId,
                     status: 'received'
                 }
@@ -352,7 +374,7 @@ export const receiveOrder = createAsyncThunk<
     try {
         batch.update(orderRef(shopId, order.id), {
             ...reqProdAmoDiff,
-            ...prodStatusDiff,
+            ...orderForUpdate,
             status: "received"
         } as OrderForUpdate);
     } catch (e) {
@@ -360,9 +382,13 @@ export const receiveOrder = createAsyncThunk<
     }
 
     // Update Other Orders
+    const completeAtDiff = order.complete_at.toMillis() - new Date().getTime();
     for (const orderAfterThis of ordersAfterThis) {
         try {
-            batch.update(orderRef(shopId, orderAfterThis.id), reqProdAmoDiff);
+            batch.update(orderRef(shopId, orderAfterThis.id), {
+                ...reqProdAmoDiff,
+                complete_at: Timestamp.fromMillis(orderAfterThis.complete_at.toMillis() - completeAtDiff)
+            } as OrderForUpdate);
         } catch (e) {
             console.error(e);
         }
@@ -428,7 +454,9 @@ export const receiveOrderIndividual = createAsyncThunk<
     const state = getState();
     const latestStocks = selectAllStocks(state, shopId);
     const latestOrders = selectAllOrders(state, shopId);
+    const products = selectAllProducts(state, shopId);
     const prodId = order.product_status[productStatusKey].product_id;
+    const product = products.find(p => p.id === prodId);
     const newerOrders = latestOrders /* このOrder以降のrequired_product_amountを更新すべきOrder */
         .filter(o => o.created_at.seconds > order.created_at.seconds && Object.keys(o.product_amount).includes(prodId));
 
@@ -443,10 +471,12 @@ export const receiveOrderIndividual = createAsyncThunk<
     const orderStatus = allReceived ? 'received' : 'idle';
     newOrder.status = orderStatus;
 
+    const newCompleteAt = order.complete_at.toMillis() - (product?.span ?? 0) * 1000
     batch.update(orderRef(shopId, newOrder.id), {
         product_status: newOrder.product_status,
         [`required_product_amount.${prodId}`]: increment(-1),
-        status: orderStatus
+        status: orderStatus,
+        complete_at:
     }) // FIXME OrderForUpdateを使う
 
     // Update Products
@@ -455,10 +485,12 @@ export const receiveOrderIndividual = createAsyncThunk<
     } as ProductForUpdate)
 
     // Update Other Orders
+    const completeAtDiff = order.complete_at.toMillis() - new Date().getTime();
     for (const newerOrder of newerOrders) {
         batch.update(orderRef(shopId, newerOrder.id), {
             [`required_product_amount.${prodId}`]: increment(-1),
-        }) // FIXME OrderForUpdateを使う
+            complete_at: Timestamp.fromMillis(newerOrder.complete_at.toMillis() - completeAtDiff),
+        }); // FIXME OrderForUpdateを使う
     }
 
     // Update Stocks

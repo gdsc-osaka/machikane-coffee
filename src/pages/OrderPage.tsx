@@ -220,7 +220,8 @@ const OrderCard = (props: {
 }) => {
     const {order, products, shopStatus, delaySec} = props;
 
-    const now = useDate().getSeconds();
+    const now = useDate();
+    const nowSec = Math.floor(now.getTime() / 1000);
     const productTexts = Object.keys(order.product_amount)
         .map(key => {
             return {
@@ -237,25 +238,26 @@ const OrderCard = (props: {
     }, [order, products])
 
     // 商品の完成予定時刻を秒単位で
-    const completeAt = useMemo(() => {
-        let untilCount = 0;
+    // const completeAt = useMemo(() => {
+    //     let untilCount = 0;
+    //
+    //     for (const productId in order.required_product_amount) {
+    //         const product = products.find(p => p.id === productId);
+    //         const requiredAmount = order.required_product_amount[productId];
+    //
+    //         if (product) {
+    //             untilCount += (requiredAmount - product.stock) * product.span;
+    //         }
+    //     }
+    //
+    //     return order.created_at.seconds + untilCount;
+    // }, [order, products])
+    const completeAt = order.complete_at.seconds;
 
-        for (const productId in order.required_product_amount) {
-            const product = products.find(p => p.id === productId);
-            const requiredAmount = order.required_product_amount[productId];
-
-            if (product) {
-                untilCount += (requiredAmount - product.stock) * product.span;
-            }
-        }
-
-        return new Date().addSeconds(untilCount).getSeconds();
-    }, [order, products])
-
-    const untilSec = completeAt - now;
-    const untilMin = Math.floor(untilSec / 60);
-    const untilHou = Math.floor(untilMin / 60);
-    const completeRate = untilSec / (completeAt - order.created_at.seconds) / 1000;
+    const untilSec = completeAt - nowSec;
+    const untilMin = untilSec > 0 ? Math.floor(untilSec / 60) : -1;
+    const untilHou = untilSec > 0 ? Math.floor(untilMin / 60) : -1;
+    const completeRate = untilSec / (completeAt - order.created_at.seconds);
 
     return <StickyNote>
         <Stack spacing={3} sx={{width: "100%", padding: "1rem 1.5rem"}}>
@@ -290,7 +292,7 @@ const OrderCard = (props: {
                                 <React.Fragment>
                                     <Typography variant={"h3"} sx={{paddingLeft: "0.2rem", fontWeight: "bold"}}
                                                 color={fontColor} key={"until-sec"}>
-                                        {untilSec}
+                                        {untilSec % 60}
                                     </Typography>
                                     <Typography variant={"h4"} sx={{paddingBottom: "0.25rem", fontWeight: "800"}}
                                                 color={fontColor} key={"until-sec-label"}>

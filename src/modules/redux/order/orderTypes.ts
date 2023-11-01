@@ -42,7 +42,8 @@ type OrderTemplate<T extends Timestamp | FieldValue, N extends number | FieldVal
     }
     // データ追加時は以下のみ
     product_amount: ProductAmount;
-} & DotNotation<N>;
+    complete_at: Timestamp;
+};
 
 export type Order = OrderTemplate<Timestamp, number, DocumentReference[]>;
 
@@ -50,16 +51,15 @@ export type Order = OrderTemplate<Timestamp, number, DocumentReference[]>;
  * データの追加時、ユーザーが設定しなければいけないフィールドのみにした order
  */
 export type OrderForAdd = Omit<Order, "id" | "index" | "created_at" | "delay_seconds" | "status" |
-    "product_status" | "required_product_amount" | "stocksRef">;
+    "product_status" | "required_product_amount" | "stocksRef" | "complete_at">;
 
 /**
  * データの更新時に使用する Order
  */
-export type OrderForUpdate = Partial<OrderTemplate<FieldValue | Timestamp, FieldValue | number, FieldValue | DocumentReference[]>>;
-type DotNotation<N extends FieldValue | number> = {
-    [k in `product_status.${string}`]: ProductStatus
+export type OrderForUpdate = Partial<OrderTemplate<FieldValue | Timestamp, FieldValue | number, FieldValue | DocumentReference[]>> & {
+    [k in `product_status.${string}`]?: ProductStatus | undefined
 } & {
-    [k in `required_product_amount.${string}`]: N
+    [p in `required_product_amount.${string}`]?: FieldValue | undefined
 };
 
 /**
