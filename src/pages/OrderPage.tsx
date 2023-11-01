@@ -170,7 +170,7 @@ const OrderPage = () => {
             <TextField id={"order-index"} variant={"filled"}
                        label={"注文番号"} // helperText={"番号札に記入された数字を入力してください"}
                        type={"number"} required fullWidth
-                       value={oIndexInput} onChange={handleOrderIndex} sx={{minWidth: "17rem"}}/>
+                       value={oIndexInput} onChange={handleOrderIndex}/>
             <Button variant={"contained"} sx={{minWidth: "100px"}}
                     disabled={oIndexInput === ''} onClick={() => handleSubmit(oIndexInput)}>
                 確認
