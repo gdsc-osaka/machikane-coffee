@@ -27,7 +27,6 @@ import {
 } from "../modules/redux/order/ordersThunk";
 import {streamProducts} from "../modules/redux/product/productsThunk";
 import {
-    selectAllOrders,
     selectOrderStatus,
     selectReceivedOrder,
     selectUnreceivedOrder

@@ -7,7 +7,7 @@ import {
     onSnapshot,
     query,
     serverTimestamp,
-    Timestamp, where,
+    where,
     writeBatch
 } from "firebase/firestore";
 import {db} from "../../firebase/firebase";

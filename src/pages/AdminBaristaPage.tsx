@@ -1,11 +1,10 @@
-import {Button, CircularProgress, IconButton, Stack, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
+import {Button, CircularProgress, Stack, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
 import React, {useEffect, useState} from "react";
 import {useAppDispatch, useAppSelector} from "../modules/redux/store";
 import {selectShopById, selectShopStatus, selectShopUnsubscribe} from "../modules/redux/shop/shopsSlice";
 import {useParams} from "react-router-dom";
 import {BaristaMap, ShopForAdd} from "../modules/redux/shop/shopTypes";
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
-import UndoRoundedIcon from '@mui/icons-material/UndoRounded';
 import StickyNote from "../components/StickyNote";
 import {selectAllProducts, selectProductStatus} from "../modules/redux/product/productsSlice";
 import {MotionList, MotionListItem} from "src/components/motion/motionList";

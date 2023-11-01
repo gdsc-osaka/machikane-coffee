@@ -32,7 +32,7 @@ import {stockRef} from "../stock/stocksThunk";
 import {isOrderAllReceived, isOrderCompleted} from "../../util/orderUtils";
 import {selectAllProducts} from "../product/productsSlice";
 import {orderInfoRef} from "../info/infoRef";
-import {OrderInfo, OrderInfoForAdd, OrderInfoForUpdate} from "../info/infoTypes";
+import {OrderInfoForAdd, OrderInfoForUpdate} from "../info/infoTypes";
 
 const { v4: uuidv4 } = require('uuid');
 
