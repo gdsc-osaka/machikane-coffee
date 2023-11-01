@@ -1,9 +1,18 @@
 import React, {useEffect, useState} from "react";
-import {Button, Card, InputAdornment, Link as LinkText, Stack, Typography} from "@mui/material";
+import {
+    Button,
+    Card,
+    InputAdornment,
+    Link as LinkText,
+    Stack,
+    ToggleButton,
+    ToggleButtonGroup,
+    Typography
+} from "@mui/material";
 import {useAppDispatch, useAppSelector} from "../modules/redux/store";
 import {selectAllShops, selectShopStatus} from "../modules/redux/shop/shopsSlice";
 import TextField from "@mui/material/TextField";
-import {Shop} from "../modules/redux/shop/shopTypes";
+import {Shop, ShopStatus} from "../modules/redux/shop/shopTypes";
 import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import CoffeeOutlinedIcon from '@mui/icons-material/CoffeeOutlined';
@@ -13,7 +22,7 @@ import {
     selectProductStatus
 } from "../modules/redux/product/productsSlice";
 import FileInputButton from "../components/FileInputButton";
-import {Link} from "react-router-dom";
+import {Link, useSearchParams} from "react-router-dom";
 import MarkdownTextField from "../components/MarkdownTextField";
 import DataView from "../components/admin/DataView";
 import AddProductDialog, {ProductFormType} from "../components/admin/AddProductDialog";
@@ -24,6 +33,12 @@ import {addShop, fetchShops, updateShop} from "../modules/redux/shop/shopsThunk"
 type ShopFormType = {
     display_name: string;
     message: string;
+    status: ShopStatus;
+}
+
+const shopStatusKV: {[k in string]: string} = {
+    active: '表示',
+    inactive: '非表示'
 }
 
 function getFileExt(file: File) {
@@ -32,12 +47,17 @@ function getFileExt(file: File) {
 }
 
 const AdminPage = () => {
-    const [selectedShopId, setSelectedShopId] = useState('');
-    const [selectedProductId, setSelectedProductId] = useState('');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const shopParam = searchParams.get('shop');
+    const productParam = searchParams.get('product');
+
+    const [selectedShopId, setSelectedShopId] = useState(typeof shopParam === 'string' ? shopParam : '');
+    const [selectedProductId, setSelectedProductId] = useState(typeof productParam === 'string' ? productParam : '');
     const [isThumbnailError, setIsThumbnailError] = useState(false);
     const [shopForm, setShopForm] = useState<ShopFormType>({
         display_name: "",
         message: "",
+        status: 'active',
     });
     const [productForm, setProductForm] = useState<ProductFormType>({
         display_name: "",
@@ -75,7 +95,8 @@ const AdminPage = () => {
         const defaultShopForm: ShopFormType = {...selectedShop};
 
         return defaultShopForm.display_name !== newShopForm.display_name ||
-            defaultShopForm.message !== newShopForm.message;
+            defaultShopForm.message !== newShopForm.message ||
+            defaultShopForm.status !== newShopForm.status;
     }
 
     useEffect(() => {
@@ -92,16 +113,20 @@ const AdminPage = () => {
     }, [selectedShop?.id, dispatch, productStatus]);
 
     useEffect(() => {
-        if (shops.length !== 0) {
+        if (shops.length !== 0 && selectedShopId === '') {
             const shop = shops[0];
             setSelectedShopId(shop.id);
         }
     }, [shops]);
 
     useEffect(() => {
-        if (products.length !== 0) {
+        if (products.length !== 0 && selectedProductId === '') {
             const product = products[0];
             setSelectedProductId(product.id);
+            setSearchParams(prev => {
+                prev.set('product', product.id);
+                return prev;
+            });
         }
     }, [products]);
 
@@ -127,12 +152,20 @@ const AdminPage = () => {
 
     const handleClickShop = (shopId: string) => {
         setSelectedShopId(shopId);
+
+        searchParams.set('shop', shopId);
+        searchParams.delete('product');
+        setSelectedProductId('');
+        setSearchParams(searchParams);
     }
 
 
     const handleClickProduct = (productId: string) => {
         setThumbnailFile(undefined);
         setSelectedProductId(productId);
+
+        searchParams.set('product', productId);
+        setSearchParams(searchParams);
     }
 
     const handleSetThumbnail = (file: File | undefined) => {
@@ -236,14 +269,27 @@ const AdminPage = () => {
                                         タイマー
                                     </Link>
                                 </LinkText>
+                                <LinkText>
+                                    <Link to={`/${selectedShop.id}`}>
+                                        注文照会
+                                    </Link>
+                                </LinkText>
                             </Stack>
-                            <Typography variant={"h6"}>
-                                店舗詳細
-                            </Typography>
                             <Stack spacing={2} width={"100%"}>
-                                <TextField label={"名前"} value={shopForm.display_name} id={"shop-display-name"}
-                                           onChange={e => setShopForm({...shopForm, display_name: e.target.value})}
-                                           sx={{width: "231px"}}/>
+                                <Stack direction={"row"} spacing={2} alignItems={"center"}>
+                                    <TextField label={"名前"} value={shopForm.display_name} id={"shop-display-name"}
+                                               onChange={e => setShopForm({...shopForm, display_name: e.target.value})}
+                                               sx={{width: "231px"}}/>
+                                    <ToggleButtonGroup exclusive value={shopForm.status}
+                                                       onChange={(e, val) => setShopForm(prev => {
+                                                           return {...prev, status: val}
+                                                       })}>
+                                        {Object.keys(shopStatusKV).map(status => <ToggleButton value={status} key={status}
+                                                                                               id={status} sx={{width: '4rem'}}>
+                                            {shopStatusKV[status]}
+                                        </ToggleButton>)}
+                                    </ToggleButtonGroup>
+                                </Stack>
                                 <MarkdownTextField label={"メッセージ"} value={shopForm.message}
                                                    helperText={"Markdownが使用可能です"} id={"shop-message"}
                                                    onChange={e => setShopForm({

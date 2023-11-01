@@ -127,8 +127,7 @@ const ShopManager = () => {
             );
         }
     };
-    return shop !== undefined &&
-    (shop.status === "active" || shop.status === "pause_ordering") ? (
+    return shop !== undefined ? (
         <Stack spacing={3}>
             {/*<Typography variant={"h4"} sx={{fontWeight: "bold"}}>*/}
             {/*    管理*/}

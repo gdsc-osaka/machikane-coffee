@@ -37,6 +37,7 @@ const DataView = <D,>(props: DataViewProps<D>) => {
             <AddTextButton addLabel={addTextProps.addLabel} onClickAdd={addTextProps.onClickAdd}/>
             {selectionProps.map(prop => <SelectionItem label={prop.label}
                                                  selected={prop.selected}
+                                                       key={prop.label}
                                                  onClick={prop.onClick}/>)}
         </Stack>
         <DataDivider orientation={"vertical"} flexItem/>

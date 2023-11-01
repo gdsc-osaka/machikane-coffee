@@ -1,20 +1,19 @@
-import {Button, ButtonProps} from "@mui/material";
+import {Button} from "@mui/material";
 import React, {useRef} from "react";
 
 const FileInputButton = (props: {
     onFileChanged: (file: FileList | null) => void,
-} & ButtonProps & React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>) => {
+}) => { // & ButtonProps & React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         props.onFileChanged(event.target.files)
     }
 
-    return <Button {...props} variant={"outlined"}
+    return <Button variant={"outlined"}
                    onClick={_ => fileInputRef.current?.click()}>
         ファイルを選択
         <input
-            {...props}
             hidden
             name="thumbnail"
             type="file"
