@@ -22,7 +22,7 @@ import {
     selectProductStatus
 } from "../modules/redux/product/productsSlice";
 import FileInputButton from "../components/FileInputButton";
-import {Link} from "react-router-dom";
+import {Link, useSearchParams} from "react-router-dom";
 import MarkdownTextField from "../components/MarkdownTextField";
 import DataView from "../components/admin/DataView";
 import AddProductDialog, {ProductFormType} from "../components/admin/AddProductDialog";
@@ -47,8 +47,12 @@ function getFileExt(file: File) {
 }
 
 const AdminPage = () => {
-    const [selectedShopId, setSelectedShopId] = useState('');
-    const [selectedProductId, setSelectedProductId] = useState('');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const shopParam = searchParams.get('shop');
+    const productParam = searchParams.get('product');
+
+    const [selectedShopId, setSelectedShopId] = useState(typeof shopParam === 'string' ? shopParam : '');
+    const [selectedProductId, setSelectedProductId] = useState(typeof productParam === 'string' ? productParam : '');
     const [isThumbnailError, setIsThumbnailError] = useState(false);
     const [shopForm, setShopForm] = useState<ShopFormType>({
         display_name: "",
@@ -109,16 +113,20 @@ const AdminPage = () => {
     }, [selectedShop?.id, dispatch, productStatus]);
 
     useEffect(() => {
-        if (shops.length !== 0) {
+        if (shops.length !== 0 && selectedShopId === '') {
             const shop = shops[0];
             setSelectedShopId(shop.id);
         }
     }, [shops]);
 
     useEffect(() => {
-        if (products.length !== 0) {
+        if (products.length !== 0 && selectedProductId === '') {
             const product = products[0];
             setSelectedProductId(product.id);
+            setSearchParams(prev => {
+                prev.set('product', product.id);
+                return prev;
+            });
         }
     }, [products]);
 
@@ -144,12 +152,20 @@ const AdminPage = () => {
 
     const handleClickShop = (shopId: string) => {
         setSelectedShopId(shopId);
+
+        searchParams.set('shop', shopId);
+        searchParams.delete('product');
+        setSelectedProductId('');
+        setSearchParams(searchParams);
     }
 
 
     const handleClickProduct = (productId: string) => {
         setThumbnailFile(undefined);
         setSelectedProductId(productId);
+
+        searchParams.set('product', productId);
+        setSearchParams(searchParams);
     }
 
     const handleSetThumbnail = (file: File | undefined) => {
@@ -253,6 +269,11 @@ const AdminPage = () => {
                                         タイマー
                                     </Link>
                                 </LinkText>
+                                <LinkText>
+                                    <Link to={`/${selectedShop.id}`}>
+                                        注文照会
+                                    </Link>
+                                </LinkText>
                             </Stack>
                             <Stack spacing={2} width={"100%"}>
                                 <Stack direction={"row"} spacing={2} alignItems={"center"}>
@@ -263,7 +284,8 @@ const AdminPage = () => {
                                                        onChange={(e, val) => setShopForm(prev => {
                                                            return {...prev, status: val}
                                                        })}>
-                                        {Object.keys(shopStatusKV).map(status => <ToggleButton value={status} id={status} sx={{width: '4rem'}}>
+                                        {Object.keys(shopStatusKV).map(status => <ToggleButton value={status} key={status}
+                                                                                               id={status} sx={{width: '4rem'}}>
                                             {shopStatusKV[status]}
                                         </ToggleButton>)}
                                     </ToggleButtonGroup>
