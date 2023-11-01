@@ -36,6 +36,7 @@ import SubTotal from "../components/cashier/SubTotal";
 import {UnreceivedOrderItem} from "../components/cashier/UnreceivedOrderItem";
 import OrdersList from "../components/cashier/OrdersList";
 import {useStreamEffect} from "../modules/hooks/useStreamEffect";
+import {CaptionCard, OutlineCard} from "../components/OutlineCard";
 
 const AdminCashierPage = () => {
     const [openDelete, setOpenDelete] = useState(false);
@@ -118,32 +119,46 @@ const AdminCashierPage = () => {
                 {isMobile ?
                     <Stack spacing={2} sx={{padding: "20px 10px"}}>
                         <MotionList layoutId={"cashier-page-root"} style={{gap: "1.5rem", display: 'flex', flexDirection: 'column'}}>
-                            <Typography variant={"h4"} fontWeight={"bold"}>
-                                未受取注文
+                            <Typography variant={"h5"}>
+                                待機中の注文
                             </Typography>
-                            <div style={{gap: '1rem', display: 'flex', flexDirection: 'column', paddingBottom: "1rem"}}>
-                                {unreceivedOrders.map(order =>
-                                    <MotionListItem key={order.id}>
-                                        <UnreceivedOrderItem order={order}
-                                                             products={products}
-                                                             onClickDelete={handleDeleteOrder}
-                                                             onClickReceive={handleReceiveOrder}
-                                                             onReceiveIndividual={handleReceiveIndividual}/>
-                                    </MotionListItem>
-                                )}
+                            <div>
+                                {unreceivedOrders.length === 0 &&
+                                    <CaptionCard>
+                                        待機中の注文はありません
+                                    </CaptionCard>
+                                }
+                                <div style={{gap: '1rem', display: 'flex', flexDirection: 'column', paddingBottom: "1rem"}}>
+                                    {unreceivedOrders.map(order =>
+                                        <MotionListItem key={order.id}>
+                                            <UnreceivedOrderItem order={order}
+                                                                 products={products}
+                                                                 onClickDelete={handleDeleteOrder}
+                                                                 onClickReceive={handleReceiveOrder}
+                                                                 onReceiveIndividual={handleReceiveIndividual}/>
+                                        </MotionListItem>
+                                    )}
+                                </div>
                             </div>
                             <MotionListItem>
-                                <Typography variant={"h4"} fontWeight={"bold"}>
+                                <Typography variant={"h5"}>
                                     受取済み注文
                                 </Typography>
                             </MotionListItem>
-                            <div style={{gap: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr'}}>
-                                {receivedOrders.map(order =>
-                                    <MotionListItem key={order.id}>
-                                        <ReceivedOrderListItem order={order}
-                                                               onClickUnreceive={handleUnreceiveOrder}/>
-                                    </MotionListItem>
-                                )}
+                            <div>
+                                {receivedOrders.length === 0 &&
+                                    <CaptionCard>
+                                        受取済み注文はありません
+                                    </CaptionCard>
+                                }
+                                <div style={{gap: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr'}}>
+                                    {receivedOrders.map(order =>
+                                        <MotionListItem key={order.id}>
+                                            <ReceivedOrderListItem order={order}
+                                                                   onClickUnreceive={handleUnreceiveOrder}/>
+                                        </MotionListItem>
+                                    )}
+                                </div>
                             </div>
                         </MotionList>
                     </Stack>

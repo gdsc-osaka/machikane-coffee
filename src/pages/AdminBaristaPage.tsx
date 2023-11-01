@@ -19,6 +19,7 @@ import styled from "styled-components";
 import {fullToHalf} from "../modules/util/stringUtils";
 import {useDate} from "../modules/hooks/useDate";
 import {useStreamEffect} from "../modules/hooks/useStreamEffect";
+import {CaptionCard} from "../components/OutlineCard";
 
 const AdminBaristaPage = () => {
     const [selectedId, setSelectedId] = useState(0);
@@ -127,6 +128,11 @@ const AdminBaristaPage = () => {
             {/*<Typography variant={"h4"} fontWeight={"bold"} sx={{padding: "5px 0"}}>*/}
             {/*    未完成の注文一覧*/}
             {/*</Typography>*/}
+            {stocks.length === 0 &&
+                <CaptionCard>
+                    注文がありません
+                </CaptionCard>
+            }
             <MotionList layoutId={"barista-order-list"} style={{
                 display: 'grid',
                 gridTemplateColumns: "1fr",

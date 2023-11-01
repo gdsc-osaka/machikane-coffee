@@ -66,7 +66,7 @@ const StickyNote = (props: StickyNoteContainerProps) => {
         key
     } = props;
 
-    const color = variant == "surface-variant" ? "#F7ECE5" : "#FFF8F5";
+    const color = variant === "surface-variant" ? "#F7ECE5" : "#FFF8F5";
     const child = <>
         <Stack sx={{width: "100%", ...sx}} direction={direction ?? 'column'} spacing={spacing}>
             {children}
@@ -77,7 +77,7 @@ const StickyNote = (props: StickyNoteContainerProps) => {
     if (animation) {
         return <AnimationContainer layout key={key}
                                    color={color} style={{height: "auto"}}
-                                   transition={{type: "spring", stiffness: 600, damping: 40}}>
+                                   transition={{ease: 'linear'}}>
             {child}
         </AnimationContainer>
     } else {
