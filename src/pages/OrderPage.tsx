@@ -23,6 +23,7 @@ import {selectOrderById, selectOrderStatus} from "../modules/redux/order/orderSe
 import {orderAdded} from "../modules/redux/order/ordersSlice";
 import {isOrderCompleted} from "../modules/util/orderUtils";
 import {useDate} from "../modules/hooks/useDate";
+import {MotionDivider} from "../components/motion/MotionDivider";
 
 // queryParamで使うキー
 const orderIndexParamKey = 'order';
@@ -258,7 +259,7 @@ const OrderCard = (props: {
     const untilSec = completeAt - nowSec;
     const untilMin = untilSec > 0 ? Math.floor(untilSec / 60) : -1;
     const untilHou = untilSec > 0 ? Math.floor(untilMin / 60) : -1;
-    const completeRate = untilSec / (completeAt - order.created_at.seconds);
+    const completeRate = status === 'idle' ? untilSec / (completeAt - order.created_at.seconds) : 0;
 
     return <StickyNote>
         <Stack spacing={3} sx={{width: "100%", padding: "1rem 1.5rem"}}>
@@ -370,7 +371,7 @@ const OrderCard = (props: {
         </Stack>
         <Stack alignItems={"end"}>
             <Divider sx={{borderColor: "#D5C3B5", width: "100%", marginBottom: "-0.8px"}}/>
-            <Divider sx={{borderColor: "#837468", width: completeRate > 0 ? completeRate : 0}}/>
+            <MotionDivider style={{borderColor: "#837468"}} width={`${completeRate > 0 ? (completeRate * 100) : 0}%`}/>
         </Stack>
     </StickyNote>
 }
