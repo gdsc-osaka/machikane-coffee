@@ -1,4 +1,4 @@
-import {Button, CircularProgress, Stack, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
+import {Button, CircularProgress, Divider, Stack, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
 import React, {useEffect, useState} from "react";
 import {useAppDispatch, useAppSelector} from "../modules/redux/store";
 import {selectShopById, selectShopStatus, selectShopUnsubscribe} from "../modules/redux/shop/shopsSlice";
@@ -17,6 +17,7 @@ import {selectStockStatus, selectStocksForBarista} from "../modules/redux/stock/
 import {streamStocks, updateStockStatus} from "../modules/redux/stock/stocksThunk";
 import {Stock, StockStatus} from "../modules/redux/stock/stockTypes";
 import styled from "styled-components";
+import {fullToHalf} from "../modules/util/stringUtils";
 
 const AdminBaristaPage = () => {
     const [selectedId, setSelectedId] = useState(0);
@@ -168,6 +169,7 @@ const BaristaStockItem = (props: {
 
     const isWorking = stock.status === "working";
     const product = products.find(p => p.id === stock.product_id);
+    const splittedOrderId = stock.orderRef.id.split('_'); /* orderのidには末尾に "_番号" の形で注文番号が付加されている */
 
     if (product === undefined) {
         return <></>;
@@ -175,9 +177,13 @@ const BaristaStockItem = (props: {
 
     return <StickyNote variant={isWorking ? "surface-variant" : "surface"} direction={"row"} sx={{justifyContent: "space-between", padding: "0.375rem 1.5rem 0.375rem 0.5rem"}}>
         <Stack direction={"row"} alignItems={"center"} spacing={1}>
+            <Typography variant={"body2"} fontWeight={"bold"} width={"20px"} textAlign={"center"}>
+                {splittedOrderId.length > 1 && splittedOrderId[splittedOrderId.length - 1]}
+            </Typography>
+            <Divider orientation={"vertical"} sx={{height: "100%"}}/>
             <Icon alt={"product-icon"} src={product.thumbnail_url}/>
             <Typography variant={"body2"}>
-                {product.shorter_name}
+                {fullToHalf(product.display_name)}
             </Typography>
         </Stack>
         <Stack direction={"row"} spacing={1}>

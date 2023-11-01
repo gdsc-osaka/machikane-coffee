@@ -193,9 +193,10 @@ export const addOrder = createAsyncThunk<
         }
     }
 
-    const orderId = uuidv4();
-
     try {
+        let orderIndex = 1;
+        let orderId = uuidv4();
+
         // 注文番号は必ず整合性が取れてないといけないため, Transaction を使用する.、
         await runTransaction(db, async (transaction) => {
             // OrderInfoを更新する
@@ -203,8 +204,6 @@ export const addOrder = createAsyncThunk<
             const snapshot = await transaction.get(oInfoRef);
             const orderInfo = snapshot.data();
             const today = getToday();
-
-            let orderIndex = 1;
 
             if (snapshot.exists() && orderInfo && isSameDay(orderInfo.reset_at.toDate(), today)) {
                 orderIndex = orderInfo.last_order_index + 1;
@@ -220,6 +219,8 @@ export const addOrder = createAsyncThunk<
                 } as OrderInfoForAdd);
             }
 
+            // idの末尾に注文番号を付加する. BaristaPageで使用 あまり良い方法ではない
+            orderId += `_${orderIndex}`
 
             const lastOrders = allOrders.sort((a, b) => b.created_at.seconds - a.created_at.seconds);
             const lastIdleOrders = lastOrders.filter(o => o.status == 'idle');
