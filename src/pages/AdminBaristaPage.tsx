@@ -40,6 +40,9 @@ const AdminBaristaPage = () => {
 
     const shopUnsubscribe = useAppSelector(selectShopUnsubscribe);
 
+    const current_time =  useDate().getTime();
+    // const current_time =  Number(Math.floor(useDate(1).getTime()));
+
     // データを取得
     useEffect(() => {
         if (shopStatus === "idle") {
