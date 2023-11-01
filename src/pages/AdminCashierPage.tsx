@@ -1,9 +1,8 @@
 import React, {useEffect, useState} from "react";
-import {selectAllProduct, selectProductStatus,} from "../modules/redux/product/productsSlice";
-import {RootState, useAppDispatch, useAppSelector} from "../modules/redux/store";
+import {selectAllProducts, selectProductStatus,} from "../modules/redux/product/productsSlice";
+import {useAppDispatch, useAppSelector} from "../modules/redux/store";
 import {useParams} from "react-router-dom";
-import {Order, ProductAmount, Status} from "../modules/redux/order/orderTypes";
-import OrderForm from "../components/order/OrderForm";
+import {Order, ProductAmount} from "../modules/redux/order/orderTypes";
 import {
     Button,
     CircularProgress,
@@ -12,19 +11,36 @@ import {
     DialogContent,
     DialogContentText,
     DialogTitle,
-    Grid,
     Stack
 } from "@mui/material";
-import {selectOrderStatus, selectReceivedOrder, selectUnreceivedOrder} from "../modules/redux/order/ordersSlice";
-import OrderList from "../components/order/OrderList";
-import ShopManager from "../components/order/ShopManager";
-import ReceivedOrderList from "../components/order/ReceivedOrderList";
+import ShopManager from "../components/cashier/ShopManager";
+import ReceivedOrderListItem from "../components/cashier/ReceivedOrderListItem";
 import {selectShopUnsubscribe} from "../modules/redux/shop/shopsSlice";
 import {useAuth} from "../AuthGuard";
-import {addOrder, deleteOrder, streamOrders, updateOrder} from "../modules/redux/order/ordersThunk";
-import {fetchProducts} from "../modules/redux/product/productsThunk";
-import {useSelector} from "react-redux";
-import {Timestamp} from "firebase/firestore";
+import {
+    addOrder,
+    deleteOrder,
+    receiveOrder,
+    receiveOrderIndividual,
+    streamOrders,
+    unreceiveOrder
+} from "../modules/redux/order/ordersThunk";
+import {streamProducts} from "../modules/redux/product/productsThunk";
+import {
+    selectAllOrders,
+    selectOrderStatus,
+    selectReceivedOrder,
+    selectUnreceivedOrder
+} from "../modules/redux/order/orderSelectors";
+import {selectAllStocks, selectStockStatus} from "../modules/redux/stock/stockSelectors";
+import {streamStocks} from "../modules/redux/stock/stocksThunk";
+import {MotionListItem} from "../components/motion/motionList";
+import {NeumoContainer} from "../components/neumo";
+import StockTable from "../components/cashier/StockTable";
+import ProductCounter from "../components/cashier/ProductCounter";
+import SubTotal from "../components/cashier/SubTotal";
+import {UnreceivedOrderItem} from "../components/cashier/UnreceivedOrderItem";
+import OrdersList from "../components/cashier/OrdersList";
 
 const AdminCashierPage = () => {
     const [openDelete, setOpenDelete] = useState(false);
@@ -36,30 +52,48 @@ const AdminCashierPage = () => {
 
     const dispatch = useAppDispatch();
     const auth = useAuth();
-    const products = useSelector((state: RootState) => selectAllProduct(state, shopId));
+    const products = useAppSelector(state => selectAllProducts(state, shopId));
     const productStatus = useAppSelector(state => selectProductStatus(state, shopId));
-    const unreceivedOrders = useSelector((state: RootState) => selectUnreceivedOrder(state, shopId));
-    const receivedOrders = useSelector((state: RootState) => selectReceivedOrder(state, shopId));
-    const orderStatus = useSelector((state: RootState) => selectOrderStatus(state, shopId));
 
-    const shopUnsubscribe = useSelector(selectShopUnsubscribe);
+    const orderStatus = useAppSelector(state => selectOrderStatus(state, shopId));
+    const unreceivedOrders = useAppSelector(state => selectUnreceivedOrder(state, shopId));
+    const receivedOrders = useAppSelector(state => selectReceivedOrder(state, shopId));
+
+    const stockStatus = useAppSelector(state => selectStockStatus(state, shopId))
+    const stocks = useAppSelector(state => selectAllStocks(state, shopId));
+
+    const shopUnsubscribe = useAppSelector(selectShopUnsubscribe);
 
     const onChangeAmount = (productId: string, amount: number) => {
         setProductAmount({...productAmount, [productId]: amount});
     };
 
     useEffect(() => {
-        if (productStatus === "idle") {
-            dispatch(fetchProducts(shopId));
-        }
-    }, [productStatus, shopId, dispatch])
-
-    useEffect(() => {
         if (orderStatus === "idle") {
-            const unsub = streamOrders(shopId, {dispatch})
+            const unsub = streamOrders(shopId, {dispatch});
 
             return () => {
-                unsub()
+                unsub();
+            }
+        }
+    }, [])
+
+    useEffect(() => {
+        if (productStatus === "idle") {
+            const unsub = streamProducts(shopId, {dispatch});
+
+            return () => {
+                unsub();
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        if (stockStatus === "idle") {
+            const unsub = streamStocks(shopId, {dispatch})
+
+            return () => {
+                unsub();
             }
         }
         // empty array でないと unsub() が2回呼ばれる
@@ -85,20 +119,18 @@ const AdminCashierPage = () => {
             addOrder({
                 shopId: shopId,
                 orderForAdd: {
-                    is_student: false,
                     product_amount: trueProductAmount,
-                    status: "idle",
                 },
             })
         );
     };
 
     const handleReceiveOrder = (order: Order) => {
-        dispatch(updateOrder({shopId, newOrder: {...order, status: "received"}}));
+        dispatch(receiveOrder({shopId, order}));
     }
 
     const handleUnreceiveOrder = (order: Order) => {
-        dispatch(updateOrder({shopId, newOrder: {...order, status: "completed"}}));
+        dispatch(unreceiveOrder({shopId, order}));
     }
 
     const handleDeleteOrder = (order: Order) => {
@@ -117,55 +149,65 @@ const AdminCashierPage = () => {
         }
     }
 
-    const handleSwitchStatus = (order: Order, orderStatusId: string, status: Status) => {
-        const newOrder: Order = {
-            ...order,
-            order_statuses: {
-                ...order.order_statuses,
-                [orderStatusId]: status === "working" ? {
-                    ...order.order_statuses[orderStatusId],
-                    status: status
-                } : {
-                    ...order.order_statuses[orderStatusId],
-                    status: status,
-                    start_working_at: Timestamp.now()
-                }
-            }
-        }
-
-        dispatch(updateOrder({shopId, newOrder}));
+    const handleReceiveIndividual = (order: Order, productStatusKey: string) => {
+        dispatch(receiveOrderIndividual({shopId, order, productStatusKey})).unwrap().catch(e => console.log(e))
     }
 
     return (
         !auth.loading ?
             <React.Fragment>
-                <Grid container spacing={4} sx={{padding: "30px 30px"}}>
-                    <Grid item xs={12} sm={6} lg={5}>
-                        <Stack spacing={4}>
-                            <OrderForm products={products} onChangeAmount={onChangeAmount} productAmount={productAmount}
-                                       onOrderAddClicked={onOrderAddClicked}/>
+                <Stack direction={'row'} spacing={4} sx={{padding: "30px 30px"}}
+                       alignItems={'flex-start'}>
+                    <Stack spacing={4}>
+                        <NeumoContainer key={"order-form-container"}>
+                            <Stack direction={"row"} spacing={3}>
+                                <ProductCounter products={products}
+                                                productAmount={productAmount}
+                                                onChangeAmount={onChangeAmount}/>
+                                <Stack justifyContent={"space-between"} alignItems={"stretch"}>
+                                    <SubTotal productAmount={productAmount}
+                                              products={products}
+                                              onClickButton={onOrderAddClicked}/>
+                                    <NeumoContainer key={"stock-table-container"} type={'pressed'}>
+                                        <StockTable stocks={stocks} products={products}/>
+                                    </NeumoContainer>
+                                </Stack>
+                            </Stack>
+                        </NeumoContainer>
+                        <NeumoContainer key={"shop-manager-container"}>
                             <ShopManager/>
-                        </Stack>
-                    </Grid>
-                    <Grid item container xs={12} sm={6} lg={7} spacing={4}>
-                        <Grid item  md={12} lg={7}>
-                            <OrderList orders={unreceivedOrders} products={products}
-                                       onClickReceive={handleReceiveOrder}
-                                       onClickDelete={handleDeleteOrder}
-                                       onSwitchStatus={handleSwitchStatus}/>
-                        </Grid>
-                        <Grid item md={12} lg={5}>
-                            <ReceivedOrderList receivedOrders={receivedOrders} products={products}
-                                               onClickUnreceive={handleUnreceiveOrder}/>
-                        </Grid>
-                    </Grid>
-                </Grid>
+                        </NeumoContainer>
+                    </Stack>
+                    {unreceivedOrders.length > 0 &&
+                        <OrdersList layoutId={"unreceived-orders"} grid={1}>
+                            {unreceivedOrders.map(o =>
+                                <MotionListItem key={o.id}>
+                                    <UnreceivedOrderItem order={o}
+                                                         products={products}
+                                                         onClickDelete={handleDeleteOrder}
+                                                         onClickReceive={handleReceiveOrder}
+                                                         onReceiveIndividual={handleReceiveIndividual}/>
+                                </MotionListItem>
+                            )}
+                        </OrdersList>
+                    }
+                    {receivedOrders.length > 0 &&
+                        <OrdersList layoutId={"received-orders"} grid={1}>
+                            {receivedOrders.map(o =>
+                                <MotionListItem key={o.id}>
+                                    <ReceivedOrderListItem order={o}
+                                                           onClickUnreceive={handleUnreceiveOrder}/>
+                                </MotionListItem>
+                            )}
+                        </OrdersList>
+                    }
+                </Stack>
                 <Dialog open={openDelete}
                         onClose={handleCloseDelete}
                         aria-labelledby="order-delete-alert-dialog"
                         aria-describedby="check-order-delete-alert">
                     <DialogTitle id={"order-delete-alert-title"}>
-                        {orderToDelete?.index}番の注文を消去しますか？
+                        {orderToDelete?.index}番の注文と関連する在庫データを消去しますか？
                     </DialogTitle>
                     <DialogContent>
                         <DialogContentText id="delete-dialog-description">

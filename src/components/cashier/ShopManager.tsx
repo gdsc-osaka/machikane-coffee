@@ -129,9 +129,9 @@ const ShopManager = () => {
     return shop !== undefined &&
     (shop.status === "active" || shop.status === "pause_ordering") ? (
         <Stack spacing={3}>
-            <Typography variant={"h4"} sx={{fontWeight: "bold"}}>
-                管理
-            </Typography>
+            {/*<Typography variant={"h4"} sx={{fontWeight: "bold"}}>*/}
+            {/*    管理*/}
+            {/*</Typography>*/}
             <Stack spacing={2}>
                 <Expanded>
                     <Typography variant={"h5"} sx={{fontWeight: "bold"}}>

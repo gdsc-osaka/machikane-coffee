@@ -9,7 +9,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import CoffeeOutlinedIcon from '@mui/icons-material/CoffeeOutlined';
 import {Product} from "../modules/redux/product/productTypes";
 import {
-    selectAllProduct,
+    selectAllProducts,
     selectProductStatus
 } from "../modules/redux/product/productsSlice";
 import FileInputButton from "../components/FileInputButton";
@@ -53,7 +53,7 @@ const AdminPage = () => {
     const shopStatus = useAppSelector(selectShopStatus);
     const shops = useAppSelector(selectAllShops);
     const selectedShop = shops.find(shop => shop.id === selectedShopId);
-    const products = useAppSelector(state => selectAllProduct(state, selectedShopId));
+    const products = useAppSelector(state => selectAllProducts(state, selectedShopId));
     const productStatus = useAppSelector(state => selectProductStatus(state, selectedShopId));
     const selectedProduct = products.find(p => p.id === selectedProductId);
 

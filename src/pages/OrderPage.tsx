@@ -1,13 +1,11 @@
 import {Button, Dialog, DialogActions, DialogTitle, Divider, Stack, TextField, Typography} from "@mui/material";
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useMemo, useState} from "react";
 import {RootState, useAppDispatch, useAppSelector} from "../modules/redux/store";
-import {selectOrderById, selectOrderUnsubscribe} from "../modules/redux/order/ordersSlice";
 import {useNavigate, useParams, useSearchParams} from "react-router-dom";
 import {Order} from "../modules/redux/order/orderTypes";
 import StickyNote from "../components/StickyNote";
 import {Product} from "../modules/redux/product/productTypes";
-import {selectAllProduct} from "../modules/redux/product/productsSlice";
-import {useCountDownInterval} from "../modules/hooks/useCountDownInterval";
+import {selectAllProducts, selectProductStatus} from "../modules/redux/product/productsSlice";
 import {ShopStatus} from "../modules/redux/shop/shopTypes";
 import {
     selectAllShops,
@@ -18,9 +16,13 @@ import {
 import DelayContainer from "../components/User/delayContainer";
 import MyMarkdown from "src/components/MyMarkdown";
 import {MotionList, MotionListItem} from "../components/motion/motionList";
-import {streamOrder} from "../modules/redux/order/ordersThunk";
-import {fetchProducts} from "../modules/redux/product/productsThunk";
+import {fetchOrderByIndex, streamOrder} from "../modules/redux/order/ordersThunk";
+import {streamProducts} from "../modules/redux/product/productsThunk";
 import {fetchShops, streamShop} from "../modules/redux/shop/shopsThunk";
+import {selectOrderById, selectOrderStatus} from "../modules/redux/order/orderSelectors";
+import {orderAdded} from "../modules/redux/order/ordersSlice";
+import {isOrderCompleted} from "../modules/util/orderUtils";
+import {useDate} from "../modules/hooks/useDate";
 
 // queryParamで使うキー
 const orderIndexParamKey = 'order';
@@ -32,12 +34,13 @@ type DialogState = {
 }
 
 const OrderPage = () => {
-    const [orderIndex, setOrderIndex] = useState<string>("");
+    const [oIndexInput, setOIndexInput] = useState("");
     const [orderId, setOrderId] = useState("");
     const [dialogState, setDialogState] = useState<DialogState>({
         open: false,
         title: "",
-        onOk: () => {}
+        onOk: () => {
+        }
     });
 
     const dispatch = useAppDispatch();
@@ -46,26 +49,47 @@ const OrderPage = () => {
     const shopId = params.shopId ?? '';
     const [searchParams, setSearchParams] = useSearchParams();
     const paramOrderIndex = searchParams.get(orderIndexParamKey);
-    
+
+    // Order関連
     const order = useAppSelector(state => selectOrderById(state, shopId, orderId));
-    const unsubscribe = useAppSelector(state => selectOrderUnsubscribe(state, shopId));
+    const orderStatus = useAppSelector(state => selectOrderStatus(state, shopId))
+
+    // Product関連
+    const products = useAppSelector(state => selectAllProducts(state, shopId));
+    const productStatus = useAppSelector(state => selectProductStatus(state, shopId))
+
+    // Shop関連
+    const shop = useAppSelector((state: RootState) => selectShopById(state, shopId));
+    const shopStatus = useAppSelector(selectShopStatus);
+    const allShops = useAppSelector(selectAllShops);
     const delaySec = useAppSelector(state => selectShopDelaySeconds(state, shopId));
 
-    const products = useAppSelector(state => selectAllProduct(state, shopId));
-    const shop = useAppSelector((state: RootState) => selectShopById(state, shopId));
-    const allShops = useAppSelector(selectAllShops);
-    const shopStatus = useAppSelector(selectShopStatus);
+    useEffect(() => {
+        if (productStatus === "idle") {
+            const unsub = streamProducts(shopId, {dispatch})
+
+            return () => {
+                unsub();
+            }
+        }
+    }, []);
 
     useEffect(() => {
-        dispatch(fetchProducts(shopId));
-    }, [dispatch, shopId]);
-
-    useEffect(() => {
-        if (shopStatus == "idle" || shopStatus == "failed") {
+        if (shopStatus === "idle") {
             dispatch(fetchShops());
             dispatch(streamShop(shopId));
         }
     }, [dispatch, shopStatus, shopId]);
+
+    useEffect(() => {
+        if (orderStatus === 'idle' && orderId !== '') {
+            const unsub = streamOrder(shopId, orderId, {dispatch});
+
+            return () => {
+                unsub();
+            }
+        }
+    }, [orderId])
 
     useEffect(() => {
         if (shopId !== undefined && allShops.length !== 0 &&
@@ -85,57 +109,46 @@ const OrderPage = () => {
     useEffect(() => {
         const oIndex = Number(paramOrderIndex);
 
-        if (!isNaN(oIndex) && oIndex != 0) {
+        if (!isNaN(oIndex) && oIndex !== 0) {
             const strOIndex = oIndex.toString();
-            setOrderIndex(strOIndex);
+            setOIndexInput(strOIndex);
             handleSubmit(strOIndex);
         }
     }, [paramOrderIndex])
 
     const handleOrderIndex = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const num = Number(e.target.value);
-        if (!isNaN(num) && num != 0) {
-            setOrderIndex(num.toString());
+        if (!isNaN(num) && num !== 0) {
+            setOIndexInput(num.toString());
 
-        } else if (e.target.value == "") {
-            setOrderIndex("");
+        } else if (e.target.value === "") {
+            setOIndexInput("");
         }
     }
 
     const handleSubmit = async (orderIndex: string) => {
-        if (unsubscribe != null) {
-            unsubscribe();
-        }
+        const index = Number(orderIndex);
 
-        if (orderIndex === '') {
+        if (orderIndex === '' || isNaN(index)) {
             setDialogState({
                 open: true,
                 title: "注文番号を入力してください",
                 onOk: handleClose
             })
+        } else {
+            const order = await fetchOrderByIndex({shopId, orderIndex: index});
 
-            return;
-        }
-
-        const num = Number(orderIndex);
-
-        if (!isNaN(num)) {
-            await dispatch(streamOrder({shopId: shopId, orderIndex: num}))
-                .unwrap()
-                .then((payload) => {
-                    const {order} = payload;
-                    setOrderId(order.id);
-
-                    setSearchParams({[orderIndexParamKey]: orderIndex});
+            if (order === undefined) {
+                setDialogState({
+                    open: true,
+                    title: "該当する注文が見つかりませんでした",
+                    onOk: handleClose
                 })
-                .catch((_) => {
-                    setDialogState({
-                        open: true,
-                        title: "該当する番号の注文が見つかりません",
-                        onOk: () => handleClose()
-                    });
-                });
-
+            } else {
+                setSearchParams({ [orderIndexParamKey]: index.toString() });
+                dispatch(orderAdded({shopId, order}));
+                setOrderId(order.id);
+            }
         }
     }
 
@@ -157,9 +170,9 @@ const OrderPage = () => {
             <TextField id={"order-index"} variant={"filled"}
                        label={"注文番号"} // helperText={"番号札に記入された数字を入力してください"}
                        type={"number"} required fullWidth
-                       value={orderIndex} onChange={handleOrderIndex} sx={{minWidth: "17rem"}}/>
+                       value={oIndexInput} onChange={handleOrderIndex} sx={{minWidth: "17rem"}}/>
             <Button variant={"contained"} sx={{minWidth: "100px"}}
-                    disabled={orderIndex === undefined} onClick={() => handleSubmit(orderIndex)}>
+                    disabled={oIndexInput === ''} onClick={() => handleSubmit(oIndexInput)}>
                 確認
             </Button>
         </Stack>
@@ -167,7 +180,8 @@ const OrderPage = () => {
             {(order !== undefined && shop !== undefined) &&
                 <MotionListItem key={"order-card"}>
                     <div style={{paddingTop: "1rem"}}>
-                        <OrderCard order={order} products={products} shopStatus={shop.status} delaySec={order.delay_seconds + delaySec}/>
+                        <OrderCard order={order} products={products} shopStatus={shop.status}
+                                   delaySec={order.delay_seconds + delaySec}/>
                     </div>
                 </MotionListItem>
             }
@@ -190,7 +204,7 @@ const OrderPage = () => {
     </Stack>
 }
 
-const ShopMessage = (props: {message: string}) => {
+const ShopMessage = (props: { message: string }) => {
     return <Stack sx={{boxShadow: "none", padding: "1rem 0", paddingBottom: "2rem"}}>
         <MyMarkdown>
             {props.message}
@@ -198,95 +212,110 @@ const ShopMessage = (props: {message: string}) => {
     </Stack>
 }
 
-const OrderCard = (props: {order: Order, products: Product[], shopStatus: ShopStatus, delaySec: number}) => {
-    const [untilCount, setUntilCount] = useState(0);
-
+const OrderCard = (props: {
+    order: Order,
+    products: Product[],
+    shopStatus: ShopStatus,
+    delaySec: number,
+}) => {
     const {order, products, shopStatus, delaySec} = props;
-    const untilTime = order.complete_at.toDate().getTime() - new Date().getTime();
-    const until = new Date(untilTime);
-    const untilSec = untilCount % 60;
-    const untilMin = Math.floor(untilCount / 60);
-    const untilHou = Math.floor(untilMin / 60);
-    const completeRate = untilTime / (order.complete_at.toDate().getTime() - order.created_at.toDate().getTime());
-    const productTexts = Object.keys(order.product_amount).map(key => `${products.find(e => e.id == key)?.display_name ?? '???'} × ${order.product_amount[key]}`);
+
+    const now = useDate();
+    const nowSec = Math.floor(now.getTime() / 1000);
+    const productTexts = Object.keys(order.product_amount)
+        .map(key => {
+            return {
+                text: `${products.find(e => e.id === key)?.display_name ?? '???'} × ${order.product_amount[key]}`,
+                key
+            }
+        });
     const fontColor = shopStatus === "pause_ordering" ? "#410002" : "#201B16";
 
-    const isCompleted = order.status === "completed";
+    const status = useMemo(() => {
+        if (order.status === "received") return "received";
 
-    useEffect(() => {
-        setUntilCount(Math.floor(until.getTime() / 1000));
-    }, [until]);
+        return isOrderCompleted(order, products, 'required_product_amount') ? 'completed' : 'idle';
+    }, [order, products])
 
-    useCountDownInterval(untilCount, setUntilCount);
-    const [isWorking, setIsWorking] = useState(false);
-    useEffect(() => {
-        let isWorking_tmp = false;
-        for( const order_status in order.order_statuses){
-            const status = order.order_statuses[order_status].status;
-            if(status === "working" || status === "completed"){
-                isWorking_tmp = true;
-            }
-            // 完了済み，受け取り済みの場合は非表示
-            if(order.status === "completed" || order.status === "received"){
-                setIsWorking(false);
-            }else{ // 何れかの商品を制作中であれば表示
-                setIsWorking(isWorking_tmp);
-            }
-        }
-    }, [order.order_statuses, order.status]);
+    // 商品の完成予定時刻を秒単位で
+    // const completeAt = useMemo(() => {
+    //     let untilCount = 0;
+    //
+    //     for (const productId in order.required_product_amount) {
+    //         const product = products.find(p => p.id === productId);
+    //         const requiredAmount = order.required_product_amount[productId];
+    //
+    //         if (product) {
+    //             untilCount += (requiredAmount - product.stock) * product.span;
+    //         }
+    //     }
+    //
+    //     return order.created_at.seconds + untilCount;
+    // }, [order, products])
+    const completeAt = order.complete_at.seconds;
+
+    const untilSec = completeAt - nowSec;
+    const untilMin = untilSec > 0 ? Math.floor(untilSec / 60) : -1;
+    const untilHou = untilSec > 0 ? Math.floor(untilMin / 60) : -1;
+    const completeRate = untilSec / (completeAt - order.created_at.seconds);
 
     return <StickyNote>
         <Stack spacing={3} sx={{width: "100%", padding: "1rem 1.5rem"}}>
             <Stack direction={"row"} justifyContent={"space-between"}>
                 <Stack spacing={1}>
-                    <Typography variant={"caption"}>
+                    <Typography variant={"caption"} key={"head-1"}>
                         完成予定まで
                     </Typography>
-                    {!isCompleted && (untilCount > 0  ?
+                    {status === 'idle' && (untilSec > 0 ?
                         <Stack direction={"row"} spacing={0.7} alignItems={"flex-end"}>
                             {untilHou > 0 &&
                                 <React.Fragment>
-                                    <Typography variant={"h3"} sx={{fontWeight: "bold"}} color={fontColor}>
+                                    <Typography variant={"h3"} sx={{fontWeight: "bold"}} color={fontColor} key={"until-hou"}>
                                         {untilHou}
                                     </Typography>
-                                    <Typography variant={"h4"} sx={{paddingBottom: "0.25rem", fontWeight: "800"}} color={fontColor}>
+                                    <Typography variant={"h4"} sx={{paddingBottom: "0.25rem", fontWeight: "800"}}
+                                                color={fontColor} key={"until-hou-label"}>
                                         時間
                                     </Typography>
                                 </React.Fragment>}
                             {untilMin > 0 &&
                                 <React.Fragment>
-                                    <Typography variant={"h3"} sx={{fontWeight: "bold"}} color={fontColor}>
+                                    <Typography variant={"h3"} sx={{fontWeight: "bold"}} color={fontColor} key={"until-min"}>
                                         {untilMin}
                                     </Typography>
-                                    <Typography variant={"h4"} sx={{paddingBottom: "0.25rem", fontWeight: "800"}} color={fontColor}>
+                                    <Typography variant={"h4"} sx={{paddingBottom: "0.25rem", fontWeight: "800"}}
+                                                color={fontColor} key={"until-min-label"}>
                                         分
                                     </Typography>
                                 </React.Fragment>}
                             {untilSec > 0 &&
                                 <React.Fragment>
-                                    <Typography variant={"h3"} sx={{paddingLeft: "0.2rem", fontWeight: "bold"}} color={fontColor}>
-                                        {untilSec}
+                                    <Typography variant={"h3"} sx={{paddingLeft: "0.2rem", fontWeight: "bold"}}
+                                                color={fontColor} key={"until-sec"}>
+                                        {untilSec % 60}
                                     </Typography>
-                                    <Typography variant={"h4"} sx={{paddingBottom: "0.25rem", fontWeight: "800"}} color={fontColor}>
+                                    <Typography variant={"h4"} sx={{paddingBottom: "0.25rem", fontWeight: "800"}}
+                                                color={fontColor} key={"until-sec-label"}>
                                         秒
                                     </Typography>
                                 </React.Fragment>}
                         </Stack>
                         :
-                        <Typography sx={{fontWeight: "bold"}}>
+                        <Typography sx={{fontWeight: "bold"}} key={"almost-complete"}>
                             まもなく完成します･･･
                         </Typography>)
                     }
-                    {isCompleted &&
-                        <Typography sx={{fontWeight: "bold"}}>
+                    {status === 'completed' &&
+                        <Typography sx={{fontWeight: "bold"}} key={"completed"}>
                             完成済みです
                             <br/>受け取りをお待ちしております
                         </Typography>
 
                     }
-                    {isWorking &&
-                        <Typography variant={"overline"}>
-                        現在お作りしています
+                    {status === 'received' &&
+                        <Typography sx={{fontWeight: "bold"}} key={"received"}>
+                            商品は受け取り済みです
+                            <br/>ご利用いただきありがとうございました
                         </Typography>
                     }
                 </Stack>
@@ -316,12 +345,12 @@ const OrderCard = (props: {order: Order, products: Product[], shopStatus: ShopSt
             }
             {/*見出しとTypographyの間隔が、通知設定の物と合わないので仕方なくこの書き方*/}
             <Stack spacing={productTexts.length === 1 ? 0 : 1}>
-                <Typography variant={"caption"}>
+                <Typography variant={"caption"} key={"products"}>
                     商品
                 </Typography>
                 <Stack sx={{minHeight: "38px"}} justifyContent={"center"} spacing={1}>
-                    {productTexts.map(p => <Typography variant={"body1"}>
-                        {p}
+                    {productTexts.map(p => <Typography variant={"body1"} key={p.key}>
+                        {p.text}
                     </Typography>)}
                 </Stack>
             </Stack>

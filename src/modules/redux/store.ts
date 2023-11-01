@@ -3,18 +3,21 @@ import shopReducer from "./shop/shopsSlice";
 import productReducer from "./product/productsSlice";
 import orderReducer from "./order/ordersSlice";
 import {useDispatch, useSelector} from "react-redux";
+import stockReducer from "./stock/stocksSlice";
 
 const store = configureStore({
     reducer: {
         shop: shopReducer,
         product: productReducer,
-        order: orderReducer
+        order: orderReducer,
+        stock: stockReducer
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({
-            serializableCheck: {
-                ignoredActions: ['shops/fetchShops/fulfilled', 'products/fetchProducts/pending', 'products/fetchProducts/rejected', 'products/fetchProducts/fulfilled'],
-            },
+            serializableCheck: false,
+            // serializableCheck: {
+            //     ignoredActions: ['shops/fetchShops/fulfilled', 'products/fetchProducts/pending', 'products/fetchProducts/rejected', 'products/fetchProducts/fulfilled'],
+            // },
         }),
 })
 
