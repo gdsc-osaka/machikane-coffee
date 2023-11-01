@@ -47,6 +47,7 @@ const AdminCashierPage = () => {
 
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const isSmall = useMediaQuery(theme.breakpoints.down('lg'));
 
     const dispatch = useAppDispatch();
     const auth = useAuth();
@@ -149,7 +150,7 @@ const AdminCashierPage = () => {
                     :
                     <Stack direction={'row'} spacing={4} sx={{padding: "30px 30px"}}
                            alignItems={'flex-start'}>
-                        <Stack spacing={4}>
+                        <Stack spacing={4} minWidth={"570px"}>
                             <NeumoContainer key={"order-form-container"}>
                                 <Stack direction={"row"} spacing={3}>
                                     <ProductCounter products={products}
@@ -169,29 +170,31 @@ const AdminCashierPage = () => {
                                 <ShopManager/>
                             </NeumoContainer>
                         </Stack>
-                        {unreceivedOrders.length > 0 &&
-                            <OrdersList layoutId={"unreceived-orders"} grid={1}>
-                                {unreceivedOrders.map(o =>
-                                    <MotionListItem key={o.id}>
-                                        <UnreceivedOrderItem order={o}
-                                                             products={products}
-                                                             onClickDelete={handleDeleteOrder}
-                                                             onClickReceive={handleReceiveOrder}
-                                                             onReceiveIndividual={handleReceiveIndividual}/>
-                                    </MotionListItem>
-                                )}
-                            </OrdersList>
-                        }
-                        {receivedOrders.length > 0 &&
-                            <OrdersList layoutId={"received-orders"} grid={1}>
-                                {receivedOrders.map(o =>
-                                    <MotionListItem key={o.id}>
-                                        <ReceivedOrderListItem order={o}
-                                                               onClickUnreceive={handleUnreceiveOrder}/>
-                                    </MotionListItem>
-                                )}
-                            </OrdersList>
-                        }
+                        <Stack direction={isSmall ? "column" : "row"} spacing={4}>
+                            {unreceivedOrders.length > 0 &&
+                                <OrdersList layoutId={"unreceived-orders"} grid={1}>
+                                    {unreceivedOrders.map(o =>
+                                        <MotionListItem key={o.id}>
+                                            <UnreceivedOrderItem order={o}
+                                                                 products={products}
+                                                                 onClickDelete={handleDeleteOrder}
+                                                                 onClickReceive={handleReceiveOrder}
+                                                                 onReceiveIndividual={handleReceiveIndividual}/>
+                                        </MotionListItem>
+                                    )}
+                                </OrdersList>
+                            }
+                            {receivedOrders.length > 0 &&
+                                <OrdersList layoutId={"received-orders"} grid={isSmall ? 2 : 1}>
+                                    {receivedOrders.map(o =>
+                                        <MotionListItem key={o.id}>
+                                            <ReceivedOrderListItem order={o}
+                                                                   onClickUnreceive={handleUnreceiveOrder}/>
+                                        </MotionListItem>
+                                    )}
+                                </OrdersList>
+                            }
+                        </Stack>
                     </Stack>
                 }
                 <Dialog open={openDelete}

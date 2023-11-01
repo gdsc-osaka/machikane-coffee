@@ -50,7 +50,11 @@ export const UnreceivedOrderItem = (props: {
         </Row>
         <Stack direction={"column"} spacing={1} alignItems={"stretch"} width={"100%"}>
             <Row sx={{justifyContent: 'space-between'}} spacing={2} key={`unreceived-order-item-${order.id}-2`}>
-                <Typography variant={"body2"}>
+                <Typography variant={"body2"} sx={{    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    display: "-webkit-box",
+                    WebkitLineClamp: "2",
+                    WebkitBoxOrient: "vertical",}}>
                     {getOrderLabel(order, products)}
                 </Typography>
                 <Row key={`unreceived-order-item-${order.id}-3`} spacing={0}>
