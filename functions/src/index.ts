@@ -1,11 +1,11 @@
 import { initializeApp } from 'firebase-admin';
 import {setAdminClaim} from "./auth";
-import {resetProductStock} from "./db";
+import {onEveryday} from "./db";
 
 const app = initializeApp();
 
 export const auth = app.auth();
-export const firestore = app.firestore();
+export const db = app.firestore();
 
 exports.setAdminClaim = setAdminClaim;
-exports.resetProductStock = resetProductStock;
+exports.onEveryday = onEveryday;

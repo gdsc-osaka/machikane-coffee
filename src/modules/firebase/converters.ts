@@ -12,6 +12,7 @@ import {assertShop, Shop} from "../redux/shop/shopTypes";
 import {assertOrder, Order} from "../redux/order/orderTypes";
 import {Weaken} from "../util/typeUtils";
 import {assertStock, Stock} from "../redux/stock/stockTypes";
+import {assertOrderInfo, OrderInfo} from "../redux/info/infoTypes";
 
 export const productConverter: FirestoreDataConverter<Product> = {
     fromFirestore(snapshot: QueryDocumentSnapshot<DocumentData, DocumentData>, options: SnapshotOptions | undefined): Product {
@@ -75,4 +76,15 @@ export const stockConverter: FirestoreDataConverter<Stock> = {
         return weakenModel;
     }
 
+}
+
+export const orderInfoConverter: FirestoreDataConverter<OrderInfo> = {
+    fromFirestore(snapshot: QueryDocumentSnapshot<DocumentData, DocumentData>, options: SnapshotOptions | undefined): OrderInfo {
+        const data = snapshot.data(options);
+        assertOrderInfo(data);
+        return data;
+
+    }, toFirestore(modelObject: WithFieldValue<OrderInfo> | PartialWithFieldValue<OrderInfo>, options?: SetOptions): any {
+        return modelObject
+    }
 }
