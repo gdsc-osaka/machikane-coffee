@@ -103,13 +103,14 @@ export const updateStockStatus = createAsyncThunk<
 
     const batch = writeBatch(db);
 
-    batch.update(stockRef(shopId, stock.id), stockForUpdate)
-
     if (status === 'completed') {
         batch.update(productRef(shopId, stock.product_id), {
             stock: increment(1)
         } as ProductForUpdate)
+        stockForUpdate.completed_at = serverTimestamp();
     }
+
+    batch.update(stockRef(shopId, stock.id), stockForUpdate)
 
     try {
         await batch.commit();
@@ -117,10 +118,9 @@ export const updateStockStatus = createAsyncThunk<
         return {
             shopId,
             stock: {
-                ...stock,
+                ...stock, ...stockForUpdate,
                 status: status,
-                start_working_at: status === 'working' ? Timestamp.now() : stock.start_working_at
-            }
+            } as Stock
         }
     } catch (e) {
         return rejectWithValue(e)

@@ -64,10 +64,6 @@ const AdminCashierPage = () => {
 
     const shopUnsubscribe = useAppSelector(selectShopUnsubscribe);
 
-    useEffect(() => {
-        // console.log(products)
-    }, [products])
-
     const onChangeAmount = (productId: string, amount: number) => {
         setProductAmount({...productAmount, [productId]: amount});
     };

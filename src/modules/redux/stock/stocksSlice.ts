@@ -22,6 +22,15 @@ function ensureInitialized(state: any, shopId: string) {
     }
 }
 
+function mergeStock(stock: Stock, stockForUpdate: StockForUpdate): Stock {
+    return {
+        ...stock, ...stockForUpdate,
+        created_at: (stockForUpdate.created_at instanceof Timestamp) ? stockForUpdate.created_at : stock.created_at,
+        start_working_at: (stockForUpdate.start_working_at instanceof Timestamp) ? stockForUpdate.start_working_at : stock.start_working_at,
+        completed_at: (stockForUpdate.completed_at instanceof Timestamp) ? stockForUpdate.completed_at : stock.completed_at,
+    }
+}
+
 const stocksSlice = createSlice({
     name: 'stocks',
     initialState: {} as StockState,
@@ -42,11 +51,7 @@ const stocksSlice = createSlice({
             const oldStock = state[shopId].data.find(s => s.id === stock.id);
 
             if (oldStock) {
-                state[shopId].data.update(e => e.id === stock.id, {
-                    ...oldStock, ...stock,
-                    created_at: (stock.created_at instanceof Timestamp) ? stock.created_at : oldStock.created_at,
-                    start_working_at: (stock.start_working_at instanceof Timestamp) ? stock.start_working_at : oldStock.start_working_at,
-                });
+                state[shopId].data.update(e => e.id === stock.id, mergeStock(oldStock, stock));
             } else {
                 state[shopId].data.push(stock as Stock);
             }

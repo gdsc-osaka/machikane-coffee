@@ -228,6 +228,7 @@ export const addOrder = createAsyncThunk<
                     created_at: serverTimestamp(),
                     product_id: prodKey,
                     start_working_at: serverTimestamp(),
+                    completed_at: serverTimestamp(),
                     status: "idle",
                     spend_to_make: 0
                 };
@@ -461,52 +462,31 @@ export const receiveOrderIndividual = createAsyncThunk<
         .filter(o => o.created_at.seconds > order.created_at.seconds && Object.keys(o.product_amount).includes(prodId));
 
     const batch = writeBatch(db);
-
     const newOrder = lodash.cloneDeep(order);
 
-    // Update This Order
-    newOrder.product_status[productStatusKey].status = 'received';
-    newOrder.required_product_amount[prodId] -= 1; // 商品の必要数を1減らす
-    const allReceived = isOrderAllReceived(newOrder);
-    const orderStatus = allReceived ? 'received' : 'idle';
-    newOrder.status = orderStatus;
-
-    const newCompleteAt = order.complete_at.toMillis() - (product?.span ?? 0) * 1000
-    batch.update(orderRef(shopId, newOrder.id), {
-        product_status: newOrder.product_status,
-        [`required_product_amount.${prodId}`]: increment(-1),
-        status: orderStatus,
-        complete_at:
-    }) // FIXME OrderForUpdateを使う
-
-    // Update Products
+    // region Update Products
     batch.update(productRef(shopId, prodId), {
         stock: increment(-1)
     } as ProductForUpdate)
+    // endregion
 
-    // Update Other Orders
-    const completeAtDiff = order.complete_at.toMillis() - new Date().getTime();
-    for (const newerOrder of newerOrders) {
-        batch.update(orderRef(shopId, newerOrder.id), {
-            [`required_product_amount.${prodId}`]: increment(-1),
-            complete_at: Timestamp.fromMillis(newerOrder.complete_at.toMillis() - completeAtDiff),
-        }); // FIXME OrderForUpdateを使う
-    }
-
-    // Update Stocks
+    // region Update Stocks
     const stock = latestStocks /* 関係づけられているStockでproduct_idが一致するもの */
-        .find(s => s.orderRef.id === newOrder.id && s.product_id === prodId)
+        .find(s => s.orderRef.id === newOrder.id && s.product_id === prodId);
 
     if (stock === undefined) {
         return rejectWithValue('注文データに関連付けられた在庫データが存在しません')
     }
 
     const stRef = stockRef(shopId, stock.id);
+    let timeSpentToMakeMills: number;
 
     if (stock.status === 'completed') {
         batch.update(stRef, {
             status: 'received'
         } as StockForUpdate)
+
+        timeSpentToMakeMills = stock.completed_at.seconds - stock.start_working_at.seconds;
 
     } else {
         /* 関連付けられているStockがcompletedでない場合 */
@@ -516,10 +496,39 @@ export const receiveOrderIndividual = createAsyncThunk<
 
         if (altStock) {
             swapAndReceiveStockBatch(batch, shopId, stock, altStock);
+            timeSpentToMakeMills = altStock.completed_at.toMillis() - altStock.start_working_at.toMillis();
+
         } else {
             return rejectWithValue(`完成済みの在庫が見つかりませんでした (product_id: ${prodId})`)
         }
     }
+    // endregion
+
+    // region Update This Order
+    newOrder.product_status[productStatusKey].status = 'received';
+    newOrder.required_product_amount[prodId] -= 1; // 商品の必要数を1減らす
+    const allReceived = isOrderAllReceived(newOrder);
+    const orderStatus = allReceived ? 'received' : 'idle';
+    newOrder.status = orderStatus;
+
+    const newCompleteAtDiff = (product?.span ?? 0) * 1000 - timeSpentToMakeMills;
+
+    batch.update(orderRef(shopId, newOrder.id), {
+        product_status: newOrder.product_status,
+        [`required_product_amount.${prodId}`]: increment(-1),
+        status: orderStatus,
+        complete_at: Timestamp.fromMillis(order.complete_at.toMillis() - newCompleteAtDiff)
+    }) // FIXME OrderForUpdateを使う
+    // endregion
+
+    // region Update Other Orders
+    for (const newerOrder of newerOrders) {
+        batch.update(orderRef(shopId, newerOrder.id), {
+            [`required_product_amount.${prodId}`]: increment(-1),
+            complete_at: Timestamp.fromMillis(newerOrder.complete_at.toMillis() - timeSpentToMakeMills),
+        }); // FIXME OrderForUpdateを使う
+    }
+    // endregion
 
     try {
         await batch.commit();

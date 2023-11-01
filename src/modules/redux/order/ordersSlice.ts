@@ -53,7 +53,6 @@ const ordersSlice = createSlice({
 
             ensureInitialized(state, shopId);
             const oldOrder = state[shopId].data.find(s => s.id === order.id);
-            console.log(order);
 
             if (oldOrder) {
                 state[shopId].data.update(o => o.id === order.id, mergeOrderForUpdateAndOrder(order, oldOrder));
