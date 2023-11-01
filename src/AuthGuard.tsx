@@ -2,7 +2,7 @@ import React, {ReactNode, useContext, useEffect, useState} from "react";
 import {auth} from "./modules/firebase/firebase";
 import {useLocation, useNavigate, useParams} from "react-router-dom";
 
-export const AuthContext = React.createContext<AuthState>({loading: true, role: "unknown"});
+const AuthContext = React.createContext<AuthState>({loading: true, role: "unknown"});
 
 type Role = "user" | "admin" | "unknown";
 
