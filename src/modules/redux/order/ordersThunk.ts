@@ -8,14 +8,14 @@ import {
     increment,
     onSnapshot,
     orderBy,
-    query,
+    query, runTransaction,
     serverTimestamp,
     Timestamp,
     where,
     WriteBatch,
     writeBatch
 } from "firebase/firestore";
-import {getToday, today} from "../../util/dateUtils";
+import {getToday, isSameDay, today} from "../../util/dateUtils";
 import {db} from "../../firebase/firebase";
 import {orderConverter, stockConverter} from "../../firebase/converters";
 import {createAsyncThunk, Dispatch} from "@reduxjs/toolkit";
@@ -31,6 +31,8 @@ import {ProductForUpdate} from "../product/productTypes";
 import {stockRef} from "../stock/stocksThunk";
 import {isOrderAllReceived, isOrderCompleted} from "../../util/orderUtils";
 import {selectAllProducts} from "../product/productsSlice";
+import {orderInfoRef} from "../info/infoRef";
+import {OrderInfo, OrderInfoForAdd, OrderInfoForUpdate} from "../info/infoTypes";
 
 const { v4: uuidv4 } = require('uuid');
 
@@ -172,7 +174,6 @@ export const addOrder = createAsyncThunk<
             }
 
             if (product) {
-                console.log(product)
                 requireToMakeSec += product.span;
             }
         }
@@ -192,69 +193,81 @@ export const addOrder = createAsyncThunk<
         }
     }
 
+    const orderId = uuidv4();
 
     try {
-        // // TODO: Transaction を使う
-        // const lastOrderSnapshot = await getDocs(ordersQuery(shopId, limit(1)));
+        // 注文番号は必ず整合性が取れてないといけないため, Transaction を使用する.、
+        await runTransaction(db, async (transaction) => {
+            // OrderInfoを更新する
+            const oInfoRef = orderInfoRef(shopId);
+            const snapshot = await transaction.get(oInfoRef);
+            const orderInfo = snapshot.data();
+            const today = getToday();
 
-        const lastOrders = allOrders.sort((a, b) => b.created_at.seconds - a.created_at.seconds);
-        const lastIdleOrders = lastOrders.filter(o => o.status == 'idle');
+            let orderIndex = 1;
 
-        const now = new Date();
+            if (snapshot.exists() && orderInfo && isSameDay(orderInfo.reset_at.toDate(), today)) {
+                orderIndex = orderInfo.last_order_index + 1;
 
-        if (lastOrders.length !== 0) {
-            const lastOrder = lastOrders[0];
-            payloadOrder.index = lastOrder.index + 1;
-        }
+                transaction.update(oInfoRef, {
+                    last_order_index: increment(1)
+                } as OrderInfoForUpdate);
 
-        if (lastIdleOrders.length !== 0 && lastIdleOrders[0].complete_at.toMillis() > now.getTime()) {
-            const lastIdleOrder = lastIdleOrders[0];
-            payloadOrder.complete_at = Timestamp.fromMillis(lastIdleOrder.complete_at.toMillis() + requireToMakeSec * 1000);
-        } else {
-            payloadOrder.complete_at = Timestamp.fromDate(new Date().addSeconds(requireToMakeSec))
-        }
-
-        const batch = writeBatch(db);
-
-        const orderId = uuidv4();
-        const orderRef = doc(db, `shops/${shopId}/orders/${orderId}`);
-
-        for (const prodKey in payloadOrder.product_amount) {
-            const amount = payloadOrder.product_amount[prodKey];
-            for (let i = 0; i < amount; i++) {
-                const stock: PayloadStock = {
-                    orderRef: orderRef,
-                    barista_id: 0,
-                    created_at: serverTimestamp(),
-                    product_id: prodKey,
-                    start_working_at: serverTimestamp(),
-                    completed_at: serverTimestamp(),
-                    status: "idle",
-                    spend_to_make: 0
-                };
-                const stockId = crypto.randomUUID();
-                const stockRef = doc(db, `shops/${shopId}/stocks/${stockId}`);
-
-                payloadOrder.stocksRef.push(stockRef);
-
-                batch.set(stockRef.withConverter(stockConverter), stock);
+            } else {
+                transaction.set(oInfoRef, {
+                    last_order_index: 1,
+                    reset_at: serverTimestamp()
+                } as OrderInfoForAdd);
             }
-        }
 
-        batch.set(orderRef.withConverter(orderConverter), payloadOrder);
 
-        try {
-            await batch.commit();
-            const order: Order = {
-                ...payloadOrder,
-                id: orderId,
-                created_at: Timestamp.now()
+            const lastOrders = allOrders.sort((a, b) => b.created_at.seconds - a.created_at.seconds);
+            const lastIdleOrders = lastOrders.filter(o => o.status == 'idle');
+
+            const now = new Date();
+
+            payloadOrder.index = orderIndex;
+
+            if (lastIdleOrders.length !== 0 && lastIdleOrders[0].complete_at.toMillis() > now.getTime()) {
+                const lastIdleOrder = lastIdleOrders[0];
+                payloadOrder.complete_at = Timestamp.fromMillis(lastIdleOrder.complete_at.toMillis() + requireToMakeSec * 1000);
+            } else {
+                payloadOrder.complete_at = Timestamp.fromDate(new Date().addSeconds(requireToMakeSec))
             }
-            return {shopId, order}
 
-        } catch (e) {
-            return rejectWithValue(e);
+            const orderRef = doc(db, `shops/${shopId}/orders/${orderId}`);
+
+            for (const prodKey in payloadOrder.product_amount) {
+                const amount = payloadOrder.product_amount[prodKey];
+                for (let i = 0; i < amount; i++) {
+                    const stock: PayloadStock = {
+                        orderRef: orderRef,
+                        barista_id: 0,
+                        created_at: serverTimestamp(),
+                        product_id: prodKey,
+                        start_working_at: serverTimestamp(),
+                        completed_at: serverTimestamp(),
+                        status: "idle",
+                        spend_to_make: 0
+                    };
+                    const stockId = crypto.randomUUID();
+                    const stockRef = doc(db, `shops/${shopId}/stocks/${stockId}`);
+
+                    payloadOrder.stocksRef.push(stockRef);
+
+                    transaction.set(stockRef.withConverter(stockConverter), stock);
+                }
+            }
+
+            transaction.set(orderRef.withConverter(orderConverter), payloadOrder);
+        })
+
+        const order: Order = {
+            ...payloadOrder,
+            id: orderId,
+            created_at: Timestamp.now()
         }
+        return {shopId, order}
 
     } catch (error) {
         return rejectWithValue(error);
