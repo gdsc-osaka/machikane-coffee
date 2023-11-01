@@ -93,7 +93,6 @@ export const fetchOrderByIndex = async ({shopId, orderIndex}: {shopId: string, o
  */
 export const streamOrders = (shopId: string, {dispatch}: { dispatch: Dispatch }, ...queryConstraints: QueryConstraint[]) => {
     dispatch(orderSucceeded({shopId}));
-    console.log("streamOrders")
 
     const unsubscribe = onSnapshot(ordersQuery(shopId), (snapshot) => {
         snapshot.docChanges().forEach((change) => {

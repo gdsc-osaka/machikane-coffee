@@ -23,7 +23,7 @@ const RootPage = () => {
         </Typography>
         <Stack spacing={1}>
             {shops.map(shop => <MLink>
-                <Link to={shop.id}>
+                <Link to={shop.id} key={shop.id}>
                     {shop.display_name}
                 </Link>
             </MLink> )}

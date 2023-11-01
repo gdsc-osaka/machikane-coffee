@@ -1,15 +1,6 @@
 import {createAsyncThunk, Dispatch} from "@reduxjs/toolkit";
 import {Stock, StockForUpdate, StockStatus} from "./stockTypes";
-import {
-    collection,
-    doc,
-    increment,
-    onSnapshot,
-    query,
-    serverTimestamp, Timestamp,
-    where,
-    writeBatch
-} from "firebase/firestore";
+import {collection, doc, increment, onSnapshot, query, serverTimestamp, where, writeBatch} from "firebase/firestore";
 import {db} from "../../firebase/firebase";
 import {stockConverter} from "../../firebase/converters";
 import {stockAdded, stockIdle, stockRemoved, stockSucceeded, stockUpdated} from "./stocksSlice";
@@ -26,12 +17,10 @@ export const stockRef = (shopId: string, stockId: string) =>
 
 export const streamStocks = (shopId: string, {dispatch}: { dispatch: Dispatch }) => {
     dispatch(stockSucceeded({shopId}))
-    console.log("stream stocks")
 
     const _query = stocksCollection(shopId);
     const unsub = onSnapshot(_query, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
-            console.log(change.doc)
             if (change.type === "added") {
                 if (change.doc.metadata.hasPendingWrites) {
                     return;
@@ -90,31 +79,30 @@ export const addStock = createAsyncThunk<
  */
 
 export const updateStockStatus = createAsyncThunk<
-    {shopId: string, stock: StockForUpdate},
-    {shopId: string, stock: Stock, status: StockStatus, baristaId: number},
+    { shopId: string, stock: StockForUpdate },
+    { shopId: string, stock: Stock, status: StockStatus, baristaId: number },
     {}
 >('stocks/changeStockStatus', async ({shopId, stock, status, baristaId}, {rejectWithValue}) => {
     try {
+        const stockForUpdate: StockForUpdate = {
+            status: status,
+            barista_id: baristaId
+        }
 
-    const stockForUpdate: StockForUpdate = {
-        status: status,
-        barista_id: baristaId
-    }
+        if (status === 'working') {
+            stockForUpdate.start_working_at = serverTimestamp();
+        }
 
-    if (status === 'working') {
-        stockForUpdate.start_working_at = serverTimestamp();
-    }
+        const batch = writeBatch(db);
 
-    const batch = writeBatch(db);
+        if (status === 'completed') {
+            batch.update(productRef(shopId, stock.product_id), {
+                stock: increment(1)
+            } as ProductForUpdate)
+            stockForUpdate.completed_at = serverTimestamp();
+        }
 
-    if (status === 'completed') {
-        batch.update(productRef(shopId, stock.product_id), {
-            stock: increment(1)
-        } as ProductForUpdate)
-        stockForUpdate.completed_at = serverTimestamp();
-    }
-
-    batch.update(stockRef(shopId, stock.id), stockForUpdate)
+        batch.update(stockRef(shopId, stock.id), stockForUpdate)
 
         await batch.commit();
 

@@ -26,7 +26,6 @@ export const productConverter: FirestoreDataConverter<Product> = {
         const weakenModel: Weaken<WithFieldValue<Product> | PartialWithFieldValue<Product>, "id" | "thumbnail_url"> = Object.assign({}, modelObject);
         delete weakenModel.id;
         delete weakenModel.thumbnail_url;
-        console.log(weakenModel)
         return weakenModel;
     }
 }

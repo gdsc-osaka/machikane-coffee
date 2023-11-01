@@ -91,6 +91,7 @@ const TableText = (props: {
 
     return <Typography fontSize={variant === 'label' ? '0.8rem' : '1.2rem'}
                        fontWeight={variant === 'label' ? '' : "bold"}
+                       sx={variant === 'label' ? {color: (theme) => theme.typography.caption.color} : {}}
                        textAlign={"right"} width={"50px"}>
         {children}
     </Typography>
