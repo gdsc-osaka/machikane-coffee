@@ -223,7 +223,7 @@ const OrderCard = (props: {
     const {order, products, shopStatus, delaySec} = props;
 
     const now = useDate();
-    const nowSec = Math.floor(now.getTime() / 1000);
+    const nowSec = Math.floor(now / 1000);
     const productTexts = Object.keys(order.product_amount)
         .map(key => {
             return {

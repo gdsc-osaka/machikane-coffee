@@ -79,8 +79,13 @@ const stocksSlice = createSlice({
     extraReducers: (builder) => {
         builder.addCase(updateStockStatus.fulfilled, (state, action) => {
             const {shopId, stock} = action.payload;
+
             ensureInitialized(state, shopId);
-            state[shopId].data.update(e => e.id === stock.id, stock);
+            const oldStock = state[shopId].data.find(s => s.id === stock.id);
+
+            if (oldStock) {
+                state[shopId].data.update(e => e.id === stock.id, mergeStock(oldStock, stock));
+            }
         })
     }
 });

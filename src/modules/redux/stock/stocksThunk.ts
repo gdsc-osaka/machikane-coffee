@@ -6,7 +6,7 @@ import {
     increment,
     onSnapshot,
     query,
-    serverTimestamp,
+    serverTimestamp, Timestamp,
     where,
     writeBatch
 } from "firebase/firestore";
@@ -88,7 +88,7 @@ export const addStock = createAsyncThunk<
  */
 
 export const updateStockStatus = createAsyncThunk<
-    {shopId: string, stock: Stock},
+    {shopId: string, stock: StockForUpdate},
     {shopId: string, stock: Stock, status: StockStatus, baristaId: number},
     {}
 >('stocks/changeStockStatus', async ({shopId, stock, status, baristaId}, {rejectWithValue}) => {
@@ -117,10 +117,7 @@ export const updateStockStatus = createAsyncThunk<
 
         return {
             shopId,
-            stock: {
-                ...stock, ...stockForUpdate,
-                status: status,
-            } as Stock
+            stock: stockForUpdate
         }
     } catch (e) {
         return rejectWithValue(e)

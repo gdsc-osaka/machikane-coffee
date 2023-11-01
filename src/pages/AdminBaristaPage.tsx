@@ -18,6 +18,7 @@ import {streamStocks, updateStockStatus} from "../modules/redux/stock/stocksThun
 import {Stock, StockStatus} from "../modules/redux/stock/stockTypes";
 import styled from "styled-components";
 import {fullToHalf} from "../modules/util/stringUtils";
+import {useDate} from "../modules/hooks/useDate";
 
 const AdminBaristaPage = () => {
     const [selectedId, setSelectedId] = useState(0);
@@ -160,6 +161,8 @@ const BaristaStockItem = (props: {
 }) => {
     const {stock, products, onChangeStatus} = props;
 
+    const now = useDate();
+
     const isWorking = stock.status === "working";
     const product = products.find(p => p.id === stock.product_id);
     const splittedOrderId = stock.orderRef.id.split('_'); /* orderのidには末尾に "_番号" の形で注文番号が付加されている */
@@ -167,6 +170,12 @@ const BaristaStockItem = (props: {
     if (product === undefined) {
         return <></>;
     }
+
+    console.log(new Date(now).toLocaleTimeString() + ", " + stock.start_working_at.toDate().toLocaleTimeString());
+
+    const secSpentToMake = (now - stock.start_working_at.toMillis()) / 1000; /* 作成し始めてから何秒経過したか */
+    const elapsedMin = Math.floor(secSpentToMake / 60);
+    const elapsedSec = Math.floor(secSpentToMake % 60);
 
     return <StickyNote variant={isWorking ? "surface-variant" : "surface"} direction={"row"} sx={{justifyContent: "space-between", padding: "0.375rem 1.5rem 0.375rem 0.5rem"}}>
         <Stack direction={"row"} alignItems={"center"} spacing={1}>
@@ -177,6 +186,11 @@ const BaristaStockItem = (props: {
             <Icon alt={"product-icon"} src={product.thumbnail_url}/>
             <Typography variant={"body2"}>
                 {fullToHalf(product.display_name)}
+            </Typography>
+            <Typography variant={"body2"} sx={{color: (theme) => theme.typography.caption.color}}>
+                {stock.status === "working" &&
+                    String(elapsedMin > 0 ? elapsedMin : 0).padStart(2, "0")
+                    + ":" + String(elapsedSec > 0  ? elapsedSec : 0).padStart(2, "0")}
             </Typography>
         </Stack>
         <Stack direction={"row"} spacing={1}>
