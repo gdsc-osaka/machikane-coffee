@@ -22,8 +22,8 @@ const RootPage = () => {
             店舗一覧
         </Typography>
         <Stack spacing={1}>
-            {shops.map(shop => <MLink>
-                <Link to={shop.id} key={shop.id}>
+            {shops.map(shop => <MLink key={shop.id}>
+                <Link to={shop.id}>
                     {shop.display_name}
                 </Link>
             </MLink> )}
