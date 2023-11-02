@@ -110,7 +110,7 @@ const AdminCashierPage = () => {
     }
 
     const handleReceiveIndividual = (order: Order, productStatusKey: string) => {
-        dispatch(receiveOrderIndividual({shopId, order, productStatusKey})).unwrap().catch(e => console.log(e))
+        dispatch(receiveOrderIndividual({shopId, order, productStatusKey}))
     }
 
     return (

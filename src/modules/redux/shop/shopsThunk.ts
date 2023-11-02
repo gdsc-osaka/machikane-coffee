@@ -143,7 +143,7 @@ export const changeShopStatus = createAsyncThunk<Shop | undefined, { shopId: str
                     return newShop;
                 }
             } catch (e) {
-                console.log(e);
+                console.error(e);
             }
 
         }

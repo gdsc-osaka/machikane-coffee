@@ -90,7 +90,6 @@ export const streamOrders = (shopId: string, {dispatch}: { dispatch: Dispatch },
 
     const unsubscribe = onSnapshot(ordersQuery(shopId), (snapshot) => {
         snapshot.docChanges().forEach((change) => {
-            console.log(change.doc)
             if (change.type === "added") {
                 if (change.doc.metadata.hasPendingWrites) {
                     return;
