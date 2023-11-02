@@ -155,10 +155,8 @@ const OrderPage = () => {
         <MotionList layoutId={"order-page-stack"}>
             {(order !== undefined && shop !== undefined) &&
                 <MotionListItem>
-                    <div style={{paddingTop: "1rem"}}>
-                        <OrderCard order={order} products={products} shopStatus={shop.status}
-                                   delaySec={order.delay_seconds + delaySec}/>
-                    </div>
+                    <OrderCard order={order} products={products} shopStatus={shop.status}
+                               delaySec={order.delay_seconds + delaySec}/>
                 </MotionListItem>
             }
             {shop !== undefined && shop.message !== '' &&
@@ -181,7 +179,7 @@ const OrderPage = () => {
 }
 
 const ShopMessage = (props: { message: string }) => {
-    return <Stack sx={{boxShadow: "none", padding: "1rem 0", paddingBottom: "2rem"}}>
+    return <Stack sx={{boxShadow: "none", padding: "1rem 0"}}>
         <MyMarkdown>
             {props.message}
         </MyMarkdown>
