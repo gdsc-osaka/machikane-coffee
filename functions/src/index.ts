@@ -1,6 +1,7 @@
 const {onSchedule} = require("firebase-functions/v2/scheduler");
-const {logger} = require("firebase-functions");
 const {getFirestore} = require("firebase-admin/firestore");
+const functions = require("firebase-functions");
+const logger = functions.logger;
 
 // The Firebase Admin SDK to delete inactive users.
 const admin = require("firebase-admin");
@@ -13,7 +14,7 @@ const firestore = getFirestore();
  * 1. shops/{shopId}/products/{productId} の stock を 0 に設定する
  */
 // @ts-ignore
-exports.onEveryday = onSchedule("every day 00:00", async (e) => {
+exports.onEveryday =  onSchedule("every day 00:00", async (e) => {
     const productsRef = firestore.collectionGroup('products');
     const shopIds: String[] = []; /* productsから得られるデータからshopIdを格納する */
 

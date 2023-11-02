@@ -194,7 +194,8 @@ const OrderCard = (props: {
 }) => {
     const {order, products, shopStatus, delaySec} = props;
 
-    const now = useDate();
+    const isPause = shopStatus === "pause_ordering";
+    const now = useDate(1, isPause);
     const nowSec = Math.floor(now / 1000);
     const productTexts = Object.keys(order.product_amount)
         .map(key => {
@@ -203,7 +204,7 @@ const OrderCard = (props: {
                 key
             }
         });
-    const fontColor = shopStatus === "pause_ordering" ? "#410002" : "#201B16";
+    const fontColor = isPause ? "#410002" : "#201B16";
 
     const status = useMemo(() => {
         if (order.status === "received") return "received";
@@ -228,10 +229,11 @@ const OrderCard = (props: {
     // }, [order, products])
     const completeAt = order.complete_at.seconds + order.delay_seconds;
 
-    const untilSec = completeAt - nowSec;
-    const untilMin = untilSec > 0 ? Math.floor(untilSec / 60) : -1;
-    const untilHou = untilSec > 0 ? Math.floor(untilMin / 60) : -1;
-    const completeRate = status === 'idle' ? untilSec / (completeAt - order.created_at.seconds) : 0;
+    const untilCount = completeAt - nowSec;
+    const untilSec = untilCount % 60;
+    const untilMin = untilCount > 0 ? Math.floor(untilCount / 60) : -1;
+    const untilHou = untilCount > 0 ? Math.floor(untilMin / 60) : -1;
+    const completeRate = status === 'idle' ? untilCount / (completeAt - order.created_at.seconds) : 0;
 
     return <StickyNote>
         <Stack spacing={3} sx={{width: "100%", padding: "1rem 1.5rem"}}>
@@ -240,7 +242,7 @@ const OrderCard = (props: {
                     <Typography variant={"caption"}>
                         完成予定まで
                     </Typography>
-                    {status === 'idle' && (untilSec > 0 ?
+                    {status === 'idle' && (untilCount > 0 ?
                         <Stack direction={"row"} spacing={0.7} alignItems={"flex-end"}>
                             {untilHou > 0 &&
                                 <React.Fragment>
@@ -266,7 +268,7 @@ const OrderCard = (props: {
                                 <React.Fragment>
                                     <Typography variant={"h3"} sx={{paddingLeft: "0.2rem", fontWeight: "bold"}}
                                                 color={fontColor}>
-                                        {untilSec % 60}
+                                        {untilSec}
                                     </Typography>
                                     <Typography variant={"h4"} sx={{paddingBottom: "0.25rem", fontWeight: "800"}}
                                                 color={fontColor}>
@@ -306,14 +308,14 @@ const OrderCard = (props: {
             <div style={{marginLeft: "-1rem", marginRight: "-1rem"}}>
                 <Divider sx={{borderBottomStyle: "dotted"}}/>
             </div>
-            {shopStatus === "pause_ordering" &&
+            {delaySec > 0 &&
                 <Stack>
                     <Typography variant={"caption"}>
                         遅延
                     </Typography>
                     <Stack sx={{minHeight: "38px"}} justifyContent={"center"} spacing={1}>
                         <Typography variant={"body1"}>
-                            全部で約{Math.floor(delaySec / 60)}分遅延しています
+                            約{Math.ceil(delaySec / 60)}分遅延しています
                         </Typography>
                     </Stack>
                 </Stack>

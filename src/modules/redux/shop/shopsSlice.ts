@@ -93,7 +93,7 @@ export const selectShopStatus = (state: RootState) => state.shop.status;
 export const selectShopDelaySeconds = (state: RootState, shopId: string) => {
     const shop = selectShopById(state, shopId);
 
-    if (shop !== undefined) {
+    if (shop !== undefined && shop.status === 'pause_ordering') {
         const delayMilliSec = new Date().getTime() - shop.last_active_time.toDate().getTime();
 
         return delayMilliSec / 1000;

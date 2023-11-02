@@ -1,25 +1,22 @@
 import {createAsyncThunk, Dispatch} from "@reduxjs/toolkit";
-import {Shop, ShopForAdd, ShopStatus} from "./shopTypes";
+import {Shop, ShopForAdd, ShopForUpdate, ShopStatus} from "./shopTypes";
 import {RootState} from "../store";
 import {
     collection,
     doc,
-    getDoc,
     getDocs,
     increment,
     onSnapshot,
-    query,
     runTransaction,
     serverTimestamp,
     setDoc,
     Timestamp,
-    updateDoc,
-    where
+    updateDoc
 } from "firebase/firestore";
 import {db} from "../../firebase/firebase";
-import {orderConverter, shopConverter} from "../../firebase/converters";
-import {getToday} from "../../util/dateUtils";
+import {shopConverter} from "../../firebase/converters";
 import {selectShopById, shopIdle, shopRemoved, shopSucceeded, shopUpdated} from "./shopsSlice";
+import {ordersQuery} from "../order/ordersThunk";
 
 const shopsRef = collection(db, "shops").withConverter(shopConverter);
 const shopRef = (shopId: string) => doc(db, `shops/${shopId}`).withConverter(shopConverter);
@@ -82,11 +79,12 @@ export const updateShop = createAsyncThunk<Shop | undefined, { shopId: string, r
             return undefined;
         }
     })
-export const changeShopStatus = createAsyncThunk<Shop | undefined, { shopId: string, status: ShopStatus }, {
-    state: RootState
-}>
-("shops/changeShopStatus",
-    async ({shopId, status}, {getState}) => {
+export const changeShopStatus = createAsyncThunk<
+    Shop,
+    { shop: Shop, status: ShopStatus, emgMsg?: string },
+    {}
+>("shops/changeShopStatus", async ({shop, status, emgMsg}, {rejectWithValue}) => {
+        const shopId = shop.id;
         const _shopRef = shopRef(shopId);
 
         if (status === "pause_ordering") {
@@ -94,57 +92,56 @@ export const changeShopStatus = createAsyncThunk<Shop | undefined, { shopId: str
             await updateDoc(_shopRef, {
                 status: status,
                 last_active_time: serverTimestamp(),
-            });
+                emg_message: emgMsg
+            } as ShopForUpdate);
 
-            // TODO: FieldValue の更新があるので get しているが, 多少の誤差は許容して get を呼ばないようにする?
-            const snapshot = await getDoc(_shopRef);
-            return snapshot.data();
+            return {
+                ...shop,
+                status,
+                last_active_time: Timestamp.now(),
+                emg_message: emgMsg
+            } as Shop;
 
         } else if (status === "active") {
-            // 注文再開時はオーダーの完了時刻を書き換える
+            // 注文再開時は注文の完了時刻を書き換える
 
-            // last_active_time を取得
-            const snapshot = await getDoc(_shopRef);
-            const shop = snapshot.data();
-            const lastActiveTime = shop!.last_active_time;
-            // 最後に営業してた時刻からどれだけ経過したか
-            const delaySeconds = new Date().getSeconds() - lastActiveTime.toDate().getSeconds();
 
             // 注文を取得
-            const _query = query(
-                collection(db, `shops/${shopId}/orders`).withConverter(orderConverter),
-                where('created_at', '>=', Timestamp.fromDate(getToday())),
-                where('completed', '==', false));
+            const q = ordersQuery(shopId);
 
             try {
-                const ordersSnapshot = await getDocs(_query);
+                const ordersSnapshot = await getDocs(q);
 
-                const newShop = selectShopById(getState(), shopId);
+                await runTransaction(db, async (transaction) => {
+                    const shopSnapshot = await transaction.get(_shopRef);
+                    const latestShop = shopSnapshot.data();
 
-                try {
-                    await runTransaction(db, async (transaction) => {
+                    const lastActiveTime = latestShop ? latestShop.last_active_time : shop.last_active_time;
+                    // 最後に営業してた時刻からどれだけ経過したか
+                    const delaySeconds = Math.floor((new Date().getTime() - lastActiveTime.toMillis()) / 1000);
 
-                        for (const doc of ordersSnapshot.docs) {
-                            // 遅延時間分を可算
-                            transaction.update(doc.ref, {
-                                delay_seconds: increment(delaySeconds)
-                            })
-                        }
-                        // 店のステータスをactiveに変更
-                        transaction.update(_shopRef, {
-                            status: status
+                    for (const doc of ordersSnapshot.docs) {
+                        // 遅延時間分を可算
+                        transaction.update(doc.ref, {
+                            delay_seconds: increment(delaySeconds)
                         })
-                    })
-                    if (newShop !== undefined) {
-                        newShop.status = status;
                     }
-                    return newShop;
-                } catch {
-                    return newShop;
-                }
-            } catch (e) {
-                console.error(e);
-            }
 
+                    // 店のステータスをactiveに変更
+                    transaction.update(_shopRef, {
+                        status: status
+                    })
+                });
+
+                return {
+                    ...shop,
+                    status
+                } as Shop;
+            } catch (e) {
+                rejectWithValue(e);
+            }
         }
+
+        // status == active, pause以外は何もしない
+        return shop;
     })

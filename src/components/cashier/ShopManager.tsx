@@ -4,24 +4,19 @@ import {useEffect, useState} from "react";
 import {Row} from "../layout/Row";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import RemoveRoundedIcon from "@mui/icons-material/RemoveRounded";
-import {
-    selectShopById,
-    selectShopStatus,
-
-
-} from "../../modules/redux/shop/shopsSlice";
+import {selectShopById,} from "../../modules/redux/shop/shopsSlice";
 import {useParams} from "react-router";
 import {useSelector} from "react-redux";
 import {RootState, useAppDispatch} from "../../modules/redux/store";
 import {BaristaMap, Shop, ShopStatus,} from "../../modules/redux/shop/shopTypes";
 import MarkdownTextField from "../MarkdownTextField";
-import {changeShopStatus, streamShop, updateShop} from "../../modules/redux/shop/shopsThunk";
+import {changeShopStatus, updateShop} from "../../modules/redux/shop/shopsThunk";
+import {useStreamEffect} from "../../modules/hooks/useStreamEffect";
 
 const ShopManager = () => {
     const dispatch = useAppDispatch();
     const params = useParams();
     const shopId = params.shopId ?? "";
-    const shopStatus = useSelector(selectShopStatus);
     const shop = useSelector<RootState, Shop | undefined>((state) =>
         selectShopById(state, shopId)
     );
@@ -30,12 +25,7 @@ const ShopManager = () => {
     const [baristas, setBaristas] = useState<BaristaMap>({1: "active"});
     const [status, setStatus] = useState<ShopStatus>("active");
 
-    useEffect(() => {
-        if (shopStatus === "idle") {
-            const unsub = streamShop(shopId, {dispatch});
-            return () => unsub();
-        }
-    }, [shopId]);
+    useStreamEffect(shopId, "shop");
 
     useEffect(() => {
         if (shop !== undefined) {
@@ -46,54 +36,17 @@ const ShopManager = () => {
         }
     }, [shop]);
 
-    const handleEmergency = async (value: boolean) => {
-        if (value) {
-            // pause
-            if (shop !== undefined) {
-                // emgMsg
-                await dispatch(
-                    updateShop({
-                        shopId: shopId,
-                        rawShop: {
-                            ...shop,
-                            emg_message: emgMsg,
-                        },
-                    })
-                );
+    const handleEmergency = async (isEmergency: boolean) => {
+        const newStatus = isEmergency ? "pause_ordering" : "active";
 
-                // status
-                await dispatch(
-                    changeShopStatus({shopId: shopId, status: "pause_ordering"})
-                );
+        // pause
+        if (shop !== undefined) {
+            dispatch(changeShopStatus({shop: shop, status: newStatus, emgMsg: emgMsg}));
 
-                setStatus("pause_ordering");
-            }
-        } else {
-            // active
-            if (shop !== undefined) {
-                // emgMsg
-                // await dispatch(
-                //     updateShop({
-                //         shopId: shopId,
-                //         rawShop: {
-                //             ...shop,
-                //             emg_message: "",
-                //         },
-                //     })
-                // );
-
-                // status
-                await dispatch(
-                    changeShopStatus({
-                        shopId: shopId,
-                        status: "active",
-                    })
-                );
-
-                setStatus("active");
-            }
+            setStatus(newStatus);
         }
-    };
+    }
+
     const handleBaristaCount = async (diff: number) => {
         const newCount = baristaCount + diff;
         const trueBaristas = Object.assign({}, baristas); // make the copy
@@ -108,7 +61,7 @@ const ShopManager = () => {
             }
 
             if (shop !== undefined) {
-                await dispatch(
+                dispatch(
                     updateShop({
                         shopId: shopId,
                         rawShop: {
@@ -118,13 +71,6 @@ const ShopManager = () => {
                     })
                 );
             }
-
-            await dispatch(
-                changeShopStatus({
-                    shopId: shopId,
-                    status: status,
-                })
-            );
         }
     };
     return shop !== undefined ? (

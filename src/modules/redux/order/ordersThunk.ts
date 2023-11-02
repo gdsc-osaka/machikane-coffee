@@ -38,7 +38,7 @@ import {selectShopById} from "../shop/shopsSlice";
 
 const { v4: uuidv4 } = require('uuid');
 
-const ordersQuery = (shopId: string, ...queryConstraints: QueryConstraint[]) => {
+export const ordersQuery = (shopId: string, ...queryConstraints: QueryConstraint[]) => {
     const today = Timestamp.fromDate(getToday());
     return query(
         collection(db, `shops/${shopId}/orders`).withConverter(orderConverter),
