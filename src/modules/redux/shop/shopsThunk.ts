@@ -32,8 +32,6 @@ export const fetchShops = createAsyncThunk("shops/fetchShops",
  * shopをリアルタイム更新する.
  */
 export const streamShop = (shopId: string, {dispatch}: {dispatch: Dispatch}) => {
-    dispatch(shopSucceeded());
-
     const unsubscribe = onSnapshot(shopRef(shopId), (snapshot) => {
         if (snapshot.exists()) {
             const shop = snapshot.data();
@@ -41,6 +39,7 @@ export const streamShop = (shopId: string, {dispatch}: {dispatch: Dispatch}) => 
         } else {
             dispatch(shopRemoved(shopId));
         }
+        dispatch(shopSucceeded());
     });
 
     return () => {

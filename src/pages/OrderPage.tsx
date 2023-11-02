@@ -62,7 +62,6 @@ const OrderPage = () => {
     // Shop関連
     const shop = useAppSelector((state: RootState) => selectShopById(state, shopId));
     const shopStatus = useAppSelector(state => selectShopStatus(state));
-    const allShops = useAppSelector(selectAllShops);
     const delaySec = useAppSelector(state => selectShopDelaySeconds(state, shopId));
 
     useStreamEffect(shopId, "shop", "product");
