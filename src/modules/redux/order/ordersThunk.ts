@@ -360,11 +360,11 @@ export const receiveOrder = createAsyncThunk<
 
         await runTransaction(db, async (transaction) => {
             const latestOrderSnapshot = await transaction.get(oRef.withConverter(orderConverter));
-            if (!latestOrderSnapshot.exists()) return;
+            if (!latestOrderSnapshot.exists()) return Promise.reject('該当する注文が見つかりません');
             const latestOrder = latestOrderSnapshot.data();
 
             // 注文が受け取り済みなら処理をしない
-            if (latestOrder.status === 'received') return;
+            if (latestOrder.status === 'received') return Promise.reject('該当する注文は既に受け取り済みです');
 
             // Update Products + calculate reqProdAmoDiff
             const reqProdAmoDiff: OrderForUpdate = {};
@@ -479,11 +479,11 @@ export const receiveOrderIndividual = createAsyncThunk<
         await runTransaction(db, async (transaction) => {
             const oRef = orderRef(shopId, newOrder.id);
             const latestOrderSnapshot = await transaction.get(oRef.withConverter(orderConverter));
-            if (!latestOrderSnapshot.exists()) return;
+            if (!latestOrderSnapshot.exists()) return Promise.reject('該当する注文がありません');
             const latestOrder = latestOrderSnapshot.data();
 
             /// 受け取り済みなら処理をやめる
-            if (latestOrder.product_status[productStatusKey].status === 'received') return;
+            if (latestOrder.product_status[productStatusKey].status === 'received') return Promise.reject('該当する商品は既に受け取り済みです');
 
             // region Update Products
             transaction.update(productRef(shopId, prodId), {
@@ -555,6 +555,7 @@ export const receiveOrderIndividual = createAsyncThunk<
         return {shopId, order: newOrder};
 
     } catch (e) {
+        console.error(e);
         return rejectWithValue(e);
     }
 })

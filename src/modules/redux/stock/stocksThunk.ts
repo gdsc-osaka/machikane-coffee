@@ -106,10 +106,10 @@ export const updateStockStatus = createAsyncThunk<
 
         await runTransaction(db, async (transaction) => {
             const latestStockSnapshot = await transaction.get(stRef);
-            if (!latestStockSnapshot.exists()) return;
+            if (!latestStockSnapshot.exists()) return Promise.reject('該当するStockが見つかりません');
             const latestStock = latestStockSnapshot.data();
             /// 既に状態がstatusに変わっていたら処理をやめる
-            if (latestStock.status === status) return;
+            if (latestStock.status === status) return Promise.reject('Stockのstatusは既に変更されています.');
 
             if (status === 'completed') {
                 transaction.update(productRef(shopId, stock.product_id), {

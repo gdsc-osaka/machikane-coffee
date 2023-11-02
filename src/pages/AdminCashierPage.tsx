@@ -186,7 +186,7 @@ const AdminCashierPage = () => {
                             </NeumoContainer>
                         </Stack>
                         <Stack direction={isSmall ? "column" : "row"} spacing={4}
-                               alignItems={isSmall ? "stretch" : 'flex-start'}>
+                               alignItems={isSmall ? "stretch" : 'flex-start'} width={"100%"}>
                             {unreceivedOrders.length > 0 &&
                                 <OrdersList layoutId={"unreceived-orders"} grid={1}>
                                     {unreceivedOrders.map(o =>
