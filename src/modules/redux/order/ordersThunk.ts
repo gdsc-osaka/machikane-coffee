@@ -8,14 +8,15 @@ import {
     increment,
     onSnapshot,
     orderBy,
-    query, runTransaction,
+    query,
+    runTransaction,
     serverTimestamp,
     Timestamp,
     where,
     WriteBatch,
     writeBatch
 } from "firebase/firestore";
-import {getToday, isSameDay, today} from "../../util/dateUtils";
+import {getToday, isSameDay} from "../../util/dateUtils";
 import {db} from "../../firebase/firebase";
 import {orderConverter, stockConverter} from "../../firebase/converters";
 import {createAsyncThunk, Dispatch} from "@reduxjs/toolkit";
@@ -213,7 +214,7 @@ export const addOrder = createAsyncThunk<
             orderId += `_${orderIndex}`
 
             const lastOrders = allOrders.sort((a, b) => b.created_at.seconds - a.created_at.seconds);
-            const lastIdleOrders = lastOrders.filter(o => o.status == 'idle');
+            const lastIdleOrders = lastOrders.filter(o => o.status === 'idle');
 
             const now = new Date();
 
