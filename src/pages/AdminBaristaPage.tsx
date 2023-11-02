@@ -138,7 +138,14 @@ const AdminBaristaPage = () => {
                 gridTemplateColumns: "1fr",
                 gap: '1rem'
             }}>
-                {stocks.map(stock => {
+                {selectedId === 0 &&
+                    <MotionListItem>
+                        <CaptionCard>
+                            番号を選択してください
+                        </CaptionCard>
+                    </MotionListItem>
+                }
+                {selectedId !== 0 && stocks.map(stock => {
                     return <MotionListItem key={stock.id}>
                         <BaristaStockItem stock={stock}
                                           products={products}
@@ -199,12 +206,12 @@ const BaristaStockItem = (props: {
                     <Button variant={"outlined"} onClick={() => onChangeStatus(stock, "idle")} key={"undo"}>
                         戻す
                     </Button>
-                    <Button variant={"outlined"} onClick={() => onChangeStatus(stock, "completed")} key={"check"}>
+                    <Button variant={"contained"} onClick={() => onChangeStatus(stock, "completed")} key={"check"}>
                         完成
                     </Button>
                 </>
                 :
-                <Button variant={"contained"} onClick={() => onChangeStatus(stock, "working")}>
+                <Button variant={"outlined"} onClick={() => onChangeStatus(stock, "working")}>
                     作成
                 </Button>
             }
