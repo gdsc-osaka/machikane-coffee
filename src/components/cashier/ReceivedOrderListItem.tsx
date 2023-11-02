@@ -14,7 +14,7 @@ const ReceivedOrderListItem = (props: ReceivedOrderListProps) => {
 
     return <StickyNote variant={"surface-variant"} direction={'row'}
                        sx={{alignItems: 'stretch', padding: "0.375rem 0.5rem"}}>
-        <Stack direction={'row'} alignItems={"center"} spacing={1} justifyContent={"space-between"} width={"100%"}>
+        <Stack direction={'row'} alignItems={"center"} spacing={0} justifyContent={"space-between"} width={"100%"}>
             <Stack direction={'row'} alignItems={"center"} spacing={1} height={"100%"}>
                 <Typography variant={"body2"} fontWeight={"bold"} width={"20px"} textAlign={"center"}>
                     {order.index}
