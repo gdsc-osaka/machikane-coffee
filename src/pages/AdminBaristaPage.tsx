@@ -103,7 +103,7 @@ const AdminBaristaPage = () => {
 
     // それぞれのボタンを押したとき
     const handleStockStatus = (stock: Stock, status: StockStatus) => {
-        dispatch(updateStockStatus({shopId, stock, status, baristaId: selectedId}));
+        dispatch(updateStockStatus({shopId, stock, status, baristaId: selectedId})).catch(e => toast.error(e));
     }
 
 

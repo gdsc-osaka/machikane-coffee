@@ -37,6 +37,7 @@ import {UnreceivedOrderItem} from "../components/cashier/UnreceivedOrderItem";
 import OrdersList from "../components/cashier/OrdersList";
 import {useStreamEffect} from "../modules/hooks/useStreamEffect";
 import {CaptionCard} from "../components/OutlineCard";
+import toast from "react-hot-toast";
 
 const AdminCashierPage = () => {
     const [openDelete, setOpenDelete] = useState(false);
@@ -86,11 +87,11 @@ const AdminCashierPage = () => {
     };
 
     const handleReceiveOrder = (order: Order) => {
-        dispatch(receiveOrder({shopId, order}));
+        dispatch(receiveOrder({shopId, order})).catch(e => toast.error(e));
     }
 
     const handleUnreceiveOrder = (order: Order) => {
-        dispatch(unreceiveOrder({shopId, order}));
+        dispatch(unreceiveOrder({shopId, order})).catch(e => toast.error(e));
     }
 
     const handleDeleteOrder = (order: Order) => {
