@@ -29,20 +29,13 @@ import {selectAllStocks} from "../stock/stockSelectors";
 import {productRef} from "../product/productsThunk";
 import {ProductForUpdate} from "../product/productTypes";
 import {stockRef} from "../stock/stocksThunk";
-import {isOrderAllReceived, isOrderCompleted} from "../../util/orderUtils";
+import {getTimeToMake, isOrderAllReceived, isOrderCompleted} from "../../util/orderUtils";
 import {selectAllProducts} from "../product/productsSlice";
 import {orderInfoRef} from "../info/infoRef";
 import {OrderInfoForAdd, OrderInfoForUpdate} from "../info/infoTypes";
+import {selectShopById} from "../shop/shopsSlice";
 
 const { v4: uuidv4 } = require('uuid');
-
-const ordersRef = (shopId: string) => {
-    return query(
-        collection(db, `shops/${shopId}/orders`),
-        where("created_at", ">=", today),
-        orderBy("created_at", "desc")
-    );
-}
 
 const ordersQuery = (shopId: string, ...queryConstraints: QueryConstraint[]) => {
     const today = Timestamp.fromDate(getToday());
@@ -159,23 +152,19 @@ export const addOrder = createAsyncThunk<
     const state = getState();
     const allOrders = selectAllOrders(state, shopId);
     const products = selectAllProducts(state, shopId);
+    const shop = selectShopById(state, shopId);
     const unreceivedOrders = allOrders.filter(o => o.status !== "received");
     const productIds: String[] = [];
-    let requireToMakeSec = 0;
+    const timeToMakeSec = getTimeToMake(orderForAdd.product_amount, products, shop ? Object.keys(shop.baristas).length : 1);
 
     for (const productId in payloadOrder.product_amount) {
         // 商品一つ一つでproduct_statusを設定
         const amount = payloadOrder.product_amount[productId];
-        const product = products.find(p => p.id === productId);
 
         for (let i = 0; i < amount; i++) {
             payloadOrder.product_status[`${productId}_${i+1}`] = {
                 product_id: productId,
                 status: "idle"
-            }
-
-            if (product) {
-                requireToMakeSec += product.span;
             }
         }
         // required_product_amount の初期値=この注文の商品数を設定
@@ -232,9 +221,9 @@ export const addOrder = createAsyncThunk<
 
             if (lastIdleOrders.length !== 0 && lastIdleOrders[0].complete_at.toMillis() > now.getTime()) {
                 const lastIdleOrder = lastIdleOrders[0];
-                payloadOrder.complete_at = Timestamp.fromMillis(lastIdleOrder.complete_at.toMillis() + requireToMakeSec * 1000);
+                payloadOrder.complete_at = Timestamp.fromMillis(lastIdleOrder.complete_at.toMillis() + timeToMakeSec * 1000);
             } else {
-                payloadOrder.complete_at = Timestamp.fromDate(new Date().addSeconds(requireToMakeSec))
+                payloadOrder.complete_at = Timestamp.fromDate(new Date().addSeconds(timeToMakeSec))
             }
 
             const orderRef = doc(db, `shops/${shopId}/orders/${orderId}`);
@@ -471,6 +460,7 @@ export const receiveOrderIndividual = createAsyncThunk<
     const latestStocks = selectAllStocks(state, shopId);
     const latestOrders = selectAllOrders(state, shopId);
     const products = selectAllProducts(state, shopId);
+    const shop = selectShopById(state, shopId);
     const prodId = order.product_status[productStatusKey].product_id;
     const product = products.find(p => p.id === prodId);
     const newerOrders = latestOrders /* このOrder以降のrequired_product_amountを更新すべきOrder */
@@ -526,7 +516,8 @@ export const receiveOrderIndividual = createAsyncThunk<
     const orderStatus = allReceived ? 'received' : 'idle';
     newOrder.status = orderStatus;
 
-    const newCompleteAtDiff = (product?.span ?? 0) * 1000 - timeSpentToMakeMills;
+    const baristaCount = shop ? Object.keys(shop.baristas).length : 1
+    const newCompleteAtDiff = (product?.span ?? 0) * 1000 / baristaCount - timeSpentToMakeMills;
 
     batch.update(orderRef(shopId, newOrder.id), {
         product_status: newOrder.product_status,

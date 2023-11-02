@@ -1,4 +1,4 @@
-import {Order} from "../redux/order/orderTypes";
+import {Order, ProductAmount} from "../redux/order/orderTypes";
 import {Product} from "../redux/product/productTypes";
 
 export const isOrderCompleted = (order: Order, products: Product[], refer: "required_product_amount" | "product_amount" = "product_amount") => {
@@ -27,17 +27,47 @@ export const getOrderLabel = (order: Order, products: Product[]) => {
     let labelStr = "";
 
     for (const productId in order.product_amount) {
-        if (labelStr.length != 0) {
+        if (labelStr.length !== 0) {
             labelStr += " / "
         }
 
-        const product = products.find(e => e.id == productId);
+        const product = products.find(e => e.id === productId);
         const amount = order.product_amount[productId];
 
-        if (product != undefined) {
+        if (product !== undefined) {
             labelStr += `${product.shorter_name}×${amount}`;
         }
     }
 
     return labelStr;
+}
+
+/**
+ * 注文の作成時間を計算する
+ * averageSpan = Σproduct.span * amountOfProduct / allAmount
+ * return ceil(allAmount / baristaAmount) * averageSpan
+ * @param productAmount order.product_amountのこと
+ * @param products
+ * @param baristaCount バリスタ人数
+ */
+export const getTimeToMake = (productAmount: ProductAmount, products: Product[], baristaCount: number) => {
+    let sumSpan = 0;
+    let allAmount = 0;
+
+    for (const productId in productAmount) {
+        const product = products.find(p => p.id === productId);
+
+        if (product) {
+            const amount = productAmount[productId];
+            sumSpan += product.span * amount;
+            allAmount += amount;
+
+        } else {
+            console.error(`Product:${productId} not found.`)
+        }
+    }
+
+    const averageSpan = sumSpan / allAmount;
+
+    return Math.ceil(allAmount / baristaCount) * averageSpan;
 }

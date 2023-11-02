@@ -19,7 +19,7 @@ import {
 import {db} from "../../firebase/firebase";
 import {orderConverter, shopConverter} from "../../firebase/converters";
 import {getToday} from "../../util/dateUtils";
-import {selectShopById, shopAdded, shopIdle, shopRemoved, shopSucceeded, shopUpdated} from "./shopsSlice";
+import {selectShopById, shopIdle, shopRemoved, shopSucceeded, shopUpdated} from "./shopsSlice";
 
 const shopsRef = collection(db, "shops").withConverter(shopConverter);
 const shopRef = (shopId: string) => doc(db, `shops/${shopId}`).withConverter(shopConverter);

@@ -36,7 +36,7 @@ import SubTotal from "../components/cashier/SubTotal";
 import {UnreceivedOrderItem} from "../components/cashier/UnreceivedOrderItem";
 import OrdersList from "../components/cashier/OrdersList";
 import {useStreamEffect} from "../modules/hooks/useStreamEffect";
-import {CaptionCard, OutlineCard} from "../components/OutlineCard";
+import {CaptionCard} from "../components/OutlineCard";
 
 const AdminCashierPage = () => {
     const [openDelete, setOpenDelete] = useState(false);
@@ -69,7 +69,7 @@ const AdminCashierPage = () => {
         const trueProductAmount = Object.assign({}, productAmount);
         // 量がゼロの要素は排除する
         for (const id in trueProductAmount) {
-            if (trueProductAmount[id] == 0) {
+            if (trueProductAmount[id] === 0) {
                 delete trueProductAmount[id];
             }
         }
@@ -237,10 +237,6 @@ const AdminCashierPage = () => {
                 <CircularProgress/>
             </Stack>
     )
-}
-
-const DeleteOrderDialog = () => {
-    return
 }
 
 export default AdminCashierPage;

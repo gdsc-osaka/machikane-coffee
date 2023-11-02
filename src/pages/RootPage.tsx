@@ -1,7 +1,7 @@
 import {Link as MLink, Stack, Typography} from "@mui/material";
 import {useAppDispatch} from "../modules/redux/store";
 import {useSelector} from "react-redux";
-import {selectAllShops, selectPublicShops, selectShopStatus} from "../modules/redux/shop/shopsSlice";
+import {selectPublicShops, selectShopStatus} from "../modules/redux/shop/shopsSlice";
 import {useEffect} from "react";
 import {Link} from "react-router-dom";
 import {fetchShops} from "../modules/redux/shop/shopsThunk";

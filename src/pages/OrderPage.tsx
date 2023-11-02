@@ -7,12 +7,7 @@ import StickyNote from "../components/StickyNote";
 import {Product} from "../modules/redux/product/productTypes";
 import {selectAllProducts} from "../modules/redux/product/productsSlice";
 import {ShopStatus} from "../modules/redux/shop/shopTypes";
-import {
-    selectAllShops,
-    selectShopById,
-    selectShopDelaySeconds,
-    selectShopStatus
-} from "../modules/redux/shop/shopsSlice";
+import {selectShopById, selectShopDelaySeconds, selectShopStatus} from "../modules/redux/shop/shopsSlice";
 import DelayContainer from "../components/User/delayContainer";
 import MyMarkdown from "src/components/MyMarkdown";
 import {MotionList, MotionListItem} from "../components/motion/motionList";

@@ -1,5 +1,5 @@
 import {createSlice, PayloadAction} from "@reduxjs/toolkit";
-import {AsyncState, Unsubscribe} from "../stateType";
+import {AsyncState} from "../stateType";
 import {Shop} from "./shopTypes";
 import {RootState} from "../store";
 import {addShop, changeShopStatus, fetchShops, updateShop} from "./shopsThunk";
