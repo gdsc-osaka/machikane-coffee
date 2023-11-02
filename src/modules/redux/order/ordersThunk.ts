@@ -12,8 +12,8 @@ import {
     runTransaction,
     serverTimestamp,
     Timestamp,
+    Transaction,
     where,
-    WriteBatch,
     writeBatch
 } from "firebase/firestore";
 import {getToday, isSameDay} from "../../util/dateUtils";
@@ -85,7 +85,7 @@ export const fetchOrderByIndex = async ({shopId, orderIndex}: {shopId: string, o
 /**
  * order をリアルタイム更新する. ユーザー側で使用されることを想定
  */
-export const streamOrders = (shopId: string, {dispatch}: { dispatch: Dispatch }, ...queryConstraints: QueryConstraint[]) => {
+export const streamOrders = (shopId: string, {dispatch}: { dispatch: Dispatch }) => {
     dispatch(orderSucceeded({shopId}));
 
     const unsubscribe = onSnapshot(ordersQuery(shopId), (snapshot) => {
@@ -336,8 +336,6 @@ export const receiveOrder = createAsyncThunk<
         return rejectWithValue('Order is not completed.')
     }
 
-    const batch = writeBatch(db);
-
     const stockAmountLeft = Object.assign({}, order.product_amount); /* 残りの必要な在庫数 */
     const orderForUpdate: OrderForUpdate = {};
     for (const productStatusKey in order.product_status) {
@@ -357,105 +355,114 @@ export const receiveOrder = createAsyncThunk<
         }
     }
 
-    // Update Products + calculate reqProdAmoDiff
-    const reqProdAmoDiff: OrderForUpdate = {};
-    for (const productId in stockAmountLeft) {
-        const amLeft = stockAmountLeft[productId];
-
-        if (amLeft > 0) {
-            const incre = increment(-amLeft);
-            reqProdAmoDiff[`required_product_amount.${productId}`] = incre;
-            try {
-                batch.update(productRef(shopId, productId), {
-                    stock: incre
-                } as ProductForUpdate)
-            } catch (e) {
-                console.error(e);
-            }
-        }
-    }
-
-    // Update This Order
     try {
-        batch.update(orderRef(shopId, order.id), {
-            ...reqProdAmoDiff,
-            ...orderForUpdate,
-            status: "received"
-        } as OrderForUpdate);
-    } catch (e) {
-        console.error(e);
-    }
+        const oRef = orderRef(shopId, order.id);
 
-    // Update Other Orders
-    const completeAtDiff = order.complete_at.toMillis() - new Date().getTime();
-    for (const orderAfterThis of ordersAfterThis) {
-        try {
-            batch.update(orderRef(shopId, orderAfterThis.id), {
-                ...reqProdAmoDiff,
-                complete_at: Timestamp.fromMillis(orderAfterThis.complete_at.toMillis() - completeAtDiff)
-            } as OrderForUpdate);
-        } catch (e) {
-            console.error(e);
-        }
-    }
+        await runTransaction(db, async (transaction) => {
+            const latestOrderSnapshot = await transaction.get(oRef.withConverter(orderConverter));
+            if (!latestOrderSnapshot.exists()) return;
+            const latestOrder = latestOrderSnapshot.data();
 
-    // Update Stocks
-    const productIds = Object.keys(stockAmountLeft);
-    const relatedStock = latestStocks
-        .filter(s => s.orderRef.id === order.id && productIds.includes(s.product_id));
-    const alterStocks = latestStocks
-        .filter(s => s.orderRef.id !== order.id && productIds.includes(s.product_id)
-            && s.status === 'completed');
+            // 注文が受け取り済みなら処理をしない
+            if (latestOrder.status === 'received') return;
 
-    for (const st of relatedStock) {
-        const prodId = st.product_id;
+            // Update Products + calculate reqProdAmoDiff
+            const reqProdAmoDiff: OrderForUpdate = {};
+            for (const productId in stockAmountLeft) {
+                const amLeft = stockAmountLeft[productId];
 
-        if (st.status === 'completed') {
-            // 関連付けられたStockが完成の場合
+                if (amLeft > 0) {
+                    const incre = increment(-amLeft);
+                    reqProdAmoDiff[`required_product_amount.${productId}`] = incre;
+                    try {
+                        transaction.update(productRef(shopId, productId), {
+                            stock: incre
+                        } as ProductForUpdate)
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
+            }
 
-            // Stockが足りてるか確認するため
-            stockAmountLeft[prodId] -= 1;
+            // Update This Order
             try {
-                batch.update(stockRef(shopId, st.id), {
-                    status: 'received'
-                } as StockForUpdate)
+                transaction.update(orderRef(shopId, order.id), {
+                    ...reqProdAmoDiff,
+                    ...orderForUpdate,
+                    status: "received"
+                } as OrderForUpdate);
             } catch (e) {
                 console.error(e);
             }
 
-        } else {
-            // 完成でない場合、他の注文ののStockを完成にする
-            const altStock = alterStocks.find(s => s.product_id === prodId);
-
-            if (altStock) {
-                alterStocks.remove(s => s.id === altStock.id);
-                swapAndReceiveStockBatch(batch, shopId, st, altStock);
-                // Stockが足りてるか確認するため
-                stockAmountLeft[prodId] -= 1;
+            // Update Other Orders
+            const completeAtDiff = order.complete_at.toMillis() - new Date().getTime();
+            for (const orderAfterThis of ordersAfterThis) {
+                try {
+                    transaction.update(orderRef(shopId, orderAfterThis.id), {
+                        ...reqProdAmoDiff,
+                        complete_at: Timestamp.fromMillis(orderAfterThis.complete_at.toMillis() - completeAtDiff)
+                    } as OrderForUpdate);
+                } catch (e) {
+                    console.error(e);
+                }
             }
-        }
-    }
 
-    // Stockが足りない場合
-    if (Object.values(stockAmountLeft).find(e => e > 0) !== undefined) {
-        return rejectWithValue('在庫が足りません');
-    }
+            // Update Stocks
+            const productIds = Object.keys(stockAmountLeft);
+            const relatedStock = latestStocks
+                .filter(s => s.orderRef.id === order.id && productIds.includes(s.product_id));
+            const alterStocks = latestStocks
+                .filter(s => s.orderRef.id !== order.id && productIds.includes(s.product_id)
+                    && s.status === 'completed');
 
-    try {
-        await batch.commit();
-        return {shopId, order: order}
+            for (const st of relatedStock) {
+                const prodId = st.product_id;
 
+                if (st.status === 'completed') {
+                    // 関連付けられたStockが完成の場合
+
+                    // Stockが足りてるか確認するため
+                    stockAmountLeft[prodId] -= 1;
+                    try {
+                        transaction.update(stockRef(shopId, st.id), {
+                            status: 'received'
+                        } as StockForUpdate)
+                    } catch (e) {
+                        console.error(e);
+                    }
+
+                } else {
+                    // 完成でない場合、他の注文ののStockを完成にする
+                    const altStock = alterStocks.find(s => s.product_id === prodId);
+
+                    if (altStock) {
+                        alterStocks.remove(s => s.id === altStock.id);
+                        swapAndReceiveStock(transaction, shopId, st, altStock);
+                        // Stockが足りてるか確認するため
+                        stockAmountLeft[prodId] -= 1;
+                    }
+                }
+            }
+
+            // Stockが足りない場合
+            if (Object.values(stockAmountLeft).find(e => e > 0) !== undefined) {
+                return rejectWithValue('在庫が足りません');
+            }
+
+        });
     } catch (e) {
         console.error(e);
-        return rejectWithValue(e);
+        rejectWithValue(e);
     }
+    return {shopId, order: order}
 })
 
 export const receiveOrderIndividual = createAsyncThunk<
     { shopId: string, order: Order },
     { shopId: string, order: Order, productStatusKey: string },
     { state: RootState }
->('orders/receiveOrderIndividual', async ({shopId, order, productStatusKey}, {getState, rejectWithValue, dispatch}) => {
+>('orders/receiveOrderIndividual', async ({shopId, order, productStatusKey}, {getState, rejectWithValue}) => {
     const state = getState();
     const latestStocks = selectAllStocks(state, shopId);
     const latestOrders = selectAllOrders(state, shopId);
@@ -466,79 +473,86 @@ export const receiveOrderIndividual = createAsyncThunk<
     const newerOrders = latestOrders /* このOrder以降のrequired_product_amountを更新すべきOrder */
         .filter(o => o.created_at.seconds > order.created_at.seconds && Object.keys(o.product_amount).includes(prodId));
 
-    const batch = writeBatch(db);
-    const newOrder = lodash.cloneDeep(order);
-
-    // region Update Products
-    batch.update(productRef(shopId, prodId), {
-        stock: increment(-1)
-    } as ProductForUpdate)
-    // endregion
-
-    // region Update Stocks
-    const stock = latestStocks /* 関係づけられているStockでproduct_idが一致するもの */
-        .find(s => s.orderRef.id === newOrder.id && s.product_id === prodId);
-
-    if (stock === undefined) {
-        return rejectWithValue('注文データに関連付けられた在庫データが存在しません')
-    }
-
-    const stRef = stockRef(shopId, stock.id);
-    let timeSpentToMakeMills: number;
-
-    if (stock.status === 'completed') {
-        batch.update(stRef, {
-            status: 'received'
-        } as StockForUpdate)
-
-        timeSpentToMakeMills = stock.completed_at.seconds - stock.start_working_at.seconds;
-
-    } else {
-        /* 関連付けられているStockがcompletedでない場合 */
-
-        // latestStocksが日付降順であること前提
-        const altStock = latestStocks.find(s => s.status === 'completed' && s.product_id === prodId); /* 代わりとなる在庫 */
-
-        if (altStock) {
-            swapAndReceiveStockBatch(batch, shopId, stock, altStock);
-            timeSpentToMakeMills = altStock.completed_at.toMillis() - altStock.start_working_at.toMillis();
-
-        } else {
-            return rejectWithValue(`完成済みの在庫が見つかりませんでした (product_id: ${prodId})`)
-        }
-    }
-    // endregion
-
-    // region Update This Order
-    newOrder.product_status[productStatusKey].status = 'received';
-    newOrder.required_product_amount[prodId] -= 1; // 商品の必要数を1減らす
-    const allReceived = isOrderAllReceived(newOrder);
-    const orderStatus = allReceived ? 'received' : 'idle';
-    newOrder.status = orderStatus;
-
-    const baristaCount = shop ? Object.keys(shop.baristas).length : 1
-    const newCompleteAtDiff = (product?.span ?? 0) * 1000 / baristaCount - timeSpentToMakeMills;
-
-    batch.update(orderRef(shopId, newOrder.id), {
-        product_status: newOrder.product_status,
-        [`required_product_amount.${prodId}`]: increment(-1),
-        status: orderStatus,
-        complete_at: Timestamp.fromMillis(order.complete_at.toMillis() - newCompleteAtDiff)
-    }) // FIXME OrderForUpdateを使う
-    // endregion
-
-    // region Update Other Orders
-    for (const newerOrder of newerOrders) {
-        batch.update(orderRef(shopId, newerOrder.id), {
-            [`required_product_amount.${prodId}`]: increment(-1),
-            complete_at: Timestamp.fromMillis(newerOrder.complete_at.toMillis() - timeSpentToMakeMills),
-        }); // FIXME OrderForUpdateを使う
-    }
-    // endregion
-
     try {
-        await batch.commit();
-        return {shopId, order: newOrder}
+        const newOrder = lodash.cloneDeep(order);
+
+        await runTransaction(db, async (transaction) => {
+            const oRef = orderRef(shopId, newOrder.id);
+            const latestOrderSnapshot = await transaction.get(oRef.withConverter(orderConverter));
+            if (!latestOrderSnapshot.exists()) return;
+            const latestOrder = latestOrderSnapshot.data();
+
+            /// 受け取り済みなら処理をやめる
+            if (latestOrder.product_status[productStatusKey].status === 'received') return;
+
+            // region Update Products
+            transaction.update(productRef(shopId, prodId), {
+                stock: increment(-1)
+            } as ProductForUpdate)
+            // endregion
+
+            // region Update Stocks
+            const stock = latestStocks /* 関係づけられているStockでproduct_idが一致するもの */
+                .find(s => s.orderRef.id === newOrder.id && s.product_id === prodId);
+
+            if (stock === undefined) {
+                return rejectWithValue('注文データに関連付けられた在庫データが存在しません')
+            }
+
+            const stRef = stockRef(shopId, stock.id);
+            let timeSpentToMakeMills: number;
+
+            if (stock.status === 'completed') {
+                transaction.update(stRef, {
+                    status: 'received'
+                } as StockForUpdate)
+
+                timeSpentToMakeMills = stock.completed_at.seconds - stock.start_working_at.seconds;
+
+            } else {
+                /* 関連付けられているStockがcompletedでない場合 */
+
+                // latestStocksが日付降順であること前提
+                const altStock = latestStocks.find(s => s.status === 'completed' && s.product_id === prodId); /* 代わりとなる在庫 */
+
+                if (altStock) {
+                    swapAndReceiveStock(transaction, shopId, stock, altStock);
+                    timeSpentToMakeMills = altStock.completed_at.toMillis() - altStock.start_working_at.toMillis();
+
+                } else {
+                    return rejectWithValue(`完成済みの在庫が見つかりませんでした (product_id: ${prodId})`)
+                }
+            }
+            // endregion
+
+            // region Update This Order
+            newOrder.product_status[productStatusKey].status = 'received';
+            newOrder.required_product_amount[prodId] -= 1; // 商品の必要数を1減らす
+            const allReceived = isOrderAllReceived(newOrder);
+            const orderStatus = allReceived ? 'received' : 'idle';
+            newOrder.status = orderStatus;
+
+            const baristaCount = shop ? Object.keys(shop.baristas).length : 1
+            const newCompleteAtDiff = (product?.span ?? 0) * 1000 / baristaCount - timeSpentToMakeMills;
+
+            transaction.update(oRef, {
+                product_status: newOrder.product_status,
+                [`required_product_amount.${prodId}`]: increment(-1),
+                status: orderStatus,
+                complete_at: Timestamp.fromMillis(order.complete_at.toMillis() - newCompleteAtDiff)
+            }) // FIXME OrderForUpdateを使う
+            // endregion
+
+            // region Update Other Orders
+            for (const newerOrder of newerOrders) {
+                transaction.update(orderRef(shopId, newerOrder.id), {
+                    [`required_product_amount.${prodId}`]: increment(-1),
+                    complete_at: Timestamp.fromMillis(newerOrder.complete_at.toMillis() - timeSpentToMakeMills),
+                }); // FIXME OrderForUpdateを使う
+            }
+            // endregion
+        });
+        return {shopId, order: newOrder};
 
     } catch (e) {
         return rejectWithValue(e);
@@ -557,8 +571,6 @@ export const unreceiveOrder = createAsyncThunk<
         .filter(o => o.created_at.seconds > order.created_at.seconds &&
             Object.keys(o.product_amount).find(id => prodIds.includes(id)) !== undefined); /* orderのproductIdが一つでも含まれていれば更新対象 */
 
-    const batch = writeBatch(db);
-
     // Orderの差分を作成
     const orderForUpdate: OrderForUpdate = {
         status: 'idle',
@@ -576,43 +588,54 @@ export const unreceiveOrder = createAsyncThunk<
     // Update Products & required_product_amount の差分を作成
     const reqProdAmDiff: OrderForUpdate = {}; /* order と newerOrder で使う required_product_amount の差分 */
 
-    for (const prodId in order.product_amount) {
-        const amount = order.product_amount[prodId];
-
-        batch.update(productRef(shopId, prodId), {
-            stock: increment(amount)
-        } as ProductForUpdate)
-
-        reqProdAmDiff[`required_product_amount.${prodId}`] = increment(amount);
-    }
-
-    // Update Order
-    batch.update(orderRef(shopId, order.id), {
-        ...orderForUpdate,
-        ...reqProdAmDiff
-    });
-
-    // Update Other Orders (required_product_amountを増やす)
-    for (const newerOrder of newerOrders) {
-        batch.update(orderRef(shopId, newerOrder.id), {
-            ...reqProdAmDiff
-        });
-    }
-
-    // Update Stocks
-    for (const stRef of order.stocksRef) {
-        try {
-            batch.update(doc(db, stRef.path), {
-                status: 'completed'
-            } as StockForUpdate)
-        } catch (e) {
-            console.error(e);
-        }
-    }
-
     try {
-        await batch.commit();
+        const oRef = orderRef(shopId, order.id);
+
+        await runTransaction(db, async (transaction) => {
+            const latestOrderSnapshot = await transaction.get(oRef.withConverter(orderConverter));
+            if (!latestOrderSnapshot.exists()) return;
+            const latestOrder = latestOrderSnapshot.data();
+
+            /// 既に未受け取りになっていたら処理をやめる
+            if (latestOrder.status === 'idle') return;
+
+            for (const prodId in order.product_amount) {
+                const amount = order.product_amount[prodId];
+
+                transaction.update(productRef(shopId, prodId), {
+                    stock: increment(amount)
+                } as ProductForUpdate)
+
+                reqProdAmDiff[`required_product_amount.${prodId}`] = increment(amount);
+            }
+
+            // Update Order
+            transaction.update(orderRef(shopId, order.id), {
+                ...orderForUpdate,
+                ...reqProdAmDiff
+            });
+
+            // Update Other Orders (required_product_amountを増やす)
+            for (const newerOrder of newerOrders) {
+                transaction.update(orderRef(shopId, newerOrder.id), {
+                    ...reqProdAmDiff
+                });
+            }
+
+            // Update Stocks
+            for (const stRef of order.stocksRef) {
+                try {
+                    transaction.update(doc(db, stRef.path), {
+                        status: 'completed'
+                    } as StockForUpdate)
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        });
+
         return {shopId, order: {...orderForUpdate, id: order.id}};
+
     } catch (e) {
         console.error(e);
         return rejectWithValue(e);
@@ -621,12 +644,12 @@ export const unreceiveOrder = createAsyncThunk<
 
 /**
  * Orderに紐づけられたstockを入れ替えてreceivedにする
- * @param batch
+ * @param transaction
  * @param shopId
  * @param stock 元のStock
  * @param altStock 入れ替えるStock
  */
-function swapAndReceiveStockBatch(batch: WriteBatch, shopId: string, stock: Stock, altStock: Stock) {
+function swapAndReceiveStock(transaction: Transaction, shopId: string, stock: Stock, altStock: Stock) {
     const altStockRef = stockRef(shopId, altStock.id);
     const stRef = stockRef(shopId, stock.id);
     const altStockOrderRef = orderRef(shopId, altStock.orderRef.id);
@@ -634,29 +657,29 @@ function swapAndReceiveStockBatch(batch: WriteBatch, shopId: string, stock: Stoc
 
     // StockをUpdate
     try {
-        batch.update(altStockRef, {
+        transaction.update(altStockRef, {
             status: 'received',
             orderRef: stock.orderRef
         } as StockForUpdate)
 
-        batch.update(stRef, {
+        transaction.update(stRef, {
             orderRef: altStockOrderRef
         } as StockForUpdate)
 
         // Order.stocksRefを交換
-        batch.update(stOrderRef, {
+        transaction.update(stOrderRef, {
             stocksRef: arrayRemove(stRef)
         } as OrderForUpdate)
 
-        batch.update(stOrderRef, {
+        transaction.update(stOrderRef, {
             stocksRef: arrayUnion(altStockRef)
         } as OrderForUpdate)
 
-        batch.update(altStockOrderRef, {
+        transaction.update(altStockOrderRef, {
             stocksRef: arrayRemove(altStockRef)
         } as OrderForUpdate)
 
-        batch.update(altStockOrderRef, {
+        transaction.update(altStockOrderRef, {
             stocksRef: arrayUnion(stRef)
         } as OrderForUpdate)
     } catch (e) {

@@ -1,6 +1,15 @@
 import {createAsyncThunk, Dispatch} from "@reduxjs/toolkit";
 import {Stock, StockForUpdate, StockStatus} from "./stockTypes";
-import {collection, doc, increment, onSnapshot, query, serverTimestamp, where, writeBatch} from "firebase/firestore";
+import {
+    collection,
+    doc,
+    increment,
+    onSnapshot,
+    query,
+    runTransaction,
+    serverTimestamp,
+    where
+} from "firebase/firestore";
 import {db} from "../../firebase/firebase";
 import {stockConverter} from "../../firebase/converters";
 import {stockAdded, stockIdle, stockRemoved, stockSucceeded, stockUpdated} from "./stocksSlice";
@@ -83,28 +92,34 @@ export const updateStockStatus = createAsyncThunk<
     { shopId: string, stock: Stock, status: StockStatus, baristaId: number },
     {}
 >('stocks/changeStockStatus', async ({shopId, stock, status, baristaId}, {rejectWithValue}) => {
+    const stockForUpdate: StockForUpdate = {
+        status: status,
+        barista_id: baristaId
+    }
+
+    if (status === 'working') {
+        stockForUpdate.start_working_at = serverTimestamp();
+    }
+
     try {
-        const stockForUpdate: StockForUpdate = {
-            status: status,
-            barista_id: baristaId
-        }
+        const stRef = stockRef(shopId, stock.id);
 
-        if (status === 'working') {
-            stockForUpdate.start_working_at = serverTimestamp();
-        }
+        await runTransaction(db, async (transaction) => {
+            const latestStockSnapshot = await transaction.get(stRef);
+            if (!latestStockSnapshot.exists()) return;
+            const latestStock = latestStockSnapshot.data();
+            /// 既に状態がstatusに変わっていたら処理をやめる
+            if (latestStock.status === status) return;
 
-        const batch = writeBatch(db);
+            if (status === 'completed') {
+                transaction.update(productRef(shopId, stock.product_id), {
+                    stock: increment(1)
+                } as ProductForUpdate)
+                stockForUpdate.completed_at = serverTimestamp();
+            }
 
-        if (status === 'completed') {
-            batch.update(productRef(shopId, stock.product_id), {
-                stock: increment(1)
-            } as ProductForUpdate)
-            stockForUpdate.completed_at = serverTimestamp();
-        }
-
-        batch.update(stockRef(shopId, stock.id), stockForUpdate)
-
-        await batch.commit();
+            transaction.update(stRef, stockForUpdate)
+        });
 
         return {
             shopId,

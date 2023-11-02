@@ -8,7 +8,7 @@ import {selectShopById,} from "../../modules/redux/shop/shopsSlice";
 import {useParams} from "react-router";
 import {useSelector} from "react-redux";
 import {RootState, useAppDispatch} from "../../modules/redux/store";
-import {BaristaMap, Shop, ShopStatus,} from "../../modules/redux/shop/shopTypes";
+import {BaristaMap, Shop,} from "../../modules/redux/shop/shopTypes";
 import MarkdownTextField from "../MarkdownTextField";
 import {changeShopStatus, updateShop} from "../../modules/redux/shop/shopsThunk";
 import {useStreamEffect} from "../../modules/hooks/useStreamEffect";
@@ -23,7 +23,6 @@ const ShopManager = () => {
     const [emgMsg, setEmgMsg] = useState("");
     const [baristaCount, setBaristaCount] = useState(1);
     const [baristas, setBaristas] = useState<BaristaMap>({1: "active"});
-    const [status, setStatus] = useState<ShopStatus>("active");
 
     useStreamEffect(shopId, "shop");
 
@@ -32,7 +31,6 @@ const ShopManager = () => {
             setEmgMsg(shop.emg_message);
             setBaristaCount(Object.keys(shop.baristas).length);
             setBaristas(shop.baristas);
-            setStatus(shop.status);
         }
     }, [shop]);
 
@@ -42,8 +40,6 @@ const ShopManager = () => {
         // pause
         if (shop !== undefined) {
             dispatch(changeShopStatus({shop: shop, status: newStatus, emgMsg: emgMsg}));
-
-            setStatus(newStatus);
         }
     }
 
