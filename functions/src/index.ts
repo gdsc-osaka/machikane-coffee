@@ -7,14 +7,16 @@ const logger = functions.logger;
 const admin = require("firebase-admin");
 admin.initializeApp();
 
+const FieldValue = admin.firestore.FieldValue;
 const firestore = getFirestore();
 
 /**
- * 毎日0時に実行されるリセット関数
+ * 毎日0時に実行されるリセット関数. ただし日本時間に合わせるために UTS:15:00 に設定
  * 1. shops/{shopId}/products/{productId} の stock を 0 に設定する
+ * 2. shops/{shopId}/info/order_info の last_order_index を0にし、reset_atを現在時刻にする
  */
 // @ts-ignore
-exports.onEveryday =  onSchedule("every day 00:00", async (e) => {
+exports.onEveryday =  onSchedule("every day 15:00", async (e) => {
     const productsRef = firestore.collectionGroup('products');
     const shopIds: String[] = []; /* productsから得られるデータからshopIdを格納する */
 
@@ -39,7 +41,7 @@ exports.onEveryday =  onSchedule("every day 00:00", async (e) => {
 
             batch.update(orderInfoRef, {
                 last_order_index: 0,
-                reset_at: firestore.FieldValue.serverTimestamp(),
+                reset_at: FieldValue.serverTimestamp(),
             })
         }
 
