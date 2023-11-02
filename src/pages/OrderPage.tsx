@@ -144,12 +144,9 @@ const OrderPage = () => {
     }
 
     return <Stack spacing={3} padding={"1rem"}>
-        <Typography variant={"h4"} fontWeight={"bold"}>
-            {shop !== undefined && shop.display_name}
-        </Typography>
         {shop !== undefined && <DelayContainer shop={shop} delaySec={delaySec}/>}
         <Typography variant={"h5"} fontWeight={"bold"}>
-            注文照会
+            {shop !== undefined ? `${shop.display_name} - ` : ''}注文照会
         </Typography>
         <Stack direction={"row"} spacing={1}>
             <TextField id={"order-index"} variant={"filled"}
