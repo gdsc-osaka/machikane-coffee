@@ -128,20 +128,15 @@ const AdminBaristaPage = () => {
             {/*<Typography variant={"h4"} fontWeight={"bold"} sx={{padding: "5px 0"}}>*/}
             {/*    未完成の注文一覧*/}
             {/*</Typography>*/}
-            {stocks.length === 0 &&
-                <CaptionCard>
-                    注文がありません
-                </CaptionCard>
-            }
             <MotionList layoutId={"barista-order-list"} style={{
                 display: 'grid',
                 gridTemplateColumns: "1fr",
                 gap: '1rem'
             }}>
-                {selectedId === 0 &&
+                {stocks.length === 0 &&
                     <MotionListItem>
                         <CaptionCard>
-                            番号を選択してください
+                            {selectedId === 0 ? "番号を選択してください" : "注文がありません"}
                         </CaptionCard>
                     </MotionListItem>
                 }
