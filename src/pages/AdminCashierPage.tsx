@@ -38,6 +38,7 @@ import OrdersList from "../components/cashier/OrdersList";
 import {useStreamEffect} from "../modules/hooks/useStreamEffect";
 import {CaptionCard} from "../components/OutlineCard";
 import toast from "react-hot-toast";
+import Heading from "../components/Heading";
 
 const AdminCashierPage = () => {
     const [openDelete, setOpenDelete] = useState(false);
@@ -190,6 +191,9 @@ const AdminCashierPage = () => {
                                alignItems={isSmall ? "stretch" : 'flex-start'} width={"100%"}>
                             {unreceivedOrders.length > 0 &&
                                 <OrdersList layoutId={"unreceived-orders"} grid={1}>
+                                    <Heading>
+                                        注文
+                                    </Heading>
                                     {unreceivedOrders.map(o =>
                                         <MotionListItem key={o.id}>
                                             <UnreceivedOrderItem order={o}
@@ -203,6 +207,9 @@ const AdminCashierPage = () => {
                             }
                             {receivedOrders.length > 0 &&
                                 <OrdersList layoutId={"received-orders"} grid={isSmall ? 2 : 1}>
+                                    <Heading>
+                                        受取済み注文
+                                    </Heading>
                                     {receivedOrders.map(o =>
                                         <MotionListItem key={o.id}>
                                             <ReceivedOrderListItem order={o}
