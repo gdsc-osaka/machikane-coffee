@@ -11,7 +11,7 @@ const ProductCounter = (props: {
 }) => {
     const {products, productAmount, onChangeAmount} = props;
 
-    return <Stack spacing={2} alignItems={"stretch"}>
+    return <Stack spacing={2} alignItems={"stretch"} width={"100%"}>
         {products.map(product => <ProductCounterItem product={product} key={`product-counter-item-${product.id}`}
                                                      amount={productAmount[product.id] ?? 0}
                                                      onChangeAmount={(amount) => onChangeAmount(product.id, amount)}/>)}
@@ -33,11 +33,11 @@ const ProductCounterItem = (props: ProductCounterItemProps) => {
     }
     const onIncrease = () => onChangeAmount(amount + 1);
 
-    return <Stack direction={"row"} alignItems={"stretch"} justifyContent={"flex-start"}
-                  spacing={1}>
+    return <Stack direction={"row"} alignItems={"center"} justifyContent={"flex-start"}
+                  spacing={1} width={"auto"}>
         <RoundedImage alt={'product-thumbnail'} src={product.thumbnail_url}/>
         <Stack spacing={0.5} padding={'1rem 0.5rem'} width={"100%"}>
-            <Typography variant={"body1"} sx={{fontWeight: 'bold', fontSize: "1rem"}}>
+            <Typography variant={"body1"} sx={{fontWeight: 'bold', fontSize: "1rem", whiteSpace: 'nowrap'}}>
                 {product.display_name}
             </Typography>
             <Typography variant={"body2"} sx={{color: '#837468'}}>

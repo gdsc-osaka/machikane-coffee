@@ -166,9 +166,9 @@ const AdminCashierPage = () => {
                     :
                     <Stack direction={'row'} spacing={4} sx={{padding: "30px 30px"}}
                            alignItems={'flex-start'}>
-                        <Stack spacing={4} minWidth={"570px"}>
+                        <Stack spacing={4} minWidth={"600px"}>
                             <NeumoContainer key={"order-form-container"}>
-                                <Stack direction={"row"} spacing={3}>
+                                <Stack direction={"row"} spacing={3} justifyContent={"space-between"}>
                                     <ProductCounter products={products}
                                                     productAmount={productAmount}
                                                     onChangeAmount={onChangeAmount}/>
