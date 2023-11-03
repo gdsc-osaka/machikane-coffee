@@ -62,7 +62,7 @@ const OrderPage = () => {
     useStreamEffect(shopId, "shop", "product");
 
     useEffect(() => {
-        if (orderStatus === 'idle' && orderId !== '') {
+        if (orderId !== '') {
             const unsub = streamOrder(shopId, orderId, {dispatch});
 
             return () => {
@@ -136,6 +136,10 @@ const OrderPage = () => {
             ...dialogState, open: false,
         });
     }
+
+    useEffect(() => {
+        console.log(order);
+    }, [order])
 
     return <Stack spacing={3} padding={"1rem"}>
         {shop !== undefined && <DelayContainer shop={shop} delaySec={delaySec}/>}
