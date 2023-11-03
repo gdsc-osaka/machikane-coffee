@@ -297,7 +297,7 @@ const OrderCard = (props: {
                     {status === 'received' &&
                         <Typography sx={{fontWeight: "bold"}} lineHeight={"175%"}>
                             商品は受け取り済みです
-                            <br/>ご利用いただきありがとうございました
+                            <br/>ご利用ありがとうございました
                         </Typography>
                     }
                 </Stack>
