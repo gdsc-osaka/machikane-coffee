@@ -9,12 +9,14 @@ const NeumoMotionDiv = styled(motion.div)<{ type?: NeumoType }>`
   box-shadow: ${(props) => props.type === 'pressed' ? 'inset' : ''} 10px 10px 30px #d9d5d9,
     ${(props) => props.type === 'pressed' ? 'inset' : ''} -10px -10px 30px #ffffff;
   padding: 20px;
+  background-color: #FFFBFF;
 `
 const NeumoDiv = styled.div<{ type?: NeumoType }>`
   border-radius: 50px;
   box-shadow: ${(props) => props.type === 'pressed' ? 'inset' : ''} 10px 10px 30px #d9d5d9,
     ${(props) => props.type === 'pressed' ? 'inset' : ''} -10px -10px 30px #ffffff;
   padding: 20px;
+  background-color: #FFFBFF;
 `
 
 export const NeumoContainer = (props: { children: ReactNode, type?: NeumoType }) => {

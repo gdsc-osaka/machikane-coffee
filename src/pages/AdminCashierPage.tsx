@@ -176,9 +176,9 @@ const AdminCashierPage = () => {
                                        onClickDelete={handleDeleteOrder} onClickReceive={handleReceiveOrder} onClickUnreceive={handleUnreceiveOrder}
                                        onClickComplete={handleCompleteOrder} onClickAllComplete={handleAllCompleteOrder} onReceiveIndividual={handleReceiveIndividual}/>
                     :
-                    <Stack direction={'row'} spacing={4} sx={{padding: "30px 30px"}}
+                    <Stack direction={'row'} spacing={2} sx={{padding: "30px 30px"}}
                            alignItems={'flex-start'}>
-                        <Stack spacing={4} minWidth={"500px"}>
+                        <Stack spacing={2} minWidth={"500px"}>
                             <NeumoContainer key={"order-form-container"}>
                                 <Stack direction={"row"} spacing={1} justifyContent={"space-between"}>
                                     <ProductCounter products={products}
@@ -201,7 +201,7 @@ const AdminCashierPage = () => {
                                 <ShopManager/>
                             </NeumoContainer>
                         </Stack>
-                        <Stack direction={isSmall ? "column" : "row"} spacing={4}
+                        <Stack direction={isSmall ? "column" : "row"} spacing={2}
                                alignItems={isSmall ? "stretch" : 'flex-start'} width={"100%"}>
                             {unreceivedOrders.length > 0 &&
                                 <NeumoContainer>
@@ -322,9 +322,7 @@ const MobileCashierPage = (props: {
                         受取済み注文はありません
                     </CaptionCard>
                 }
-                <div style={{gap: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr'}}>
-                    <ReceivedOrderList receivedOrders={receivedOrders} onUnreceiveOrder={onClickUnreceive}/>
-                </div>
+                <ReceivedOrderList receivedOrders={receivedOrders} onUnreceiveOrder={onClickUnreceive}/>
             </div>
         </MotionList>
     </Stack>;

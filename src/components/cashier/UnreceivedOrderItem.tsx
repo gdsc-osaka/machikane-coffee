@@ -104,6 +104,11 @@ export const UnreceivedOrderItem = (props: {
                                 {product?.shorter_name ?? '???'}
                             </Typography>
                             <Row spacing={0.5}>
+                                {stock?.status === 'working' &&
+                                    <Typography variant={'caption'} sx={{padding: "0 0.5rem"}}>
+                                        {stock!.barista_id}番が作成中
+                                    </Typography>
+                                }
                                 <Button disabled={stock === undefined || stock.status === 'completed' || stock.status === 'received'}
                                         variant={"outlined"}
                                         onClick={() => onClickComplete(order, pStatusKey)}>
