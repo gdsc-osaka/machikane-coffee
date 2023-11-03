@@ -116,7 +116,7 @@ export const streamProducts = (shopId: string, {dispatch}: {dispatch: Dispatch})
     const unsub = onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach(async (change) => {
             if (change.type === "added") {
-                const product = change.doc.data();
+                const product = change.doc.data({ serverTimestamps: "estimate" });
 
                 if (product.thumbnail_url === undefined || product.thumbnail_url.length === 0) {
                     product.thumbnail_url = await getDownloadURL(ref(storage, product.thumbnail_path));
@@ -125,7 +125,7 @@ export const streamProducts = (shopId: string, {dispatch}: {dispatch: Dispatch})
                 dispatch(productAdded({shopId, product}));
             }
             if (change.type === "modified") {
-                const product = change.doc.data();
+                const product = change.doc.data({ serverTimestamps: "estimate" });
                 dispatch(productUpdated({shopId, product}));
             }
             if (change.type === "removed") {

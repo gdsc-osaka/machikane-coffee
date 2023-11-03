@@ -31,7 +31,7 @@ export const fetchShops = createAsyncThunk("shops/fetchShops",
 export const streamShop = (shopId: string, {dispatch}: {dispatch: Dispatch}) => {
     const unsubscribe = onSnapshot(shopRef(shopId), (snapshot) => {
         if (snapshot.exists()) {
-            const shop = snapshot.data();
+            const shop = snapshot.data({ serverTimestamps: "estimate" });
             dispatch(shopUpdated(shop));
         } else {
             dispatch(shopRemoved(shopId));

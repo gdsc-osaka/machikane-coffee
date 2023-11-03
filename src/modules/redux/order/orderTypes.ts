@@ -43,6 +43,7 @@ type OrderTemplate<T extends Timestamp | FieldValue, N extends number | FieldVal
     // データ追加時は以下のみ
     product_amount: ProductAmount;
     complete_at: Timestamp;
+    received_at: T,
 };
 
 export type Order = OrderTemplate<Timestamp, number, DocumentReference[]>;
@@ -51,7 +52,7 @@ export type Order = OrderTemplate<Timestamp, number, DocumentReference[]>;
  * データの追加時、ユーザーが設定しなければいけないフィールドのみにした order
  */
 export type OrderForAdd = Omit<Order, "id" | "index" | "created_at" | "delay_seconds" | "status" |
-    "product_status" | "required_product_amount" | "stocksRef" | "complete_at">;
+    "product_status" | "required_product_amount" | "stocksRef" | "complete_at" | "received_at">;
 
 /**
  * データの更新時に使用する Order

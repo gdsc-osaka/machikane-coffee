@@ -95,11 +95,11 @@ export const streamOrders = (shopId: string, {dispatch}: { dispatch: Dispatch })
                 if (change.doc.metadata.hasPendingWrites) {
                     return;
                 }
-                const order = change.doc.data();
+                const order = change.doc.data({ serverTimestamps: 'estimate' });
                 dispatch(orderAdded({shopId, order}));
             }
             if (change.type === "modified") {
-                const order = change.doc.data();
+                const order = change.doc.data({ serverTimestamps: 'estimate' });
 
                 dispatch(orderUpdated({shopId, order}));
             }
@@ -120,7 +120,7 @@ export const streamOrder = (shopId: string, orderId: string, {dispatch}: { dispa
     dispatch(orderSucceeded({shopId: shopId}))
 
     const unsubscribe = onSnapshot(orderRef(shopId, orderId).withConverter(orderConverter), (doc) => {
-        const order = doc.data();
+        const order = doc.data({ serverTimestamps: 'estimate' });
 
         if (order) {
             dispatch(orderUpdated({shopId, order}));
@@ -148,6 +148,8 @@ export const addOrder = createAsyncThunk<
         created_at: serverTimestamp(),
         delay_seconds: 0,
         complete_at: Timestamp.now(),
+        received_at: Timestamp.now()
+
     }
 
     const state = getState();
@@ -257,7 +259,8 @@ export const addOrder = createAsyncThunk<
         const order: Order = {
             ...payloadOrder,
             id: orderId,
-            created_at: Timestamp.now()
+            created_at: Timestamp.now(),
+            received_at: Timestamp.now()
         }
         return {shopId, order}
 

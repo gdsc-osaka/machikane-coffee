@@ -48,17 +48,11 @@ const ordersSlice = createSlice({
                 state[shopId].data.push(order);
             }
         },
-        orderUpdated(state, action: PayloadAction<{ shopId: string, order: OrderForUpdate }>) {
+        orderUpdated(state, action: PayloadAction<{ shopId: string, order: Order }>) {
             const {order, shopId} = action.payload;
 
             ensureInitialized(state, shopId);
-            const oldOrder = state[shopId].data.find(s => s.id === order.id);
-
-            if (oldOrder) {
-                state[shopId].data.update(o => o.id === order.id, mergeOrderForUpdateAndOrder(order, oldOrder));
-            } else {
-                state[shopId].data.push(order as Order);
-            }
+            state[shopId].data.update(o => o.id === order.id, order);
         },
         /**
          * 指定した ID の order を消去する

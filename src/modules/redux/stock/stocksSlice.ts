@@ -44,17 +44,11 @@ const stocksSlice = createSlice({
                 state[shopId].data.push(stock);
             }
         },
-        stockUpdated(state, action: PayloadAction<{shopId: string, stock: StockForUpdate}>) {
+        stockUpdated(state, action: PayloadAction<{shopId: string, stock: Stock}>) {
             const {stock, shopId} = action.payload;
 
             ensureInitialized(state, shopId);
-            const oldStock = state[shopId].data.find(s => s.id === stock.id);
-
-            if (oldStock) {
-                state[shopId].data.update(e => e.id === stock.id, mergeStock(oldStock, stock));
-            } else {
-                state[shopId].data.push(stock as Stock);
-            }
+            state[shopId].data.update(e => e.id === stock.id, stock);
         },
         stockRemoved(state, action: PayloadAction<{shopId: string, stockId: string}>) {
             const {stockId, shopId} = action.payload;

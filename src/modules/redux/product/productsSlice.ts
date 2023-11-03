@@ -35,13 +35,7 @@ const productsSlice = createSlice({
             const {product, shopId} = action.payload;
 
             ensureInitialized(state, shopId);
-            const oldProd = state[shopId].data.find(p => p.id === product.id);
-
-            if (oldProd) {
-                state[shopId].data.update(d => d.id === product.id, {...oldProd, ...product});
-            } else {
-                state[shopId].data.update(d => d.id === product.id, product);
-            }
+            state[shopId].data.update(d => d.id === product.id, product);
 
         },
         /**

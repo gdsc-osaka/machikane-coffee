@@ -4,7 +4,6 @@ import {
     collection,
     doc,
     increment,
-    limit,
     onSnapshot,
     query,
     runTransaction,
@@ -21,8 +20,8 @@ import {today} from "../../util/dateUtils";
 const stocksCollection = (shopId: string) => query(
     collection(db, `shops/${shopId}/stocks`),
     where("created_at", ">=", today),
+).withConverter(stockConverter);
 
-);
 export const stockRef = (shopId: string, stockId: string) =>
     doc(db, `shops/${shopId}/stocks/${stockId}`).withConverter(stockConverter)
 
@@ -40,9 +39,8 @@ export const streamStocks = (shopId: string, {dispatch}: { dispatch: Dispatch })
                 dispatch(stockAdded({shopId, stock}));
             }
             if (change.type === "modified") {
-                const data = change.doc.data();
-                const stockForUpdate: StockForUpdate = {...data, id: change.doc.id};
-                dispatch(stockUpdated({shopId, stock: stockForUpdate}));
+                const stock = change.doc.data({ serverTimestamps: "estimate" });
+                dispatch(stockUpdated({shopId, stock: stock}));
             }
             if (change.type === "removed") {
                 const stockId = change.doc.id;

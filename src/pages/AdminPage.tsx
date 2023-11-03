@@ -270,6 +270,11 @@ const AdminPage = () => {
                                     </Link>
                                 </LinkText>
                                 <LinkText>
+                                    <Link to={`/${selectedShop.id}/completed-orders`}>
+                                        完成済み注文
+                                    </Link>
+                                </LinkText>
+                                <LinkText>
                                     <Link to={`/${selectedShop.id}`}>
                                         注文照会
                                     </Link>
