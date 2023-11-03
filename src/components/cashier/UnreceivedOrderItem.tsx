@@ -48,7 +48,6 @@ export const UnreceivedOrderItem = (props: {
     }, [order])
 
     const isOneItem = productStatusKeys.length < 2;
-    const productStatus = order.product_status[productStatusKeys[0]];
 
     const isCompleted = isStocksOfOrderCompleted(order, stocks);
 
@@ -94,11 +93,12 @@ export const UnreceivedOrderItem = (props: {
                         const isReceived = pStatus.status === 'received'
                         const noStock = (product?.stock ?? 0) <= 0;
                         const stock = stocksBuffer.find(s => s.orderRef.id === order.id
-                            && s.product_id === productStatus.product_id);
+                            && s.product_id === pStatus.product_id);
 
                         if (stock)
                             stocksBuffer.remove(s => s.id === stock.id)
 
+                        console.log(stock);
                         return <Row sx={{justifyContent: 'space-between'}} key={`unreceived-order-item-${order.id}-${pStatusKey}`}>
                             <Typography variant={"body2"}>
                                 {product?.shorter_name ?? '???'}
