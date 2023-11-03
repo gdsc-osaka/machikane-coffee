@@ -45,7 +45,6 @@ export const ordersQuery = (shopId: string, ...queryConstraints: QueryConstraint
         collection(db, `shops/${shopId}/orders`).withConverter(orderConverter),
         where("created_at", ">=", today),
         orderBy("created_at", "desc"),
-        limit(50),
         ...queryConstraints
     );
 }

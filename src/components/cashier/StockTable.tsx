@@ -49,13 +49,9 @@ const StockTable = (props: {stocks: Stock[], products: Product[]}) => {
                 const baristaId = stock.barista_id;
 
                 if (stockStatus !== 'working') {
-                    if (!data.hasOwnProperty(productId)) {
-                        data[productId][stockStatus] = 1;
-                    } else {
-                        data[productId][stockStatus]++;
-                    }
+                    data[productId][stockStatus]++;
                 } else {
-                    if (!data.hasOwnProperty(productId)) {
+                    if (!data[productId].hasOwnProperty(stockStatus)) {
                         data[productId].working = {};
                     }
 
