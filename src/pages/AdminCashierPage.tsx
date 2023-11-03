@@ -17,7 +17,7 @@ import {
     useTheme
 } from "@mui/material";
 import ShopManager from "../components/cashier/ShopManager";
-import ReceivedOrderListItem from "../components/cashier/ReceivedOrderListItem";
+import ReceivedOrderListItem from "../components/cashier/ReceivedOrderList";
 import {useAuth} from "../AuthGuard";
 import {
     addOrder,
@@ -42,6 +42,7 @@ import {initialDialogState} from "../modules/util/stateUtils";
 import {updateStockStatus} from "../modules/redux/stock/stocksThunk";
 import useWindowSize from "../modules/hooks/useWindowSize";
 import {getOrderLabel, sortByCompleted} from "../modules/util/orderUtils";
+import ReceivedOrderList from "../components/cashier/ReceivedOrderList";
 
 const AdminCashierPage = () => {
     const [dialog, setDialog] = useState(initialDialogState);
@@ -210,12 +211,7 @@ const AdminCashierPage = () => {
                                     </CaptionCard>
                                 }
                                 <div style={{gap: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr'}}>
-                                    {receivedOrders.map(order =>
-                                        <MotionListItem key={order.id}>
-                                            <ReceivedOrderListItem order={order}
-                                                                   onClickUnreceive={handleUnreceiveOrder}/>
-                                        </MotionListItem>
-                                    )}
+                                    <ReceivedOrderList receivedOrders={receivedOrders} onReceiveOrder={handleReceiveOrder}/>
                                 </div>
                             </div>
                         </MotionList>
@@ -277,18 +273,8 @@ const AdminCashierPage = () => {
                                     <Heading>
                                         受取済み注文
                                     </Heading>
-                                    <MotionList layoutId={"received-orders"}
-                                                style={{
-                                                    display: 'grid', flexDirection: 'column', gap: '1rem',
-                                                    gridTemplateColumns: '1fr '.repeat(width > 1000 ? 3 : 2)
-                                                }}>
-                                        {receivedOrders.map(o =>
-                                            <MotionListItem key={o.id}>
-                                                <ReceivedOrderListItem order={o}
-                                                                       onClickUnreceive={handleUnreceiveOrder}/>
-                                            </MotionListItem>
-                                        )}
-                                    </MotionList>
+                                    <ReceivedOrderList receivedOrders={receivedOrders}
+                                                       onReceiveOrder={handleReceiveOrder}/>
                                 </NeumoContainer>
                             }
                         </Stack>

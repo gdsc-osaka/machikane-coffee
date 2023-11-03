@@ -7,7 +7,7 @@ import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
 import React, {ReactNode, useMemo, useState} from "react";
 import {SxProps} from "@mui/system";
 import {Theme} from "@mui/material/styles/createTheme";
-import {getOrderLabel} from "../../modules/util/orderUtils";
+import {getOrderLabel, isStocksOfOrderCompleted} from "../../modules/util/orderUtils";
 import {Stock} from "../../modules/redux/stock/stockTypes";
 
 export const UnreceivedOrderItem = (props: {
@@ -50,9 +50,7 @@ export const UnreceivedOrderItem = (props: {
     const isOneItem = productStatusKeys.length < 2;
     const productStatus = order.product_status[productStatusKeys[0]];
 
-    const isCompleted = stocks
-        .filter(s => s.orderRef.id === order.id && s.status !== 'completed')
-        .length === 0;
+    const isCompleted = isStocksOfOrderCompleted(order, stocks);
 
     return <StickyNote direction={"row"} variant={isCompleted ? 'surface-variant' : 'surface'}
                        sx={{alignItems: "stretch", padding: "0.375rem 0.5rem"}}
@@ -108,7 +106,7 @@ export const UnreceivedOrderItem = (props: {
                             <Row>
                                 <Button disabled={stock === undefined || stock.status === 'completed' || stock.status === 'received'}
                                         onClick={() => onClickComplete(order, pStatusKey)}>
-                                    完成
+                                    {stock?.status === 'completed' ? "完成済み" : stock?.status === 'received' ? "受取済" : "完成"}
                                 </Button>
                                 <Button variant={"outlined"} disabled={noStock || isReceived} onClick={() => onReceiveIndividual(order, pStatusKey)}>
                                     {isReceived ? "受取済み" : noStock ? "在庫不足" : "個別受取"}

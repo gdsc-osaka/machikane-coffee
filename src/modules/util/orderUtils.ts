@@ -79,14 +79,18 @@ export const getTimeToMake = (productAmount: ProductAmount, products: Product[],
     return Math.ceil(allAmount / baristaCount) * averageSpan;
 }
 
+/**
+ * 注文に紐づけられた在庫が完成済みかどうか
+ */
+export const isStocksOfOrderCompleted = (order: Order, stocks: Stock[]) => {
+    return stocks
+        .filter(s => s.orderRef.id === order.id && s.status !== 'completed')
+        .length === 0;
+}
+
 export const sortByCompleted = (a: Order, b: Order, stocks: Stock[]) => {
-    const aStock = stocks.find(s => s.orderRef.id === a.id);
-    const bStock = stocks.find(s => s.orderRef.id === b.id);
-
-    if (!aStock || !bStock) return 0;
-
-    const aCompleted = aStock.status === 'completed';
-    const bCompleted = bStock.status === 'completed';
+    const aCompleted = isStocksOfOrderCompleted(a, stocks);
+    const bCompleted = isStocksOfOrderCompleted(b, stocks);
 
     if (aCompleted && !bCompleted) return -1;
 

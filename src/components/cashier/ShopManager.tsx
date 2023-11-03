@@ -1,6 +1,6 @@
 import {CircularProgress, IconButton, Stack, Switch, Typography,} from "@mui/material";
 import {Expanded} from "../layout/Expanded";
-import {useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {Row} from "../layout/Row";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import RemoveRoundedIcon from "@mui/icons-material/RemoveRounded";
@@ -13,7 +13,7 @@ import MarkdownTextField from "../MarkdownTextField";
 import {changeShopStatus, updateShop} from "../../modules/redux/shop/shopsThunk";
 import {useStreamEffect} from "../../modules/hooks/useStreamEffect";
 
-const ShopManager = () => {
+const ShopManager = React.memo(() => {
     const dispatch = useAppDispatch();
     const params = useParams();
     const shopId = params.shopId ?? "";
@@ -113,5 +113,6 @@ const ShopManager = () => {
     ) : (
         <CircularProgress/>
     );
-};
+});
+
 export default ShopManager;
