@@ -1,5 +1,7 @@
 import {RootState} from "../store";
 import {Order} from "./orderTypes";
+import {selectAllProducts} from "../product/productsSlice";
+import {isOrderCompleted} from "../../util/orderUtils";
 
 /**
  * createdが新しい方が先にソートする
@@ -21,3 +23,13 @@ export const selectReceivedOrder = (state: RootState, shopId: string) =>
     selectAllOrders(state, shopId).filter(e => e.status === "received").sort(sortByCreated);
 export const selectUnreceivedOrder = (state: RootState, shopId: string) =>
     selectAllOrders(state, shopId).filter(e => e.status !== "received").sort((a, b) => sortByCreated(b, a));
+/**
+ * 完成済みの注文を取得する
+ */
+export const selectCompletedOrders = (state: RootState, shopId: string) => {
+    const products = selectAllProducts(state, shopId);
+
+    return selectAllOrders(state, shopId)
+        .filter(order => order.status !== 'received' && isOrderCompleted(order, products, "required_product_amount"))
+        .sort((a, b) => sortByCreated(b, a));
+}

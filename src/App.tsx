@@ -17,6 +17,7 @@ import AdminPage from "./pages/AdminPage";
 import NotFoundPage from "./pages/NotFoundPage";
 // @ts-ignore
 import {Toaster} from "react-hot-toast";
+import CompletedOrdersPage from "./pages/CompletedOrdersPage";
 
 const App = () => {
     const theme = createTheme(themeOptions);
@@ -42,6 +43,7 @@ const App = () => {
                                     <Route path={"/:shopId"}>
                                         <Route path={""} Component={OrderPage}/>
                                         <Route path={"timer"} Component={TimerPage}/>
+                                        <Route path={"completed-orders"} Component={CompletedOrdersPage}/>
                                         <Route path={"admin"}>
                                             <Route path={""} element={
                                                 <AuthGuard role={"admin"}>

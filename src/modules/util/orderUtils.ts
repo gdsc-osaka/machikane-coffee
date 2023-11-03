@@ -1,6 +1,12 @@
 import {Order, ProductAmount} from "../redux/order/orderTypes";
 import {Product} from "../redux/product/productTypes";
 
+/**
+ * 注文が完成済みかどうかを判定します. refer が required_product_amountの場合, その注文以前の注文が在庫を消費する想定で完成済みかどうかを判定します.
+ * @param order
+ * @param products
+ * @param refer
+ */
 export const isOrderCompleted = (order: Order, products: Product[], refer: "required_product_amount" | "product_amount" = "product_amount") => {
     for (const pid in order[refer]) {
         const product = products.find(p => p.id === pid);
