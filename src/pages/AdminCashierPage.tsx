@@ -40,10 +40,10 @@ import toast from "react-hot-toast";
 import Heading from "../components/Heading";
 import {initialDialogState} from "../modules/util/stateUtils";
 import {updateStockStatus} from "../modules/redux/stock/stocksThunk";
+import useWindowSize from "../modules/hooks/useWindowSize";
 
 const AdminCashierPage = () => {
     const [dialog, setDialog] = useState(initialDialogState);
-    const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
     const [productAmount, setProductAmount] = useState<ProductAmount>({});
 
     const params = useParams();
@@ -104,9 +104,9 @@ const AdminCashierPage = () => {
     const handleDeleteOrder = (order: Order) => {
         setDialog({
             open: true,
-            title: `${orderToDelete?.index}番の注文と関連する在庫データを消去しますか？}`,
+            title: `${order.index}番の注文と関連する在庫データを消去しますか？`,
             description: "注文の消去は取り消せません",
-            onOk: () => setOrderToDelete(order)
+            onOk: () => dispatch(deleteOrder({shopId, order}))
         });
     }
 
@@ -114,15 +114,6 @@ const AdminCashierPage = () => {
         setDialog(prev => {
             return {...prev, open: false}
         })
-    }
-
-    const handleDelete = () => {
-        if (orderToDelete != null) {
-            dispatch(deleteOrder({shopId, order: orderToDelete}));
-            setDialog(prev => {
-                return {...prev, open: false}
-            })
-        }
     }
 
     const handleReceiveIndividual = (order: Order, productStatusKey: string) => {
@@ -140,12 +131,10 @@ const AdminCashierPage = () => {
             setDialog({
                 open: true,
                 title: `${order.index}番の${product.display_name}を完成にしますか？`,
-                description: stock.status === 'working' ? `この商品は${stock.barista_id}番のバリスタが作成中に設定しています` : ``,
-                onOk: () => {
-                    closeDialog();
-                    dispatch(updateStockStatus({shopId, stock, baristaId: 0, status: "completed"}))
-                        .catch(e => toast.error(e))
-                }
+                description: stock.status === 'working' ? `この商品は${stock.barista_id}番のバリスタが作成中に設定しています` : `バリスタ係が完成にすることを推奨します`,
+                onOk: () => dispatch(updateStockStatus({shopId, stock, baristaId: 0, status: "completed"}))
+                    .catch(e => toast.error(e))
+
             });
         } else {
             setDialog({
@@ -157,6 +146,8 @@ const AdminCashierPage = () => {
         }
 
     }
+
+    const [width, _] = useWindowSize();
 
     return (
         !auth.loading ?
@@ -268,7 +259,7 @@ const AdminCashierPage = () => {
                                     <MotionList layoutId={"received-orders"}
                                                 style={{
                                                     display: 'grid', flexDirection: 'column', gap: '1rem',
-                                                    gridTemplateColumns: '1fr 1fr'
+                                                    gridTemplateColumns: '1fr '.repeat(width > 1000 ? 3 : 2)
                                                 }}>
                                         {receivedOrders.map(o =>
                                             <MotionListItem key={o.id}>
@@ -298,7 +289,10 @@ const AdminCashierPage = () => {
                     }
                     <DialogActions>
                         <Button onClick={closeDialog}>キャンセル</Button>
-                        <Button onClick={dialog.onOk} autoFocus>
+                        <Button onClick={() => {
+                            dialog.onOk();
+                            closeDialog();
+                        }} autoFocus>
                             OK
                         </Button>
                     </DialogActions>

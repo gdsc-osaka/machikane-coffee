@@ -129,10 +129,6 @@ const OrderPage = () => {
         });
     }
 
-    useEffect(() => {
-        console.log(order);
-    }, [order])
-
     return <Stack spacing={3} padding={"1rem"}>
         {shop !== undefined && <DelayContainer shop={shop} delaySec={delaySec}/>}
         <Typography variant={"h5"} fontWeight={"bold"}>
