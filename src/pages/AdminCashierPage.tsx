@@ -43,6 +43,7 @@ import {updateStockStatus} from "../modules/redux/stock/stocksThunk";
 import {getOrderLabel, sortByCompleted} from "../modules/util/orderUtils";
 import {Product} from "../modules/redux/product/productTypes";
 import {Stock} from "../modules/redux/stock/stockTypes";
+import StockList from "../components/cashier/StockList";
 
 const AdminCashierPage = () => {
     const [dialog, setDialog] = useState(initialDialogState);
@@ -203,30 +204,38 @@ const AdminCashierPage = () => {
                         </Stack>
                         <Stack direction={isSmall ? "column" : "row"} spacing={2}
                                alignItems={isSmall ? "stretch" : 'flex-start'} width={"100%"}>
-                            {unreceivedOrders.length > 0 &&
+                            <Stack spacing={2}>
                                 <NeumoContainer>
                                     <Heading>
-                                        注文
+                                        在庫一覧
                                     </Heading>
-                                    <MotionList layoutId={"order-list"}
-                                                style={{
-                                                    display: 'flex', flexDirection: 'column', gap: '1rem',
-                                                }}>
-                                        {unreceivedOrders.map(o =>
-                                            <MotionListItem key={o.id}>
-                                                <UnreceivedOrderItem order={o}
-                                                                     products={products}
-                                                                     stocks={stocks}
-                                                                     onClickDelete={handleDeleteOrder}
-                                                                     onClickReceive={handleReceiveOrder}
-                                                                     onClickComplete={handleCompleteOrder}
-                                                                     onClickAllComplete={handleAllCompleteOrder}
-                                                                     onReceiveIndividual={handleReceiveIndividual}/>
-                                            </MotionListItem>
-                                        )}
-                                    </MotionList>
+                                    <StockList products={products}/>
                                 </NeumoContainer>
-                            }
+                                {unreceivedOrders.length > 0 &&
+                                    <NeumoContainer>
+                                        <Heading>
+                                            注文
+                                        </Heading>
+                                        <MotionList layoutId={"order-list"}
+                                                    style={{
+                                                        display: 'flex', flexDirection: 'column', gap: '1rem',
+                                                    }}>
+                                            {unreceivedOrders.map(o =>
+                                                <MotionListItem key={o.id}>
+                                                    <UnreceivedOrderItem order={o}
+                                                                         products={products}
+                                                                         stocks={stocks}
+                                                                         onClickDelete={handleDeleteOrder}
+                                                                         onClickReceive={handleReceiveOrder}
+                                                                         onClickComplete={handleCompleteOrder}
+                                                                         onClickAllComplete={handleAllCompleteOrder}
+                                                                         onReceiveIndividual={handleReceiveIndividual}/>
+                                                </MotionListItem>
+                                            )}
+                                        </MotionList>
+                                    </NeumoContainer>
+                                }
+                            </Stack>
                             {receivedOrders.length > 0 &&
                                 <NeumoContainer>
                                     <Heading>
