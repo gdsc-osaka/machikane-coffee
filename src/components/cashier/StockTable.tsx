@@ -7,7 +7,9 @@ import {ReactNode, useMemo} from "react";
 type TableDataType = {
     [k in string]: {
         idle: number,
-        working: number,
+        working: {
+            [baristaId in number]: number
+        },
         completed: number,
         received: number,
     }
@@ -15,6 +17,12 @@ type TableDataType = {
 
 const StockTable = (props: {stocks: Stock[], products: Product[]}) => {
     const {stocks, products} = props;
+
+    const baristaIds = useMemo(() => {
+        return Array.from(new Set(stocks.map(s => s.barista_id)))
+            .filter(id => id !== 0)
+            .sort((a, b) => a - b);
+    }, [stocks]);
 
     const tableData = useMemo(() => {
         const data: TableDataType = {};
@@ -25,7 +33,7 @@ const StockTable = (props: {stocks: Stock[], products: Product[]}) => {
 
             data[pid] = {
                 idle: 0,
-                working: 0,
+                working: {},
                 completed: 0,
                 received: 0
             }
@@ -38,13 +46,27 @@ const StockTable = (props: {stocks: Stock[], products: Product[]}) => {
             if (prod) {
                 const productId = prod.id;
                 const stockStatus = stock.status;
+                const baristaId = stock.barista_id;
 
-                if (!data.hasOwnProperty(productId)) {
+                if (stockStatus !== 'working') {
                     data[productId][stockStatus] = 1;
-                } else {
-                    data[productId][stockStatus]++;
-                }
 
+                    if (!data.hasOwnProperty(productId)) {
+                        data[productId][stockStatus] = 1;
+                    } else {
+                        data[productId][stockStatus]++;
+                    }
+                } else {
+                    if (!data.hasOwnProperty(productId)) {
+                        data[productId].working = {};
+                    }
+
+                    if (!data[productId].working.hasOwnProperty(baristaId)) {
+                        data[productId].working[baristaId] = 1;
+                    } else {
+                        data[productId].working[baristaId]++;
+                    }
+                }
             }
         }
 
@@ -52,16 +74,20 @@ const StockTable = (props: {stocks: Stock[], products: Product[]}) => {
         // productsはproduct.stockで頻繁に更新されるのでdepsに入れない
     }, [products, stocks])
 
-    return <Stack spacing={1}>
+    const sortedBaristaIds = baristaIds.sort((a, b) => a - b);
+
+    return <Stack spacing={1} width={"100%"} alignItems={"center"}>
         <Stack direction={"row"} spacing={1} alignItems={"center"} sx={{paddingLeft: "48px"}}>
             <TableText variant={"label"}>
-                待機中
+                待機
             </TableText>
+            {sortedBaristaIds.map(id =>
+                <TableText variant={"label"} key={id}>
+                    作成 ({id}番)
+                </TableText>
+            )}
             <TableText variant={"label"}>
-                作成中
-            </TableText>
-            <TableText variant={"label"}>
-                完成済
+                完成
             </TableText>
         </Stack>
         {products.map(p => {
@@ -72,9 +98,11 @@ const StockTable = (props: {stocks: Stock[], products: Product[]}) => {
                 <TableText variant={"data"}>
                     {tableData[pid]?.idle ?? 0}
                 </TableText>
-                <TableText variant={"data"}>
-                    {tableData[pid]?.working ?? 0}
-                </TableText>
+                {sortedBaristaIds.map(id =>
+                    <TableText variant={"data"} key={`data-${id}`}>
+                        {tableData[pid]?.working[id] ?? 0}
+                    </TableText>
+                )}
                 <TableText variant={"data"}>
                     {tableData[pid]?.completed ?? 0}
                 </TableText>
@@ -85,11 +113,11 @@ const StockTable = (props: {stocks: Stock[], products: Product[]}) => {
 
 const TableText = (props: {
     children: ReactNode,
-    variant: 'label' | 'data'
+    variant: 'label' | 'data',
 }) => {
     const {children, variant} = props;
 
-    return <Typography fontSize={variant === 'label' ? '0.8rem' : '1.2rem'}
+    return <Typography fontSize={variant === 'label' ? '0.7rem' : '1.2rem'}
                        fontWeight={variant === 'label' ? '' : "bold"}
                        sx={variant === 'label' ? {color: (theme) => theme.typography.caption.color} : {}}
                        textAlign={"right"} width={"50px"}>

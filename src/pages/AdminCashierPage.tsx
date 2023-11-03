@@ -181,19 +181,16 @@ const AdminCashierPage = () => {
                     :
                     <Stack direction={'row'} spacing={4} sx={{padding: "30px 30px"}}
                            alignItems={'flex-start'}>
-                        <Stack spacing={4} minWidth={"600px"}>
+                        <Stack spacing={4} minWidth={"500px"}>
                             <NeumoContainer key={"order-form-container"}>
                                 <Stack direction={"row"} spacing={3} justifyContent={"space-between"}>
                                     <ProductCounter products={products}
                                                     productAmount={productAmount}
                                                     onChangeAmount={onChangeAmount}/>
-                                    <Stack justifyContent={"space-between"} alignItems={"stretch"}>
+                                    <Stack justifyContent={"space-between"} alignItems={"stretch"} minWidth={"200px"}>
                                         <SubTotal productAmount={productAmount}
                                                   products={products}
                                                   onClickButton={onOrderAddClicked}/>
-                                        <NeumoContainer key={"stock-table-container"} type={'pressed'}>
-                                            <StockTable stocks={stocks} products={products}/>
-                                        </NeumoContainer>
                                     </Stack>
                                 </Stack>
                             </NeumoContainer>
@@ -204,34 +201,54 @@ const AdminCashierPage = () => {
                         <Stack direction={isSmall ? "column" : "row"} spacing={4}
                                alignItems={isSmall ? "stretch" : 'flex-start'} width={"100%"}>
                             {unreceivedOrders.length > 0 &&
-                                <OrdersList layoutId={"unreceived-orders"} grid={1}>
+                                <NeumoContainer>
                                     <Heading>
                                         注文
                                     </Heading>
-                                    {unreceivedOrders.map(o =>
-                                        <MotionListItem key={o.id}>
-                                            <UnreceivedOrderItem order={o}
-                                                                 products={products}
-                                                                 onClickDelete={handleDeleteOrder}
-                                                                 onClickReceive={handleReceiveOrder}
-                                                                 onReceiveIndividual={handleReceiveIndividual}/>
-                                        </MotionListItem>
-                                    )}
-                                </OrdersList>
+                                    <MotionList layoutId={"order-list"}
+                                                style={{
+                                                    display: 'flex', flexDirection: 'column', gap: '1rem',
+                                                }}>
+                                        {unreceivedOrders.map(o =>
+                                            <MotionListItem key={o.id}>
+                                                <UnreceivedOrderItem order={o}
+                                                                     products={products}
+                                                                     onClickDelete={handleDeleteOrder}
+                                                                     onClickReceive={handleReceiveOrder}
+                                                                     onReceiveIndividual={handleReceiveIndividual}/>
+                                            </MotionListItem>
+                                        )}
+                                    </MotionList>
+                                </NeumoContainer>
                             }
-                            {receivedOrders.length > 0 &&
-                                <OrdersList layoutId={"received-orders"} grid={isSmall ? 2 : 1}>
+                            <Stack spacing={4}>
+                                <NeumoContainer>
                                     <Heading>
-                                        受取済み注文
+                                        商品の状態
                                     </Heading>
-                                    {receivedOrders.map(o =>
-                                        <MotionListItem key={o.id}>
-                                            <ReceivedOrderListItem order={o}
-                                                                   onClickUnreceive={handleUnreceiveOrder}/>
-                                        </MotionListItem>
-                                    )}
-                                </OrdersList>
-                            }
+                                    <StockTable stocks={stocks} products={products}/>
+                                </NeumoContainer>
+                                {receivedOrders.length > 0 &&
+                                    <NeumoContainer>
+                                        <Heading>
+                                            受取済み注文
+                                        </Heading>
+                                        <MotionList layoutId={"received-orders"}
+                                                    style={{
+                                                        display: 'grid', flexDirection: 'column', gap: '1rem',
+                                                        gridTemplateColumns: '1fr 1fr'
+                                                    }}>
+                                            {receivedOrders.map(o =>
+                                                <MotionListItem key={o.id}>
+                                                    <ReceivedOrderListItem order={o}
+                                                                           onClickUnreceive={handleUnreceiveOrder}/>
+                                                </MotionListItem>
+                                            )}
+                                        </MotionList>
+                                    </NeumoContainer>
+                                }
+
+                            </Stack>
                         </Stack>
                     </Stack>
                 }
