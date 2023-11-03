@@ -23,9 +23,8 @@ export const productConverter: FirestoreDataConverter<Product> = {
     },
     toFirestore(modelObject: WithFieldValue<Product> | PartialWithFieldValue<Product>, options?: SetOptions): any {
         // データから Firestore に保存しないものを除去
-        const weakenModel: Weaken<WithFieldValue<Product> | PartialWithFieldValue<Product>, "id" | "thumbnail_url"> = Object.assign({}, modelObject);
+        const weakenModel: Weaken<WithFieldValue<Product> | PartialWithFieldValue<Product>, "id"> = Object.assign({}, modelObject);
         delete weakenModel.id;
-        delete weakenModel.thumbnail_url;
         return weakenModel;
     }
 }

@@ -28,8 +28,10 @@ export const fetchProducts = createAsyncThunk("products/fetchProducts",
             const products = snapshot.docs.map(doc => doc.data());
 
             for (const product of products) {
-                const thumbnailPath = product.thumbnail_path;
-                product.thumbnail_url = await getDownloadURL(ref(storage, thumbnailPath));
+                if (product.thumbnail_url === undefined || product.thumbnail_url === '') {
+                    const thumbnailPath = product.thumbnail_path;
+                    product.thumbnail_url = await getDownloadURL(ref(storage, thumbnailPath));
+                }
             }
             return {shopId, products};
 
