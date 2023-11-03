@@ -142,13 +142,18 @@ const OrderPage = () => {
         <Typography variant={"h5"} fontWeight={"bold"}>
             {shop !== undefined ? `${shop.display_name} - ` : ''}注文照会
         </Typography>
-        <Stack direction={"row"} spacing={1}>
-            <TextField id={"order-index"} variant={"filled"}
+        <Stack direction={"row"} spacing={1} component={"form"} onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            const orderIndex = formData.get("order-index") as string ?? ""
+            handleSubmit(orderIndex)
+        }}>
+            <TextField id={"order-index"} variant={"filled"} name={"order-index"}
                        label={"注文番号"} // helperText={"番号札に記入された数字を入力してください"}
-                       type={"number"} required fullWidth
+                       type={"number"} required fullWidth autoFocus
                        value={oIndexInput} onChange={handleOrderIndex}/>
             <Button variant={"contained"} sx={{minWidth: "100px"}}
-                    disabled={oIndexInput === ''} onClick={() => handleSubmit(oIndexInput)}>
+                    disabled={oIndexInput === ''} type={"submit"}>
                 確認
             </Button>
         </Stack>
