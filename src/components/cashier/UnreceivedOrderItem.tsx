@@ -42,7 +42,10 @@ export const UnreceivedOrderItem = (props: {
 
     const stocksBuffer = stocks.slice();
 
-    const productStatusKeys = useMemo(() => Object.keys(order.product_status), [order])
+    const productStatusKeys = useMemo(() => {
+        return Object.keys(order.product_status).sort((a, b) => a > b ? 1 : -1);
+    }, [order])
+
     const isOneItem = productStatusKeys.length < 2;
     const productStatus = order.product_status[productStatusKeys[0]];
     const stock = stocks.find(s => s.orderRef.id === order.id
@@ -102,7 +105,8 @@ export const UnreceivedOrderItem = (props: {
                                 {product?.shorter_name ?? '???'}
                             </Typography>
                             <Row>
-                                <Button disabled={stock === undefined || stock.status === 'completed'} onClick={() => onClickComplete(order, pStatusKey)}>
+                                <Button disabled={stock === undefined || stock.status === 'completed' || stock.status === 'received'}
+                                        onClick={() => onClickComplete(order, pStatusKey)}>
                                     完成
                                 </Button>
                                 <Button variant={"outlined"} disabled={noStock || isReceived} onClick={() => onReceiveIndividual(order, pStatusKey)}>
