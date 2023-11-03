@@ -37,7 +37,7 @@ const ProductCounterItem = (props: ProductCounterItemProps) => {
                   spacing={1} width={"auto"}>
         <RoundedImage alt={'product-thumbnail'} src={product.thumbnail_url}/>
         <Stack spacing={0.5} padding={'1rem 0.5rem'} width={"100%"}>
-            <Typography variant={"body1"} sx={{fontWeight: 'bold', fontSize: "1rem", whiteSpace: 'nowrap'}}>
+            <Typography variant={"body1"} sx={{fontWeight: 'bold', fontSize: "1rem"}}>
                 {product.display_name}
             </Typography>
             <Typography variant={"body2"} sx={{color: '#837468'}}>

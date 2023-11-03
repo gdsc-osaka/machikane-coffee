@@ -76,7 +76,7 @@ const StockTable = (props: {stocks: Stock[], products: Product[]}) => {
 
     const sortedBaristaIds = baristaIds.sort((a, b) => a - b);
 
-    return <Stack spacing={1} width={"100%"} alignItems={"center"}>
+    return <Stack spacing={1} width={"100%"}>
         <Stack direction={"row"} spacing={1} alignItems={"center"} sx={{paddingLeft: "48px"}}>
             <TableText variant={"label"}>
                 待機

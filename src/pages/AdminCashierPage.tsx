@@ -183,7 +183,7 @@ const AdminCashierPage = () => {
                            alignItems={'flex-start'}>
                         <Stack spacing={4} minWidth={"500px"}>
                             <NeumoContainer key={"order-form-container"}>
-                                <Stack direction={"row"} spacing={3} justifyContent={"space-between"}>
+                                <Stack direction={"row"} spacing={1} justifyContent={"space-between"}>
                                     <ProductCounter products={products}
                                                     productAmount={productAmount}
                                                     onChangeAmount={onChangeAmount}/>
@@ -193,6 +193,12 @@ const AdminCashierPage = () => {
                                                   onClickButton={onOrderAddClicked}/>
                                     </Stack>
                                 </Stack>
+                            </NeumoContainer>
+                            <NeumoContainer>
+                                <Heading>
+                                    商品の状態
+                                </Heading>
+                                <StockTable stocks={stocks} products={products}/>
                             </NeumoContainer>
                             <NeumoContainer key={"shop-manager-container"}>
                                 <ShopManager/>
@@ -221,34 +227,25 @@ const AdminCashierPage = () => {
                                     </MotionList>
                                 </NeumoContainer>
                             }
-                            <Stack spacing={4}>
+                            {receivedOrders.length > 0 &&
                                 <NeumoContainer>
                                     <Heading>
-                                        商品の状態
+                                        受取済み注文
                                     </Heading>
-                                    <StockTable stocks={stocks} products={products}/>
+                                    <MotionList layoutId={"received-orders"}
+                                                style={{
+                                                    display: 'grid', flexDirection: 'column', gap: '1rem',
+                                                    gridTemplateColumns: '1fr 1fr'
+                                                }}>
+                                        {receivedOrders.map(o =>
+                                            <MotionListItem key={o.id}>
+                                                <ReceivedOrderListItem order={o}
+                                                                       onClickUnreceive={handleUnreceiveOrder}/>
+                                            </MotionListItem>
+                                        )}
+                                    </MotionList>
                                 </NeumoContainer>
-                                {receivedOrders.length > 0 &&
-                                    <NeumoContainer>
-                                        <Heading>
-                                            受取済み注文
-                                        </Heading>
-                                        <MotionList layoutId={"received-orders"}
-                                                    style={{
-                                                        display: 'grid', flexDirection: 'column', gap: '1rem',
-                                                        gridTemplateColumns: '1fr 1fr'
-                                                    }}>
-                                            {receivedOrders.map(o =>
-                                                <MotionListItem key={o.id}>
-                                                    <ReceivedOrderListItem order={o}
-                                                                           onClickUnreceive={handleUnreceiveOrder}/>
-                                                </MotionListItem>
-                                            )}
-                                        </MotionList>
-                                    </NeumoContainer>
-                                }
-
-                            </Stack>
+                            }
                         </Stack>
                     </Stack>
                 }

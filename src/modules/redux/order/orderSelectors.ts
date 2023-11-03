@@ -18,6 +18,6 @@ export const selectAllOrders = (state: RootState, shopId: string) => state.order
 export const selectOrderStatus = (state: RootState, shopId: string) => state.order[shopId]?.status ?? 'idle';
 export const selectOrderById = (state: RootState, shopId: string, orderId: string) => state.order[shopId]?.data.find(e => e.id === orderId);
 export const selectReceivedOrder = (state: RootState, shopId: string) =>
-    selectAllOrders(state, shopId).filter(e => e.status === "received").sort((a, b) => sortByCreated(b, a));
+    selectAllOrders(state, shopId).filter(e => e.status === "received").sort(sortByCreated);
 export const selectUnreceivedOrder = (state: RootState, shopId: string) =>
     selectAllOrders(state, shopId).filter(e => e.status !== "received").sort((a, b) => sortByCreated(b, a));
