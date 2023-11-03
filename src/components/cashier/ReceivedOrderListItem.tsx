@@ -12,7 +12,7 @@ type ReceivedOrderListProps = {
 const ReceivedOrderListItem = (props: ReceivedOrderListProps) => {
     const {order, onClickUnreceive} = props;
 
-    return <StickyNote variant={"surface-variant"} direction={'row'}
+    return <StickyNote direction={'row'}
                        sx={{alignItems: 'stretch', padding: "0.375rem 0.5rem"}}>
         <Stack direction={'row'} alignItems={"center"} spacing={0} justifyContent={"space-between"} width={"100%"}>
             <Stack direction={'row'} alignItems={"center"} spacing={1} height={"100%"}>

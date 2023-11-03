@@ -17,9 +17,10 @@ export const UnreceivedOrderItem = (props: {
     onClickDelete: (order: Order) => void,
     onClickReceive: (order: Order) => void,
     onClickComplete: (order: Order, productStatusKey: string) => void,
+    onClickAllComplete: (order: Order) => void,
     onReceiveIndividual: (order: Order, productStatusKey: string) => void,
 }) => {
-    const {order, products, stocks, onClickReceive, onClickDelete, onClickComplete, onReceiveIndividual} = props;
+    const {order, products, stocks, onClickReceive, onClickDelete, onClickComplete, onClickAllComplete, onReceiveIndividual} = props;
     const [expanded, setExpanded] = useState(false);
 
     const canReceive = useMemo(() => {
@@ -70,12 +71,10 @@ export const UnreceivedOrderItem = (props: {
                     {getOrderLabel(order, products)}
                 </Typography>
                 <Row key={`unreceived-order-item-${order.id}-3`} spacing={0}>
-                    {isOneItem &&
-                        <Button disabled={stock === undefined || stock.status === 'completed'}
-                                onClick={() => onClickComplete(order, productStatusKeys[0])}>
-                            完成
-                        </Button>
-                    }
+                    <Button disabled={stock === undefined || stock.status === 'completed'}
+                            onClick={() => onClickAllComplete(order)}>
+                        完成
+                    </Button>
                     <Button variant={"outlined"} disabled={!canReceive} onClick={() => onClickReceive(order)}>
                         {canReceive ? "受取" : "在庫不足"}
                     </Button>

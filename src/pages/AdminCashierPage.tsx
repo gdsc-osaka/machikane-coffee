@@ -41,6 +41,7 @@ import Heading from "../components/Heading";
 import {initialDialogState} from "../modules/util/stateUtils";
 import {updateStockStatus} from "../modules/redux/stock/stocksThunk";
 import useWindowSize from "../modules/hooks/useWindowSize";
+import {getOrderLabel} from "../modules/util/orderUtils";
 
 const AdminCashierPage = () => {
     const [dialog, setDialog] = useState(initialDialogState);
@@ -96,7 +97,7 @@ const AdminCashierPage = () => {
         setDialog({
             open: true,
             title: `${order.index}番の注文を未受け取りにしますか？`,
-            description: ``,
+            description: `${getOrderLabel(order, products)}の商品が受け取り済みから完成済みに変更されます.`,
             onOk: () => dispatch(unreceiveOrder({shopId, order})).catch(e => toast.error(e))
         })
     }
@@ -104,8 +105,8 @@ const AdminCashierPage = () => {
     const handleDeleteOrder = (order: Order) => {
         setDialog({
             open: true,
-            title: `${order.index}番の注文と関連する在庫データを消去しますか？`,
-            description: "注文の消去は取り消せません",
+            title: `${order.index}番の注文を消去しますか？`,
+            description: "在庫情報などの関連するデータも削除されます. 注文の消去は取り消せません.",
             onOk: () => dispatch(deleteOrder({shopId, order}))
         });
     }
@@ -131,7 +132,7 @@ const AdminCashierPage = () => {
             setDialog({
                 open: true,
                 title: `${order.index}番の${product.display_name}を完成にしますか？`,
-                description: stock.status === 'working' ? `この商品は${stock.barista_id}番のバリスタが作成中に設定しています` : `バリスタ係が完成にすることを推奨します`,
+                description: stock.status === 'working' ? `この商品は${stock.barista_id}番のバリスタが作成中に設定しています` : `バリスタ係がバリスタページから完成にすることを推奨します`,
                 onOk: () => dispatch(updateStockStatus({shopId, stock, baristaId: 0, status: "completed"}))
                     .catch(e => toast.error(e))
 
@@ -144,7 +145,24 @@ const AdminCashierPage = () => {
                 onOk: closeDialog
             })
         }
+    }
 
+    const handleAllCompleteOrder = (order: Order) => {
+        setDialog({
+            open: true,
+            title: `${order.index}番の注文をまとめて完成にしますか？`,
+            description: `${getOrderLabel(order, products)}の商品が完成済みになります. バリスタ係がバリスタページから完成にすることを推奨します.`,
+            onOk: () => {
+                for (const stockRef of order.stocksRef) {
+                    const stock = stocks.find(s => s.id === stockRef.id);
+
+                    if (stock) {
+                        dispatch(updateStockStatus({shopId, stock, baristaId: 0, status: "completed"}))
+                            .catch(e => toast.error(e));
+                    }
+                }
+            }
+        })
     }
 
     const [width, _] = useWindowSize();
@@ -173,7 +191,8 @@ const AdminCashierPage = () => {
                                                                  onClickDelete={handleDeleteOrder}
                                                                  onClickReceive={handleReceiveOrder}
                                                                  onReceiveIndividual={handleReceiveIndividual}
-                                                                 onClickComplete={handleCompleteOrder}/>
+                                                                 onClickComplete={handleCompleteOrder}
+                                                                 onClickAllComplete={handleAllCompleteOrder}/>
                                         </MotionListItem>
                                     )}
                                 </div>
@@ -245,6 +264,7 @@ const AdminCashierPage = () => {
                                                                      onClickDelete={handleDeleteOrder}
                                                                      onClickReceive={handleReceiveOrder}
                                                                      onClickComplete={handleCompleteOrder}
+                                                                     onClickAllComplete={handleAllCompleteOrder}
                                                                      onReceiveIndividual={handleReceiveIndividual}/>
                                             </MotionListItem>
                                         )}
