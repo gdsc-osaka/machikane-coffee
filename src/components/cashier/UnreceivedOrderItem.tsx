@@ -49,10 +49,12 @@ export const UnreceivedOrderItem = (props: {
 
     const isOneItem = productStatusKeys.length < 2;
     const productStatus = order.product_status[productStatusKeys[0]];
-    const stock = stocks.find(s => s.orderRef.id === order.id
-        && s.product_id === productStatus.product_id);
 
-    return <StickyNote direction={"row"}
+    const isCompleted = stocks
+        .filter(s => s.orderRef.id === order.id && s.status !== 'completed')
+        .length === 0;
+
+    return <StickyNote direction={"row"} variant={isCompleted ? 'surface-variant' : 'surface'}
                        sx={{alignItems: "stretch", padding: "0.375rem 0.5rem"}}
                        spacing={1}>
         <Row key={`unreceived-order-item-${order.id}-1`}>
@@ -71,9 +73,9 @@ export const UnreceivedOrderItem = (props: {
                     {getOrderLabel(order, products)}
                 </Typography>
                 <Row key={`unreceived-order-item-${order.id}-3`} spacing={0}>
-                    <Button disabled={stock === undefined || stock.status === 'completed'}
+                    <Button disabled={isCompleted}
                             onClick={() => onClickAllComplete(order)}>
-                        完成
+                        {isCompleted ? "完成済" : "完成"}
                     </Button>
                     <Button variant={"outlined"} disabled={!canReceive} onClick={() => onClickReceive(order)}>
                         {canReceive ? "受取" : "在庫不足"}

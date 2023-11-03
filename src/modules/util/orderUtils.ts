@@ -1,5 +1,6 @@
 import {Order, ProductAmount} from "../redux/order/orderTypes";
 import {Product} from "../redux/product/productTypes";
+import {Stock} from "../redux/stock/stockTypes";
 
 /**
  * 注文が完成済みかどうかを判定します. refer が required_product_amountの場合, その注文以前の注文が在庫を消費する想定で完成済みかどうかを判定します.
@@ -76,4 +77,20 @@ export const getTimeToMake = (productAmount: ProductAmount, products: Product[],
     const averageSpan = sumSpan / allAmount;
 
     return Math.ceil(allAmount / baristaCount) * averageSpan;
+}
+
+export const sortByCompleted = (a: Order, b: Order, stocks: Stock[]) => {
+    const aStock = stocks.find(s => s.orderRef.id === a.id);
+    const bStock = stocks.find(s => s.orderRef.id === b.id);
+
+    if (!aStock || !bStock) return 0;
+
+    const aCompleted = aStock.status === 'completed';
+    const bCompleted = bStock.status === 'completed';
+
+    if (aCompleted && !bCompleted) return -1;
+
+    if (!aCompleted && bCompleted) return 1;
+
+    return 0;
 }

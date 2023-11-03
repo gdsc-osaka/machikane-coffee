@@ -41,7 +41,7 @@ import Heading from "../components/Heading";
 import {initialDialogState} from "../modules/util/stateUtils";
 import {updateStockStatus} from "../modules/redux/stock/stocksThunk";
 import useWindowSize from "../modules/hooks/useWindowSize";
-import {getOrderLabel} from "../modules/util/orderUtils";
+import {getOrderLabel, sortByCompleted} from "../modules/util/orderUtils";
 
 const AdminCashierPage = () => {
     const [dialog, setDialog] = useState(initialDialogState);
@@ -58,10 +58,11 @@ const AdminCashierPage = () => {
     const auth = useAuth();
     const products = useAppSelector(state => selectAllProducts(state, shopId));
 
-    const unreceivedOrders = useAppSelector(state => selectUnreceivedOrder(state, shopId));
-    const receivedOrders = useAppSelector(state => selectReceivedOrder(state, shopId));
-
     const stocks = useAppSelector(state => selectAllStocks(state, shopId));
+
+    const unreceivedOrders = useAppSelector(state => selectUnreceivedOrder(state, shopId))
+        .sort((a, b) => sortByCompleted(a, b, stocks));
+    const receivedOrders = useAppSelector(state => selectReceivedOrder(state, shopId));
 
     const onChangeAmount = (productId: string, amount: number) => {
         setProductAmount({...productAmount, [productId]: amount});
