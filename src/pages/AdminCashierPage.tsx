@@ -34,12 +34,12 @@ import StockTable from "../components/cashier/StockTable";
 import ProductCounter from "../components/cashier/ProductCounter";
 import SubTotal from "../components/cashier/SubTotal";
 import {UnreceivedOrderItem} from "../components/cashier/UnreceivedOrderItem";
-import OrdersList from "../components/cashier/OrdersList";
 import {useStreamEffect} from "../modules/hooks/useStreamEffect";
 import {CaptionCard} from "../components/OutlineCard";
 import toast from "react-hot-toast";
 import Heading from "../components/Heading";
 import {initialDialogState} from "../modules/util/stateUtils";
+import {updateStockStatus} from "../modules/redux/stock/stocksThunk";
 
 const AdminCashierPage = () => {
     const [dialog, setDialog] = useState(initialDialogState);
@@ -110,7 +110,7 @@ const AdminCashierPage = () => {
         });
     }
 
-    const handleCloseDelete = () => {
+    const closeDialog = () => {
         setDialog(prev => {
             return {...prev, open: false}
         })
@@ -127,6 +127,35 @@ const AdminCashierPage = () => {
 
     const handleReceiveIndividual = (order: Order, productStatusKey: string) => {
         dispatch(receiveOrderIndividual({shopId, order, productStatusKey}))
+    }
+
+    const handleCompleteOrder = (order: Order, productStatusKey: string) => {
+        const prodStatus = order.product_status[productStatusKey];
+        const stock = stocks
+            .find(s => s.orderRef.id === order.id && s.product_id === prodStatus.product_id
+                && (s.status === "idle" || s.status === 'working'))
+        const product = products.find(p => p.id === prodStatus.product_id);
+
+        if (stock && product) {
+            setDialog({
+                open: true,
+                title: `${order.index}番の${product.display_name}を完成にしますか？`,
+                description: stock.status === 'working' ? `この商品は${stock.barista_id}番のバリスタが作成中に設定しています` : ``,
+                onOk: () => {
+                    closeDialog();
+                    dispatch(updateStockStatus({shopId, stock, baristaId: 0, status: "completed"}))
+                        .catch(e => toast.error(e))
+                }
+            });
+        } else {
+            setDialog({
+                open: true,
+                title: `該当するStockデータが見つかりません.`,
+                description: ``,
+                onOk: closeDialog
+            })
+        }
+
     }
 
     return (
@@ -149,9 +178,11 @@ const AdminCashierPage = () => {
                                         <MotionListItem key={order.id}>
                                             <UnreceivedOrderItem order={order}
                                                                  products={products}
+                                                                 stocks={stocks}
                                                                  onClickDelete={handleDeleteOrder}
                                                                  onClickReceive={handleReceiveOrder}
-                                                                 onReceiveIndividual={handleReceiveIndividual}/>
+                                                                 onReceiveIndividual={handleReceiveIndividual}
+                                                                 onClickComplete={handleCompleteOrder}/>
                                         </MotionListItem>
                                     )}
                                 </div>
@@ -219,8 +250,10 @@ const AdminCashierPage = () => {
                                             <MotionListItem key={o.id}>
                                                 <UnreceivedOrderItem order={o}
                                                                      products={products}
+                                                                     stocks={stocks}
                                                                      onClickDelete={handleDeleteOrder}
                                                                      onClickReceive={handleReceiveOrder}
+                                                                     onClickComplete={handleCompleteOrder}
                                                                      onReceiveIndividual={handleReceiveIndividual}/>
                                             </MotionListItem>
                                         )}
@@ -250,7 +283,7 @@ const AdminCashierPage = () => {
                     </Stack>
                 }
                 <Dialog open={dialog.open}
-                        onClose={handleCloseDelete}
+                        onClose={closeDialog}
                         aria-labelledby="order-delete-alert-dialog"
                         aria-describedby="check-order-delete-alert">
                     <DialogTitle id={"order-delete-alert-title"}>
@@ -264,9 +297,9 @@ const AdminCashierPage = () => {
                         </DialogContent>
                     }
                     <DialogActions>
-                        <Button onClick={handleCloseDelete}>キャンセル</Button>
-                        <Button onClick={handleDelete} autoFocus>
-                            消去する
+                        <Button onClick={closeDialog}>キャンセル</Button>
+                        <Button onClick={dialog.onOk} autoFocus>
+                            OK
                         </Button>
                     </DialogActions>
                 </Dialog>

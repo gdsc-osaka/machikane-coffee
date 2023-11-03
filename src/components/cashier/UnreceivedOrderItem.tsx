@@ -8,15 +8,18 @@ import React, {ReactNode, useMemo, useState} from "react";
 import {SxProps} from "@mui/system";
 import {Theme} from "@mui/material/styles/createTheme";
 import {getOrderLabel} from "../../modules/util/orderUtils";
+import {Stock} from "../../modules/redux/stock/stockTypes";
 
 export const UnreceivedOrderItem = (props: {
     order: Order,
     products: Product[],
+    stocks: Stock[],
     onClickDelete: (order: Order) => void,
     onClickReceive: (order: Order) => void,
+    onClickComplete: (order: Order, productStatusKey: string) => void,
     onReceiveIndividual: (order: Order, productStatusKey: string) => void,
 }) => {
-    const {order, products, onClickReceive, onClickDelete, onReceiveIndividual} = props;
+    const {order, products, stocks, onClickReceive, onClickDelete, onClickComplete, onReceiveIndividual} = props;
     const [expanded, setExpanded] = useState(false);
 
     const canReceive = useMemo(() => {
@@ -35,9 +38,15 @@ export const UnreceivedOrderItem = (props: {
         }
 
         return true;
-    }, [order, products])
+    }, [order, products]);
+
+    const stocksBuffer = stocks.slice();
 
     const productStatusKeys = useMemo(() => Object.keys(order.product_status), [order])
+    const isOneItem = productStatusKeys.length < 2;
+    const productStatus = order.product_status[productStatusKeys[0]];
+    const stock = stocks.find(s => s.orderRef.id === order.id
+        && s.product_id === productStatus.product_id);
 
     return <StickyNote direction={"row"}
                        sx={{alignItems: "stretch", padding: "0.375rem 0.5rem"}}
@@ -58,13 +67,19 @@ export const UnreceivedOrderItem = (props: {
                     {getOrderLabel(order, products)}
                 </Typography>
                 <Row key={`unreceived-order-item-${order.id}-3`} spacing={0}>
+                    {isOneItem &&
+                        <Button disabled={stock === undefined || stock.status === 'completed'}
+                                onClick={() => onClickComplete(order, productStatusKeys[0])}>
+                            完成
+                        </Button>
+                    }
                     <Button variant={"outlined"} disabled={!canReceive} onClick={() => onClickReceive(order)}>
                         {canReceive ? "受取" : "在庫不足"}
                     </Button>
                     <IconButton onClick={() => onClickDelete(order)}>
                         <DeleteRoundedIcon/>
                     </IconButton>
-                    <IconButton onClick={() => setExpanded(!expanded)} disabled={productStatusKeys.length < 2}>
+                    <IconButton onClick={() => setExpanded(!expanded)} disabled={isOneItem}>
                         <ExpandMoreRoundedIcon/>
                     </IconButton>
                 </Row>
@@ -76,14 +91,24 @@ export const UnreceivedOrderItem = (props: {
                         const product = products.find(p => p.id === pStatus.product_id);
                         const isReceived = pStatus.status === 'received'
                         const noStock = (product?.stock ?? 0) <= 0;
+                        const stock = stocksBuffer.find(s => s.orderRef.id === order.id
+                            && s.product_id === productStatus.product_id);
+
+                        if (stock)
+                            stocksBuffer.remove(s => s.id === stock.id)
 
                         return <Row sx={{justifyContent: 'space-between'}} key={`unreceived-order-item-${order.id}-${pStatusKey}`}>
                             <Typography variant={"body2"}>
                                 {product?.shorter_name ?? '???'}
                             </Typography>
-                            <Button variant={"text"} disabled={noStock || isReceived} onClick={() => onReceiveIndividual(order, pStatusKey)}>
-                                {isReceived ? "受取済み" : noStock ? "在庫不足" : "個別受取"}
-                            </Button>
+                            <Row>
+                                <Button disabled={stock === undefined || stock.status === 'completed'} onClick={() => onClickComplete(order, pStatusKey)}>
+                                    完成
+                                </Button>
+                                <Button variant={"outlined"} disabled={noStock || isReceived} onClick={() => onReceiveIndividual(order, pStatusKey)}>
+                                    {isReceived ? "受取済み" : noStock ? "在庫不足" : "個別受取"}
+                                </Button>
+                            </Row>
                         </Row>
                     })}
                 </>

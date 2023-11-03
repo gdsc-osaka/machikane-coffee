@@ -4,6 +4,7 @@ import {
     collection,
     doc,
     increment,
+    limit,
     onSnapshot,
     query,
     runTransaction,
@@ -20,6 +21,7 @@ import {today} from "../../util/dateUtils";
 const stocksCollection = (shopId: string) => query(
     collection(db, `shops/${shopId}/stocks`),
     where("created_at", ">=", today),
+    limit(50),
 );
 export const stockRef = (shopId: string, stockId: string) =>
     doc(db, `shops/${shopId}/stocks/${stockId}`).withConverter(stockConverter)
