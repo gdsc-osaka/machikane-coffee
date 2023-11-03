@@ -3,7 +3,6 @@ import {Button, Divider, Pagination, Stack, Typography} from "@mui/material";
 import StickyNote from "../StickyNote";
 import React, {useState} from "react";
 import {MotionList, MotionListItem} from "../motion/motionList";
-import useWindowSize from "../../modules/hooks/useWindowSize";
 
 type ReceivedOrderListProps = {
     order: Order,
@@ -39,14 +38,13 @@ const ReceivedOrderList = (props: {
     onUnreceiveOrder: (order: Order) => void
 }) => {
     const {receivedOrders, onUnreceiveOrder} = props;
-    const [width, _] = useWindowSize();
     const [page, setPage] = useState(1);
 
     return <Stack alignItems={"center"} spacing={2}>
         <MotionList layoutId={"received-orders"}
                     style={{
                         display: 'grid', flexDirection: 'column', gap: '1rem', width: "100%",
-                        gridTemplateColumns: '1fr '.repeat(width > 1000 ? 3 : 2)
+                        gridTemplateColumns: '1fr '.repeat(2)
                     }}>
             {receivedOrders.slice(orderCountPerPage * (page - 1), orderCountPerPage * page).map(o =>
                 <ReceivedOrderListItem order={o} key={o.id}

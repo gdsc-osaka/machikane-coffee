@@ -6,7 +6,6 @@ import {
     doc,
     getDocs,
     increment,
-    limit,
     onSnapshot,
     orderBy,
     query,
