@@ -147,7 +147,9 @@ const OrderPage = () => {
             {shop !== undefined ? `${shop.display_name} - ` : ''}注文照会
         </Typography>
         <Stack direction={"row"} spacing={1} component={"form"} onSubmit={(e) => {
+            e.currentTarget.blur()
             e.preventDefault();
+
             const formData = new FormData(e.currentTarget);
             const orderIndex = formData.get("order-index") as string ?? ""
             handleSubmit(orderIndex)
