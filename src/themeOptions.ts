@@ -12,7 +12,7 @@ export const themeOptions: ThemeOptions = {
     },
     palette: {
         primary: {
-            main: '#8B5000',
+            main: '#8c6938',
         },
         background: {
             default: '#FFFBFF',
@@ -61,6 +61,9 @@ export const themeOptions: ThemeOptions = {
                 },
                 outlined: {
                     borderColor: "#837468"
+                },
+                contained: {
+                    fontWeight: 'normal'
                 }
             }
         },

@@ -84,7 +84,7 @@ export const getTimeToMake = (productAmount: ProductAmount, products: Product[],
  */
 export const isStocksOfOrderCompleted = (order: Order, stocks: Stock[]) => {
     return stocks
-        .filter(s => s.orderRef.id === order.id && s.status !== 'completed')
+        .filter(s => s.orderRef.id === order.id && (s.status === 'idle' || s.status === 'working'))
         .length === 0;
 }
 

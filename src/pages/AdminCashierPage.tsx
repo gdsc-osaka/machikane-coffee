@@ -17,7 +17,7 @@ import {
     useTheme
 } from "@mui/material";
 import ShopManager from "../components/cashier/ShopManager";
-import ReceivedOrderListItem from "../components/cashier/ReceivedOrderList";
+import ReceivedOrderList from "../components/cashier/ReceivedOrderList";
 import {useAuth} from "../AuthGuard";
 import {
     addOrder,
@@ -40,9 +40,9 @@ import toast from "react-hot-toast";
 import Heading from "../components/Heading";
 import {initialDialogState} from "../modules/util/stateUtils";
 import {updateStockStatus} from "../modules/redux/stock/stocksThunk";
-import useWindowSize from "../modules/hooks/useWindowSize";
 import {getOrderLabel, sortByCompleted} from "../modules/util/orderUtils";
-import ReceivedOrderList from "../components/cashier/ReceivedOrderList";
+import {Product} from "../modules/redux/product/productTypes";
+import {Stock} from "../modules/redux/stock/stockTypes";
 
 const AdminCashierPage = () => {
     const [dialog, setDialog] = useState(initialDialogState);
@@ -158,7 +158,7 @@ const AdminCashierPage = () => {
                 for (const stockRef of order.stocksRef) {
                     const stock = stocks.find(s => s.id === stockRef.id);
 
-                    if (stock) {
+                    if (stock && (stock.status === 'idle' || stock.status === 'working')) {
                         dispatch(updateStockStatus({shopId, stock, baristaId: 0, status: "completed"}))
                             .catch(e => toast.error(e));
                     }
@@ -167,55 +167,14 @@ const AdminCashierPage = () => {
         })
     }
 
-    const [width, _] = useWindowSize();
-
     return (
         !auth.loading ?
             <React.Fragment>
                 {isMobile ?
-                    <Stack spacing={2} sx={{padding: "20px 10px"}}>
-                        <MotionList layoutId={"cashier-page-root"} style={{gap: "1.5rem", display: 'flex', flexDirection: 'column'}}>
-                            <Typography variant={"h5"}>
-                                待機中の注文
-                            </Typography>
-                            <div>
-                                {unreceivedOrders.length === 0 &&
-                                    <CaptionCard>
-                                        待機中の注文はありません
-                                    </CaptionCard>
-                                }
-                                <div style={{gap: '1rem', display: 'flex', flexDirection: 'column', paddingBottom: "1rem"}}>
-                                    {unreceivedOrders.map(order =>
-                                        <MotionListItem key={order.id}>
-                                            <UnreceivedOrderItem order={order}
-                                                                 products={products}
-                                                                 stocks={stocks}
-                                                                 onClickDelete={handleDeleteOrder}
-                                                                 onClickReceive={handleReceiveOrder}
-                                                                 onReceiveIndividual={handleReceiveIndividual}
-                                                                 onClickComplete={handleCompleteOrder}
-                                                                 onClickAllComplete={handleAllCompleteOrder}/>
-                                        </MotionListItem>
-                                    )}
-                                </div>
-                            </div>
-                            <MotionListItem>
-                                <Typography variant={"h5"}>
-                                    受取済み注文
-                                </Typography>
-                            </MotionListItem>
-                            <div>
-                                {receivedOrders.length === 0 &&
-                                    <CaptionCard>
-                                        受取済み注文はありません
-                                    </CaptionCard>
-                                }
-                                <div style={{gap: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr'}}>
-                                    <ReceivedOrderList receivedOrders={receivedOrders} onReceiveOrder={handleReceiveOrder}/>
-                                </div>
-                            </div>
-                        </MotionList>
-                    </Stack>
+                    <MobileCashierPage unreceivedOrders={unreceivedOrders} receivedOrders={receivedOrders}
+                                       products={products} stocks={stocks}
+                                       onClickDelete={handleDeleteOrder} onClickReceive={handleReceiveOrder} onClickUnreceive={handleUnreceiveOrder}
+                                       onClickComplete={handleCompleteOrder} onClickAllComplete={handleAllCompleteOrder} onReceiveIndividual={handleReceiveIndividual}/>
                     :
                     <Stack direction={'row'} spacing={4} sx={{padding: "30px 30px"}}
                            alignItems={'flex-start'}>
@@ -274,7 +233,7 @@ const AdminCashierPage = () => {
                                         受取済み注文
                                     </Heading>
                                     <ReceivedOrderList receivedOrders={receivedOrders}
-                                                       onReceiveOrder={handleReceiveOrder}/>
+                                                       onUnreceiveOrder={handleUnreceiveOrder}/>
                                 </NeumoContainer>
                             }
                         </Stack>
@@ -310,6 +269,65 @@ const AdminCashierPage = () => {
                 <CircularProgress/>
             </Stack>
     )
+}
+
+const MobileCashierPage = (props: {
+    unreceivedOrders: Order[],
+    receivedOrders: Order[],
+    products: Product[],
+    stocks: Stock[],
+    onClickDelete: (order: Order) => void,
+    onClickReceive: (order: Order) => void,
+    onClickUnreceive: (order: Order) => void,
+    onClickComplete: (order: Order, productStatusKey: string) => void,
+    onClickAllComplete: (order: Order) => void,
+    onReceiveIndividual: (order: Order, productStatusKey: string) => void,
+}) => {
+    const {unreceivedOrders, receivedOrders, onReceiveIndividual, onClickReceive, onClickUnreceive, onClickDelete, onClickComplete, onClickAllComplete, stocks, products} = props;
+
+    return <Stack spacing={2} sx={{padding: "20px 10px"}}>
+        <MotionList layoutId={"cashier-page-root"} style={{gap: "1.5rem", display: 'flex', flexDirection: 'column'}}>
+            <Typography variant={"h5"}>
+                待機中の注文
+            </Typography>
+            <div>
+                {unreceivedOrders.length === 0 &&
+                    <CaptionCard>
+                        待機中の注文はありません
+                    </CaptionCard>
+                }
+                <div style={{gap: '1rem', display: 'flex', flexDirection: 'column', paddingBottom: "1rem"}}>
+                    {unreceivedOrders.map(order =>
+                        <MotionListItem key={order.id}>
+                            <UnreceivedOrderItem order={order}
+                                                 products={products}
+                                                 stocks={stocks}
+                                                 onClickDelete={onClickDelete}
+                                                 onClickReceive={onClickReceive}
+                                                 onReceiveIndividual={onReceiveIndividual}
+                                                 onClickComplete={onClickComplete}
+                                                 onClickAllComplete={onClickAllComplete}/>
+                        </MotionListItem>
+                    )}
+                </div>
+            </div>
+            <MotionListItem>
+                <Typography variant={"h5"}>
+                    受取済み注文
+                </Typography>
+            </MotionListItem>
+            <div>
+                {receivedOrders.length === 0 &&
+                    <CaptionCard>
+                        受取済み注文はありません
+                    </CaptionCard>
+                }
+                <div style={{gap: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr'}}>
+                    <ReceivedOrderList receivedOrders={receivedOrders} onUnreceiveOrder={onClickUnreceive}/>
+                </div>
+            </div>
+        </MotionList>
+    </Stack>;
 }
 
 export default AdminCashierPage;

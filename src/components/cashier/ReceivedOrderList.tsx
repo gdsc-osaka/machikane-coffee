@@ -1,9 +1,8 @@
 import {Order} from "../../modules/redux/order/orderTypes";
-import {Button, Divider, Stack, Typography} from "@mui/material";
+import {Button, Divider, Pagination, Stack, Typography} from "@mui/material";
 import StickyNote from "../StickyNote";
-import React from "react";
+import React, {useState} from "react";
 import {MotionList, MotionListItem} from "../motion/motionList";
-import Heading from "../Heading";
 import useWindowSize from "../../modules/hooks/useWindowSize";
 
 type ReceivedOrderListProps = {
@@ -33,23 +32,29 @@ const ReceivedOrderListItem = (props: ReceivedOrderListProps) => {
     </MotionListItem>
 };
 
+const orderCountPerPage = 12;
+
 const ReceivedOrderList = (props: {
     receivedOrders: Order[],
-    onReceiveOrder: (order: Order) => void
+    onUnreceiveOrder: (order: Order) => void
 }) => {
+    const {receivedOrders, onUnreceiveOrder} = props;
     const [width, _] = useWindowSize();
+    const [page, setPage] = useState(1);
 
-    return <>
+    return <Stack alignItems={"center"} spacing={2}>
         <MotionList layoutId={"received-orders"}
                     style={{
-                        display: 'grid', flexDirection: 'column', gap: '1rem',
+                        display: 'grid', flexDirection: 'column', gap: '1rem', width: "100%",
                         gridTemplateColumns: '1fr '.repeat(width > 1000 ? 3 : 2)
                     }}>
-            {props.receivedOrders.map(o =>
+            {receivedOrders.slice(orderCountPerPage * (page - 1), orderCountPerPage * page).map(o =>
                 <ReceivedOrderListItem order={o} key={o.id}
-                                       onClickUnreceive={props.onReceiveOrder}/>
+                                       onClickUnreceive={onUnreceiveOrder}/>
             )}
         </MotionList>
-    </>
+        <Pagination count={Math.ceil(receivedOrders.length / orderCountPerPage)}
+                    page={page} onChange={(_, value) => setPage(value)}/>
+    </Stack>
 }
 export default ReceivedOrderList;

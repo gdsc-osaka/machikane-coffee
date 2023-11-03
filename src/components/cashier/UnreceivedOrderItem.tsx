@@ -70,12 +70,12 @@ export const UnreceivedOrderItem = (props: {
                     WebkitBoxOrient: "vertical",}}>
                     {getOrderLabel(order, products)}
                 </Typography>
-                <Row key={`unreceived-order-item-${order.id}-3`} spacing={0}>
-                    <Button disabled={isCompleted}
+                <Row key={`unreceived-order-item-${order.id}-3`} spacing={0.5}>
+                    <Button disabled={isCompleted} variant={"outlined"}
                             onClick={() => onClickAllComplete(order)}>
                         {isCompleted ? "完成済" : "完成"}
                     </Button>
-                    <Button variant={"outlined"} disabled={!canReceive} onClick={() => onClickReceive(order)}>
+                    <Button variant={"contained"} disabled={!canReceive} onClick={() => onClickReceive(order)}>
                         {canReceive ? "受取" : "在庫不足"}
                     </Button>
                     <IconButton onClick={() => onClickDelete(order)}>
@@ -103,12 +103,13 @@ export const UnreceivedOrderItem = (props: {
                             <Typography variant={"body2"}>
                                 {product?.shorter_name ?? '???'}
                             </Typography>
-                            <Row>
+                            <Row spacing={0.5}>
                                 <Button disabled={stock === undefined || stock.status === 'completed' || stock.status === 'received'}
+                                        variant={"outlined"}
                                         onClick={() => onClickComplete(order, pStatusKey)}>
-                                    {stock?.status === 'completed' ? "完成済み" : stock?.status === 'received' ? "受取済" : "完成"}
+                                    {stock?.status === 'received' ? "受取済" : stock?.status === 'completed' ? "完成済み" : "完成"}
                                 </Button>
-                                <Button variant={"outlined"} disabled={noStock || isReceived} onClick={() => onReceiveIndividual(order, pStatusKey)}>
+                                <Button variant={"contained"} disabled={noStock || isReceived} onClick={() => onReceiveIndividual(order, pStatusKey)}>
                                     {isReceived ? "受取済み" : noStock ? "在庫不足" : "個別受取"}
                                 </Button>
                             </Row>
