@@ -12,32 +12,22 @@ import DelayContainer from "../components/User/delayContainer";
 import MyMarkdown from "src/components/MyMarkdown";
 import {MotionList, MotionListItem} from "../components/motion/motionList";
 import {fetchOrderByIndex, streamOrder} from "../modules/redux/order/ordersThunk";
-import {selectOrderById, selectOrderStatus} from "../modules/redux/order/orderSelectors";
+import {selectOrderById} from "../modules/redux/order/orderSelectors";
 import {orderAdded} from "../modules/redux/order/ordersSlice";
 import {isOrderCompleted} from "../modules/util/orderUtils";
 import {useDate} from "../modules/hooks/useDate";
 import {MotionDivider} from "../components/motion/MotionDivider";
 import {useStreamEffect} from "../modules/hooks/useStreamEffect";
 import {useAuth} from "../AuthGuard";
+import {initialDialogState} from "../modules/util/stateUtils";
 
 // queryParamで使うキー
 const orderIndexParamKey = 'order';
 
-type DialogState = {
-    open: boolean,
-    title: string,
-    onOk: () => void,
-}
-
 const OrderPage = () => {
     const [oIndexInput, setOIndexInput] = useState("");
     const [orderId, setOrderId] = useState("");
-    const [dialogState, setDialogState] = useState<DialogState>({
-        open: false,
-        title: "",
-        onOk: () => {
-        }
-    });
+    const [dialogState, setDialogState] = useState(initialDialogState);
 
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
@@ -49,7 +39,6 @@ const OrderPage = () => {
 
     // Order関連
     const order = useAppSelector(state => selectOrderById(state, shopId, orderId));
-    const orderStatus = useAppSelector(state => selectOrderStatus(state, shopId))
 
     // Product関連
     const products = useAppSelector(state => selectAllProducts(state, shopId));
@@ -77,6 +66,7 @@ const OrderPage = () => {
             setDialogState({
                 open: true,
                 title: "該当するIDの店舗が見つかりません",
+                description: "",
                 onOk: () => {
                     handleClose();
                     navigate('/');
@@ -112,6 +102,7 @@ const OrderPage = () => {
             setDialogState({
                 open: true,
                 title: "注文番号を入力してください",
+                description: "",
                 onOk: handleClose
             })
         } else {
@@ -121,6 +112,7 @@ const OrderPage = () => {
                 setDialogState({
                     open: true,
                     title: "該当する注文が見つかりませんでした",
+                    description: "",
                     onOk: handleClose
                 })
             } else {

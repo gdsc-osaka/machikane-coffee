@@ -39,9 +39,10 @@ import {useStreamEffect} from "../modules/hooks/useStreamEffect";
 import {CaptionCard} from "../components/OutlineCard";
 import toast from "react-hot-toast";
 import Heading from "../components/Heading";
+import {initialDialogState} from "../modules/util/stateUtils";
 
 const AdminCashierPage = () => {
-    const [openDelete, setOpenDelete] = useState(false);
+    const [dialog, setDialog] = useState(initialDialogState);
     const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
     const [productAmount, setProductAmount] = useState<ProductAmount>({});
 
@@ -92,22 +93,35 @@ const AdminCashierPage = () => {
     }
 
     const handleUnreceiveOrder = (order: Order) => {
-        dispatch(unreceiveOrder({shopId, order})).catch(e => toast.error(e));
+        setDialog({
+            open: true,
+            title: `${order.index}番の注文を未受け取りにしますか？`,
+            description: ``,
+            onOk: () => dispatch(unreceiveOrder({shopId, order})).catch(e => toast.error(e))
+        })
     }
 
     const handleDeleteOrder = (order: Order) => {
-        setOrderToDelete(order);
-        setOpenDelete(true);
+        setDialog({
+            open: true,
+            title: `${orderToDelete?.index}番の注文と関連する在庫データを消去しますか？}`,
+            description: "注文の消去は取り消せません",
+            onOk: () => setOrderToDelete(order)
+        });
     }
 
     const handleCloseDelete = () => {
-        setOpenDelete(false);
+        setDialog(prev => {
+            return {...prev, open: false}
+        })
     }
 
     const handleDelete = () => {
         if (orderToDelete != null) {
             dispatch(deleteOrder({shopId, order: orderToDelete}));
-            setOpenDelete(false);
+            setDialog(prev => {
+                return {...prev, open: false}
+            })
         }
     }
 
@@ -221,18 +235,20 @@ const AdminCashierPage = () => {
                         </Stack>
                     </Stack>
                 }
-                <Dialog open={openDelete}
+                <Dialog open={dialog.open}
                         onClose={handleCloseDelete}
                         aria-labelledby="order-delete-alert-dialog"
                         aria-describedby="check-order-delete-alert">
                     <DialogTitle id={"order-delete-alert-title"}>
-                        {orderToDelete?.index}番の注文と関連する在庫データを消去しますか？
+                        {dialog.title}
                     </DialogTitle>
-                    <DialogContent>
-                        <DialogContentText id="delete-dialog-description">
-                            注文の消去は取り消せません
-                        </DialogContentText>
-                    </DialogContent>
+                    {dialog.description.length !== 0 &&
+                        <DialogContent>
+                            <DialogContentText id="delete-dialog-description">
+                                {dialog.description}
+                            </DialogContentText>
+                        </DialogContent>
+                    }
                     <DialogActions>
                         <Button onClick={handleCloseDelete}>キャンセル</Button>
                         <Button onClick={handleDelete} autoFocus>
