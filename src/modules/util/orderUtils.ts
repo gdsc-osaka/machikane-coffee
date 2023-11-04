@@ -3,13 +3,32 @@ import {Product} from "../redux/product/productTypes";
 import {Stock} from "../redux/stock/stockTypes";
 
 /**
+ * 受け取り済みの商品を引いた注文の商品数を返す
+ */
+function getProductAmountLeft(order: Order) {
+    const productAmountLeft = Object.assign({}, order.product_amount);
+
+    for (const key in order.product_status) {
+        const pPStatus = order.product_status[key];
+
+        if (pPStatus.status === 'received') {
+            productAmountLeft[pPStatus.product_id] -= 1;
+        }
+    }
+
+    return productAmountLeft;
+}
+
+/**
  * 注文が完成済みかどうかを判定します. refer が required_product_amountの場合, その注文以前の注文が在庫を消費する想定で完成済みかどうかを判定します.
  * @param order
  * @param products
  * @param refer
  */
-export const isOrderCompleted = (order: Order, products: Product[], refer: "required_product_amount" | "product_amount" = "product_amount") => {
-    for (const pid in order[refer]) {
+export const isOrderCompleted = (order: Order, products: Product[], refer: "required_product_amount" | "product_status" | "product_amount" = "product_amount") => {
+    const productAmount = refer === 'product_status' ? getProductAmountLeft(order) : order[refer];
+
+    for (const pid in productAmount) {
         const product = products.find(p => p.id === pid);
 
         if (product) {

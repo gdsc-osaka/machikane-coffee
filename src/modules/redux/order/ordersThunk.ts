@@ -335,7 +335,7 @@ export const receiveOrder = createAsyncThunk<
         .filter(o => o.created_at.seconds > order.created_at.seconds);
     const latestProducts = selectAllProducts(state, shopId);
 
-    if (!isOrderCompleted(order, latestProducts)) {
+    if (!isOrderCompleted(order, latestProducts, "product_status")) {
         return rejectWithValue('Order is not completed.')
     }
 
@@ -392,7 +392,8 @@ export const receiveOrder = createAsyncThunk<
                 transaction.update(orderRef(shopId, order.id), {
                     ...reqProdAmoDiff,
                     ...orderForUpdate,
-                    status: "received"
+                    status: "received",
+                    received_at: serverTimestamp(),
                 } as OrderForUpdate);
             } catch (e) {
                 console.error(e);
@@ -542,7 +543,8 @@ export const receiveOrderIndividual = createAsyncThunk<
                 product_status: newOrder.product_status,
                 [`required_product_amount.${prodId}`]: increment(-1),
                 status: orderStatus,
-                complete_at: Timestamp.fromMillis(order.complete_at.toMillis() - newCompleteAtDiff)
+                complete_at: Timestamp.fromMillis(order.complete_at.toMillis() - newCompleteAtDiff),
+                received_at: allReceived ? serverTimestamp() : order.received_at
             }) // FIXME OrderForUpdateを使う
             // endregion
 

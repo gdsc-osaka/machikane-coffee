@@ -98,7 +98,6 @@ export const UnreceivedOrderItem = (props: {
                         if (stock)
                             stocksBuffer.remove(s => s.id === stock.id)
 
-                        console.log(stock);
                         return <Row sx={{justifyContent: 'space-between'}} key={`unreceived-order-item-${order.id}-${pStatusKey}`}>
                             <Typography variant={"body2"}>
                                 {product?.shorter_name ?? '???'}
