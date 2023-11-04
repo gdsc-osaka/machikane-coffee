@@ -8,7 +8,7 @@ const StockList = (props: {
 
     return <Stack direction={"row"} spacing={2}>
         {props.products.map(product =>
-            <Stack alignItems={"flex-end"}>
+            <Stack alignItems={"flex-end"} key={`stock-list-${product.id}`}>
                 <ProductIcon src={product.thumbnail_url} alt={`Thumbnail of ${product.display_name}`}/>
                 <AmountLabel>
                     {product.stock}
