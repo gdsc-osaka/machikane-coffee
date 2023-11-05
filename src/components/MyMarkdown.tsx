@@ -7,7 +7,7 @@ const MyMarkdown = (props: {children: string | null | undefined, options?: Reado
         h1(props) {
             const {children} = props;
 
-            return <Typography variant={"h4"} fontWeight={"bold"} sx={{marginTop: "0.5rem"}}>
+            return <Typography variant={"h4"} fontWeight={"bold"} sx={{marginTop: "1.5rem"}}>
                 {children}
                 <UnderlineDivider/>
             </Typography>
@@ -15,7 +15,7 @@ const MyMarkdown = (props: {children: string | null | undefined, options?: Reado
         h2(props) {
             const {children} = props;
 
-            return <Typography variant={"h5"} fontWeight={"bold"} sx={{marginTop: "0.5rem"}}>
+            return <Typography variant={"h5"} fontWeight={"bold"} sx={{marginTop: "1.5rem"}}>
                 {children}
                 <UnderlineDivider/>
             </Typography>
@@ -23,7 +23,7 @@ const MyMarkdown = (props: {children: string | null | undefined, options?: Reado
         h3(props) {
             const {children} = props;
 
-            return <Typography variant={"h6"} fontWeight={"bold"} sx={{lineHeight: "200%", marginTop: "0.5rem"}}>
+            return <Typography variant={"h6"} fontWeight={"bold"} sx={{lineHeight: "200%", marginTop: "1.5rem"}}>
                 {children}
             </Typography>
         },

@@ -2,8 +2,6 @@ import * as React from "react";
 import {useEffect} from "react";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Checkbox from "@mui/material/Checkbox";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
@@ -56,7 +54,7 @@ export default function LogInPage() {
                 required
                 fullWidth
                 id="email"
-                label="Email Address"
+                label="メールアドレス"
                 name="email"
                 autoComplete="email"
                 autoFocus
@@ -67,15 +65,16 @@ export default function LogInPage() {
                 required
                 fullWidth
                 name="password"
-                label="Password"
+                label="パスワード"
                 type="password"
                 id="password"
                 autoComplete="current-password"
             />
-            <FormControlLabel
-                control={<Checkbox value="remember" color="primary"/>}
-                label="Remember me"
-            />
+            {/*↓使ってないので削除*/}
+            {/*<FormControlLabel*/}
+            {/*    control={<Checkbox value="remember" color="primary"/>}*/}
+            {/*    label="パスワードを保存する"*/}
+            {/*/>*/}
             <Button
                 type="submit"
                 fullWidth

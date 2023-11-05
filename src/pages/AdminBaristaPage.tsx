@@ -1,108 +1,70 @@
-import {Button, CircularProgress, Stack, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
-import React, {useEffect, useState} from "react";
-import {RootState, useAppDispatch} from "../modules/redux/store";
-import {useSelector} from "react-redux";
-import {
-    selectShopById,
-    selectShopStatus,
-    selectShopUnsubscribe,
-    streamShop,
-    updateShop
-} from "../modules/redux/shop/shopsSlice";
+import {Button, CircularProgress, Divider, Stack, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
+import React, {useState} from "react";
+import {useAppDispatch, useAppSelector} from "../modules/redux/store";
+import {selectShopById} from "../modules/redux/shop/shopsSlice";
 import {useParams} from "react-router-dom";
-import {BaristaMap, RawShop, Shop} from "../modules/redux/shop/types";
-import CheckIcon from '@mui/icons-material/Check';
-import HourglassEmptyRoundedIcon from '@mui/icons-material/HourglassEmptyRounded';
-import HourglassBottomRoundedIcon from '@mui/icons-material/HourglassBottomRounded';
+import {BaristaMap, ShopForAdd} from "../modules/redux/shop/shopTypes";
+import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
 import StickyNote from "../components/StickyNote";
-import IndexIcon from "../components/order/IndexIcon";
-import {
-    selectAllOrdersInverse,
-    selectOrderStatus,
-    selectOrderUnsubscribe,
-    streamOrders,
-    updateOrder
-} from "../modules/redux/order/ordersSlice";
-import {fetchProducts, selectAllProduct} from "../modules/redux/product/productsSlice";
-import {getOrderLabel} from "../modules/util/orderUtils";
-import {Order, Status} from "../modules/redux/order/types";
-import {Flex} from "../components/layout/Flex";
+import {selectAllProducts} from "../modules/redux/product/productsSlice";
 import {MotionList, MotionListItem} from "src/components/motion/motionList";
-import {getSortedObjectKey} from "../modules/util/objUtils";
-import {Product} from "../modules/redux/product/types";
+import {Product} from "../modules/redux/product/productTypes";
 import {useAuth} from "../AuthGuard";
 import toast from "react-hot-toast";
-
-/**
- * Order.orderedStatusesの要素を識別する
- * @property orderId OrderのドキュメントID
- * @property orderStatusKey ProductのID
- */
-type OrderStatusId = {
-    orderId: string;
-    orderStatusKey: string;
-}
-
-function isSameOrderStatusId(a: OrderStatusId, b: OrderStatusId) {
-    return a.orderId === b.orderId && a.orderStatusKey === b.orderStatusKey;
-}
+import {updateShop} from "../modules/redux/shop/shopsThunk";
+import {selectStocksForBarista} from "../modules/redux/stock/stockSelectors";
+import {updateStockStatus} from "../modules/redux/stock/stocksThunk";
+import {Stock, StockStatus} from "../modules/redux/stock/stockTypes";
+import styled from "styled-components";
+import {fullToHalf} from "../modules/util/stringUtils";
+import {useDate} from "../modules/hooks/useDate";
+import {useStreamEffect} from "../modules/hooks/useStreamEffect";
+import {CaptionCard} from "../components/OutlineCard";
 
 const AdminBaristaPage = () => {
     const [selectedId, setSelectedId] = useState(0);
-    const [workingOrderStatusIds, setWorkingOrderStatusIds] = useState<OrderStatusId[]>([]);
 
     const dispatch = useAppDispatch();
     const auth = useAuth();
     const params = useParams();
 
     const shopId = params.shopId ?? '';
-    const shopStatus = useSelector(selectShopStatus);
-    const shop = useSelector<RootState, Shop | undefined>(state => selectShopById(state, shopId));
+    const shop = useAppSelector(state => selectShopById(state, shopId));
     const baristas = shop?.baristas ?? {};
     const baristaIds = shop === undefined ? [] : Object.keys(shop.baristas).map((e) => parseInt(e));
 
-    const orderStatus = useSelector(selectOrderStatus);
-    const orders = useSelector(selectAllOrdersInverse);
-    const products = useSelector(selectAllProduct);
+    const stocks = useAppSelector(state => selectStocksForBarista(state, shopId, selectedId));
 
-    const shopUnsubscribe = useSelector(selectShopUnsubscribe);
-    const orderUnsubscribe = useSelector(selectOrderUnsubscribe);
+    const products = useAppSelector(state => selectAllProducts(state, shopId));
+
+    // const current_time =  Number(Math.floor(useDate(1).getTime()));
 
     // データを取得
-    useEffect(() => {
-        if (shopStatus === "idle" || shopStatus === "failed") {
-            dispatch(streamShop(shopId));
-        }
-    }, [dispatch, shopStatus, shopId]);
-
-    useEffect(() => {
-        if (orderStatus === "idle" || orderStatus === "failed") {
-            dispatch(streamOrders(shopId));
-        }
-    }, [dispatch, orderStatus, shopId]);
-
-    useEffect(() => {
-        dispatch(fetchProducts(shopId));
-    }, []);
+    // useEffect(() => {
+    //     let unsubProduct = () => {}, unsubStock = () => {}, unsubShop = () => {};
+    //
+    //     if (productStatus === 'idle') unsubProduct = streamProducts(shopId, {dispatch})
+    //     if (stockStatus === 'idle') unsubStock = streamStocks(shopId, {dispatch})
+    //     if (shopStatus === 'idle') unsubShop = streamShop(shopId, {dispatch})
+    //
+    //     return () => {
+    //         unsubProduct();
+    //         unsubStock();
+    //         unsubShop();
+    //     }
+    // }, [])
+    useStreamEffect(shopId, "product", "stock", "shop");
 
     // windowが閉じられたとき or refreshされたとき, selectedIdをinactiveに戻す & unsubscribe
-    useEffect(() => {
-        window.addEventListener("beforeunload", (_) => {
-            // ISSUE#21
-            // if (shop !== undefined) {
-            //     console.log("updateshop")
-            //     dispatch(updateShop({shopId, rawShop: {...shop, baristas: {...shop.baristas, [selectedId]: "inactive"}}}));
-            // }
-
-            if (shopUnsubscribe !== null) {
-                shopUnsubscribe();
-            }
-
-            if (orderUnsubscribe !== null) {
-                orderUnsubscribe();
-            }
-        })
-    }, [shopUnsubscribe, orderUnsubscribe])
+    // useEffect(() => {
+    //     window.addEventListener("beforeunload", (_) => {
+    //         // ISSUE#21
+    //         if (shop !== undefined) {
+    //             console.log("updateshop")
+    //             dispatch(updateShop({shopId, rawShop: {...shop, baristas: {...shop.baristas, [selectedId]: "inactive"}}}));
+    //         }
+    //     })
+    // }, [])
 
     // バリスタIDの変更
     const handleBaristaId = (
@@ -134,36 +96,18 @@ const AdminBaristaPage = () => {
                 setSelectedId(0);
             }
 
-            const rawShop: RawShop = {...shop, baristas: newBaristas};
+            const rawShop: ShopForAdd = {...shop, baristas: newBaristas};
             dispatch(updateShop({shopId, rawShop}));
         }
     };
 
     // それぞれのボタンを押したとき
-    const handleOrderStatus = (order: Order, orderStatusId: string, type: Status) => {
-        const newOrder: Order = {
-            ...order,
-            order_statuses: {
-                ...order.order_statuses,
-                [orderStatusId]: {
-                    ...order.order_statuses[orderStatusId], status: type, barista_id: selectedId
-                }
-            }
-        }
-
-        dispatch(updateOrder({shopId, newOrder}));
-
-        const orderStatus = {orderId: order.id, orderStatusKey: orderStatusId};
-
-        if (type === "working") {
-            setWorkingOrderStatusIds([...workingOrderStatusIds, orderStatus]);
-        } else {
-            setWorkingOrderStatusIds(workingOrderStatusIds.concat().remove(e => isSameOrderStatusId(e, orderStatus)))
-        }
+    const handleStockStatus = (stock: Stock, status: StockStatus) => {
+        dispatch(updateStockStatus({shopId, stock, status, baristaId: selectedId})).catch(e => toast.error(e));
     }
 
 
-    if (shop == undefined || auth.loading) {
+    if (shop === undefined || auth.loading) {
         return <CircularProgress/>
     } else {
         return <Stack spacing={2} sx={{padding: "25px 10px"}}>
@@ -172,8 +116,8 @@ const AdminBaristaPage = () => {
                                    onChange={(e, id) => handleBaristaId(id)}>
                     {baristaIds.map(id =>
                         // TODO disabled条件を付けるか否か? <ToggleButton value={id} disabled={baristas[id] === "active" && selectedId !== id}>
-                        <ToggleButton value={id}>
-                            {selectedId === id ? <CheckIcon style={{marginRight: "0.5rem"}}/> : <React.Fragment/>}
+                        <ToggleButton value={id} key={id}>
+                            {selectedId === id ? <CheckRoundedIcon style={{marginRight: "0.5rem"}}/> : <React.Fragment/>}
                             {id}番
                         </ToggleButton>)}
                 </ToggleButtonGroup>
@@ -181,22 +125,26 @@ const AdminBaristaPage = () => {
                     担当を離れるときは選択を解除してください
                 </Typography>
             </Stack>
-            <Typography variant={"h4"} fontWeight={"bold"} sx={{padding: "5px 0"}}>
-                未完成の注文一覧
-            </Typography>
-            <MotionList layoutId={"barista-order-list"}>
-                {orders.map(order => {
-                    // 全て完了した場合
-                    if (Object.values(order.order_statuses).findIndex(orderStatus => orderStatus.status !== "completed") === -1) {
-                        return <React.Fragment/>
-                    }
-
-                    return <MotionListItem key={order.id}>
-                        <BaristaOrderItem order={order}
+            {/*<Typography variant={"h4"} fontWeight={"bold"} sx={{padding: "5px 0"}}>*/}
+            {/*    未完成の注文一覧*/}
+            {/*</Typography>*/}
+            <MotionList layoutId={"barista-order-list"} style={{
+                display: 'grid',
+                gridTemplateColumns: "1fr",
+                gap: '1rem'
+            }}>
+                {stocks.length === 0 &&
+                    <MotionListItem>
+                        <CaptionCard>
+                            {selectedId === 0 ? "番号を選択してください" : "注文がありません"}
+                        </CaptionCard>
+                    </MotionListItem>
+                }
+                {selectedId !== 0 && stocks.map(stock => {
+                    return <MotionListItem key={stock.id}>
+                        <BaristaStockItem stock={stock}
                                           products={products}
-                                          orderStatusIds={workingOrderStatusIds}
-                                          selectedId={selectedId}
-                                          handleOrderStatus={handleOrderStatus}/>
+                                          onChangeStatus={handleStockStatus}/>
                     </MotionListItem>
                 })}
             </MotionList>
@@ -204,68 +152,72 @@ const AdminBaristaPage = () => {
     }
 }
 
-const BaristaOrderItem = (props: {
-    order: Order,
+const BaristaStockItem = (props: {
+    stock: Stock,
     products: Product[],
-    orderStatusIds: OrderStatusId[],
-    selectedId: number,
-    handleOrderStatus: (order: Order, orderStatusId: string, type: Status) => void,
+    onChangeStatus: (stock: Stock, status: StockStatus) => void,
 }) => {
-    const {order, products, orderStatusIds, handleOrderStatus, selectedId} = props;
+    const {stock, products, onChangeStatus} = props;
 
-    const isWorking = orderStatusIds.length > 0;
+    const now = useDate();
 
-    return <StickyNote>
-        <Flex>
-            <Stack direction={"row"} alignItems={"center"} spacing={1}>
-                <IndexIcon>
-                    {order.index}
-                </IndexIcon>
-                <Typography variant={"body2"}>
-                    {getOrderLabel(order, products)}
-                </Typography>
-            </Stack>
-        </Flex>
-        {getSortedObjectKey(order.order_statuses).map(orderStatusId => {
-            const orderStatus = order.order_statuses[orderStatusId];
-            const product = products.find(prod => prod.id === orderStatus.product_id);
-            const isOrderStatusExists = orderStatusIds.findIndex(os => isSameOrderStatusId(os, {
-                orderId: order.id,
-                orderStatusKey: orderStatusId
-            })) !== -1;
-            const isWorkingOnThis = isWorking && isOrderStatusExists;
-            const isCompleted = orderStatus.status === "completed";
-            const disabled = isCompleted || selectedId === 0 || (orderStatus.status === "working" && orderStatus.barista_id !== selectedId);
+    const isWorking = stock.status === "working";
+    const product = products.find(p => p.id === stock.product_id);
+    const splittedOrderId = stock.orderRef.id.split('_'); /* orderのidには末尾に "_番号" の形で注文番号が付加されている */
 
-            return <Flex style={{paddingLeft: "2.5rem"}}>
-                <Stack direction={"row"} alignItems={"center"} spacing={1}>
-                    {orderStatus.status === "idle" ? <HourglassEmptyRoundedIcon/> : <React.Fragment/>}
-                    {orderStatus.status === "working" ? <HourglassBottomRoundedIcon/> : <React.Fragment/>}
-                    {orderStatus.status === "completed" ? <CheckIcon/> : <React.Fragment/>}
-                    <Typography variant={"body2"}>
-                        {product?.shorter_name ?? ""}
-                    </Typography>
-                </Stack>
-                <Stack direction={"row"} alignItems={"center"} spacing={1}>
-                    {isWorkingOnThis &&
-                        <Button variant={"outlined"}
-                                disabled={disabled}
-                                onClick={_ => handleOrderStatus(order, orderStatusId, "idle")}>
-                            取り消し
-                        </Button>
-                    }
-                    <Button variant={"contained"}
-                            disabled={disabled}
-                            onClick={_ => handleOrderStatus(order, orderStatusId,
-                                isWorkingOnThis ? "completed" : "working")}>
-                        {isWorkingOnThis ? "完成" :
-                            isCompleted ? "完成済" :
-                                orderStatus.status === "working" ? `${orderStatus.barista_id}番が作成中です` : "つくる"}
+    if (product === undefined) {
+        return <></>;
+    }
+
+    const secSpentToMake = (now - stock.start_working_at.toMillis()) / 1000; /* 作成し始めてから何秒経過したか */
+    const elapsedMin = Math.floor(secSpentToMake / 60);
+    const elapsedSec = Math.floor(secSpentToMake % 60);
+
+    return <StickyNote variant={isWorking ? "surface-variant" : "surface"} direction={"row"} sx={{justifyContent: "space-between", padding: "0.375rem 1.5rem 0.375rem 0.5rem"}}>
+        <Stack direction={"row"} alignItems={"center"} spacing={1}>
+            <Typography variant={"body2"} fontWeight={"bold"} width={"20px"} textAlign={"center"}>
+                {splittedOrderId.length > 1 && splittedOrderId[splittedOrderId.length - 1]}
+            </Typography>
+            <Divider orientation={"vertical"} sx={{height: "100%"}}/>
+            <Icon alt={"product-icon"} src={product.thumbnail_url}/>
+            <Typography variant={"body2"}>
+                {fullToHalf(product.display_name)}
+            </Typography>
+            <Typography variant={"body2"} sx={{color: (theme) => theme.typography.caption.color}}>
+                {stock.status === "working" &&
+                    String(elapsedMin > 0 ? elapsedMin : 0).padStart(2, "0")
+                    + ":" + String(elapsedSec > 0  ? elapsedSec : 0).padStart(2, "0")}
+            </Typography>
+        </Stack>
+        <Stack direction={"row"} spacing={1}>
+            {isWorking ?
+                <>
+                    {/*<IconButton onClick={() => onChangeStatus(stock, "idle")} key={"undo"}>*/}
+                    {/*    <UndoRoundedIcon/>*/}
+                    {/*</IconButton>*/}
+                    {/*<IconButton onClick={() => onChangeStatus(stock, "completed")} key={"check"}>*/}
+                    {/*    <CheckRoundedIcon/>*/}
+                    {/*</IconButton>*/}
+                    <Button variant={"outlined"} onClick={() => onChangeStatus(stock, "idle")} key={"undo"}>
+                        戻す
                     </Button>
-                </Stack>
-            </Flex>
-        })}
+                    <Button variant={"contained"} onClick={() => onChangeStatus(stock, "completed")} key={"check"}>
+                        完成
+                    </Button>
+                </>
+                :
+                <Button variant={"outlined"} onClick={() => onChangeStatus(stock, "working")}>
+                    作成
+                </Button>
+            }
+
+        </Stack>
     </StickyNote>;
 }
+
+const Icon = styled.img`
+  border-radius: 10px;
+  width: 50px
+`
 
 export default AdminBaristaPage

@@ -7,10 +7,12 @@ import {
     SnapshotOptions,
     WithFieldValue
 } from "firebase/firestore"
-import {assertProduct, Product} from "../redux/product/types";
-import {assertShop, Shop} from "../redux/shop/types";
-import {assertOrder, Order} from "../redux/order/types";
+import {assertProduct, Product} from "../redux/product/productTypes";
+import {assertShop, Shop} from "../redux/shop/shopTypes";
+import {assertOrder, Order} from "../redux/order/orderTypes";
 import {Weaken} from "../util/typeUtils";
+import {assertStock, Stock} from "../redux/stock/stockTypes";
+import {assertOrderInfo, OrderInfo} from "../redux/info/infoTypes";
 
 export const productConverter: FirestoreDataConverter<Product> = {
     fromFirestore(snapshot: QueryDocumentSnapshot<DocumentData, DocumentData>, options: SnapshotOptions | undefined): Product {
@@ -21,10 +23,8 @@ export const productConverter: FirestoreDataConverter<Product> = {
     },
     toFirestore(modelObject: WithFieldValue<Product> | PartialWithFieldValue<Product>, options?: SetOptions): any {
         // データから Firestore に保存しないものを除去
-        const weakenModel: Weaken<WithFieldValue<Product> | PartialWithFieldValue<Product>, "id" | "thumbnail_url"> = Object.assign({}, modelObject);
+        const weakenModel: Weaken<WithFieldValue<Product> | PartialWithFieldValue<Product>, "id"> = Object.assign({}, modelObject);
         delete weakenModel.id;
-        delete weakenModel.thumbnail_url;
-        console.log(weakenModel)
         return weakenModel;
     }
 }
@@ -58,4 +58,31 @@ export const orderConverter: FirestoreDataConverter<Order> = {
         return weakenModel;
     }
 
+}
+
+export const stockConverter: FirestoreDataConverter<Stock> = {
+    fromFirestore(snapshot: QueryDocumentSnapshot<DocumentData, DocumentData>, options: SnapshotOptions | undefined): Stock {
+        // データに id を付加
+        const data = {...snapshot.data(options), id: snapshot.id};
+        assertStock(data);
+        return data;
+
+    }, toFirestore(modelObject: WithFieldValue<Stock> | PartialWithFieldValue<Stock>, options?: SetOptions): any {
+        // データから id を除去
+        const weakenModel: Weaken<WithFieldValue<Stock> | PartialWithFieldValue<Stock>, "id"> = Object.assign({}, modelObject);
+        delete weakenModel.id;
+        return weakenModel;
+    }
+
+}
+
+export const orderInfoConverter: FirestoreDataConverter<OrderInfo> = {
+    fromFirestore(snapshot: QueryDocumentSnapshot<DocumentData, DocumentData>, options: SnapshotOptions | undefined): OrderInfo {
+        const data = snapshot.data(options);
+        assertOrderInfo(data);
+        return data;
+
+    }, toFirestore(modelObject: WithFieldValue<OrderInfo> | PartialWithFieldValue<OrderInfo>, options?: SetOptions): any {
+        return modelObject
+    }
 }

@@ -1,58 +1,44 @@
 import React, {useEffect, useState} from "react";
 import {
     Button,
-    ButtonBase,
     Card,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle,
-    Divider,
     InputAdornment,
     Link as LinkText,
     Stack,
+    ToggleButton,
+    ToggleButtonGroup,
     Typography
 } from "@mui/material";
-import {useAppDispatch} from "../modules/redux/store";
-import {useSelector} from "react-redux";
-import {addShop, fetchShops, selectAllShops, selectShopStatus, updateShop} from "../modules/redux/shop/shopsSlice";
-import styled from "styled-components";
+import {useAppDispatch, useAppSelector} from "../modules/redux/store";
+import {selectAllShops, selectShopStatus} from "../modules/redux/shop/shopsSlice";
 import TextField from "@mui/material/TextField";
-import {Shop} from "../modules/redux/shop/types";
-import ArrowForwardIosRoundedIcon from '@mui/icons-material/ArrowForwardIosRounded';
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
+import {Shop, ShopStatus} from "../modules/redux/shop/shopTypes";
 import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import CoffeeOutlinedIcon from '@mui/icons-material/CoffeeOutlined';
-import {Product} from "../modules/redux/product/types";
+import {Product} from "../modules/redux/product/productTypes";
 import {
-    addProduct,
-    fetchProducts,
-    selectAllProduct,
-    selectProductStatus,
-    updateProduct
+    selectAllProducts,
+    selectProductStatus
 } from "../modules/redux/product/productsSlice";
-import {SxProps} from "@mui/system";
-import {Theme} from "@mui/material/styles/createTheme";
-import FileInputButton from "../components/Admin/FileInputButton";
-import {Link} from "react-router-dom";
+import FileInputButton from "../components/FileInputButton";
+import {Link, useSearchParams} from "react-router-dom";
 import MarkdownTextField from "../components/MarkdownTextField";
-
-const DataDivider = styled(Divider)`
-  border-color: #D5C3B5;
-`
-
-type ProductFormType = {
-    display_name: string;
-    span: number;
-    price: number;
-    shorter_name: string;
-}
+import DataView from "../components/admin/DataView";
+import AddProductDialog, {ProductFormType} from "../components/admin/AddProductDialog";
+import AddShopDialog, {AddShopFormType} from "../components/admin/AddShopDialog";
+import {addProduct, fetchProducts, updateProduct} from "../modules/redux/product/productsThunk";
+import {addShop, fetchShops, updateShop} from "../modules/redux/shop/shopsThunk";
 
 type ShopFormType = {
     display_name: string;
     message: string;
+    status: ShopStatus;
+}
+
+const shopStatusKV: {[k in string]: string} = {
+    active: '表示',
+    inactive: '非表示'
 }
 
 function getFileExt(file: File) {
@@ -61,12 +47,17 @@ function getFileExt(file: File) {
 }
 
 const AdminPage = () => {
-    const [selectedShopId, setSelectedShopId] = useState('');
-    const [selectedProductId, setSelectedProductId] = useState('');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const shopParam = searchParams.get('shop');
+    const productParam = searchParams.get('product');
+
+    const [selectedShopId, setSelectedShopId] = useState(typeof shopParam === 'string' ? shopParam : '');
+    const [selectedProductId, setSelectedProductId] = useState(typeof productParam === 'string' ? productParam : '');
     const [isThumbnailError, setIsThumbnailError] = useState(false);
     const [shopForm, setShopForm] = useState<ShopFormType>({
         display_name: "",
         message: "",
+        status: 'active',
     });
     const [productForm, setProductForm] = useState<ProductFormType>({
         display_name: "",
@@ -79,11 +70,11 @@ const AdminPage = () => {
     const [openAddProductDialog, setOpenAddProductDialog] = useState(false);
 
     const dispatch = useAppDispatch();
-    const shopStatus = useSelector(selectShopStatus);
-    const shops = useSelector(selectAllShops);
+    const shopStatus = useAppSelector(selectShopStatus);
+    const shops = useAppSelector(selectAllShops);
     const selectedShop = shops.find(shop => shop.id === selectedShopId);
-    const products = useSelector(selectAllProduct);
-    const productStatus = useSelector(selectProductStatus);
+    const products = useAppSelector(state => selectAllProducts(state, selectedShopId));
+    const productStatus = useAppSelector(state => selectProductStatus(state, selectedShopId));
     const selectedProduct = products.find(p => p.id === selectedProductId);
 
     const isProductChanged = (newProductForm: ProductFormType) => {
@@ -104,7 +95,8 @@ const AdminPage = () => {
         const defaultShopForm: ShopFormType = {...selectedShop};
 
         return defaultShopForm.display_name !== newShopForm.display_name ||
-            defaultShopForm.message !== newShopForm.message;
+            defaultShopForm.message !== newShopForm.message ||
+            defaultShopForm.status !== newShopForm.status;
     }
 
     useEffect(() => {
@@ -121,16 +113,20 @@ const AdminPage = () => {
     }, [selectedShop?.id, dispatch, productStatus]);
 
     useEffect(() => {
-        if (shops.length !== 0) {
+        if (shops.length !== 0 && selectedShopId === '') {
             const shop = shops[0];
             setSelectedShopId(shop.id);
         }
     }, [shops]);
 
     useEffect(() => {
-        if (products.length !== 0) {
+        if (products.length !== 0 && selectedProductId === '') {
             const product = products[0];
             setSelectedProductId(product.id);
+            setSearchParams(prev => {
+                prev.set('product', product.id);
+                return prev;
+            });
         }
     }, [products]);
 
@@ -156,13 +152,20 @@ const AdminPage = () => {
 
     const handleClickShop = (shopId: string) => {
         setSelectedShopId(shopId);
-        dispatch(fetchProducts(shopId));
+
+        searchParams.set('shop', shopId);
+        searchParams.delete('product');
+        setSelectedProductId('');
+        setSearchParams(searchParams);
     }
 
 
     const handleClickProduct = (productId: string) => {
         setThumbnailFile(undefined);
         setSelectedProductId(productId);
+
+        searchParams.set('product', productId);
+        setSearchParams(searchParams);
     }
 
     const handleSetThumbnail = (file: File | undefined) => {
@@ -198,7 +201,8 @@ const AdminPage = () => {
         if (selectedProduct !== undefined && selectedShop !== undefined) {
             dispatch(updateProduct({
                 shopId: selectedShop.id,
-                rawProduct: {...selectedProduct, ...productForm},
+                productId: selectedProduct.id,
+                productForUpdate: {...selectedProduct, ...productForm},
                 thumbnailFile: thumbnailFile
             })).then(() => {
                 // TODO: 更新したProductだけ更新. ローカルでreducer回すだけでいいかも?
@@ -211,7 +215,7 @@ const AdminPage = () => {
         setOpenAddShopDialog(false);
         dispatch(addShop({
             shopId: formData.id,
-            rawShop: {
+            shopForAdd: {
                 display_name: formData.displayName,
                 emg_message: "",
                 baristas: {1: "active"},
@@ -222,76 +226,103 @@ const AdminPage = () => {
 
     const handleSubmitProduct = async (id: string, formData: ProductFormType, file: File) => {
         setOpenAddProductDialog(false);
-        await dispatch(addProduct({shopId: selectedShopId, rawProduct: {...formData, id}, thumbnailFile: file})).unwrap();
+        await dispatch(addProduct({
+            shopId: selectedShopId,
+            productForAdd: {...formData, id},
+            thumbnailFile: file
+        })).unwrap();
         return;
     }
 
     return <React.Fragment>
         <Card sx={{border: "1px solid #837468", boxShadow: "none", margin: "1rem", overflow: 'auto'}}>
-            <Stack direction={"row"}>
-                <Stack minWidth={"14rem"}>
-                    <ViewLabel icon={StorefrontOutlinedIcon} label={"店舗"}/>
-                    <AddTextButton addLabel={"店舗を追加する"} onClickAdd={handleAddShop}/>
-                    {shops.map(shop => <SelectionItem label={shop.id}
-                                                      selected={shop.id === selectedShopId}
-                                                      onClick={() => handleClickShop(shop.id)}/>)}
-                </Stack>
-                <DataDivider orientation={"vertical"} flexItem/>
-                {/*FIXME innerWidth参照で幅を変えてるのを直す 子の幅を親の幅に合わせたいが, overflow autoとdisplay inline-block だと上手くいかない (スクロールのためのこのcssは必要)*/}
-                <Stack sx={{display: "inline-block", width: window.innerWidth >= 1434 ? '100%' : 'auto'}}>
-                    <ViewLabel icon={EditOutlinedIcon} label={selectedShop?.id ?? ''}/>
-                    {selectedShop !== undefined &&
-                        <React.Fragment>
-                            <Stack padding={"1.5rem"} spacing={3} alignItems={"flex-start"}>
-                                <Stack direction={"row"} spacing={2}>
-                                    <LinkText>
-                                        <Link to={`/${selectedShop.id}/admin`}>
-                                            レジ
-                                        </Link>
-                                    </LinkText>
-                                    <LinkText>
-                                        <Link to={`/${selectedShop.id}/admin/barista`}>
-                                            ドリップ
-                                        </Link>
-                                    </LinkText>
-                                    <LinkText>
-                                        <Link to={`/${selectedShop.id}/timer`}>
-                                            タイマー
-                                        </Link>
-                                    </LinkText>
-                                </Stack>
-                                <Typography variant={"h6"}>
-                                    店舗詳細
-                                </Typography>
-                                <Stack spacing={2} width={"100%"}>
+            {/*FIXME innerWidth参照で幅を変えてるのを直す 子の幅を親の幅に合わせたいが, overflow autoとdisplay inline-block だと上手くいかない (スクロールのためのこのcssは必要)*/}
+            <DataView<Shop> contentSx={{display: "inline-block", width: window.innerWidth >= 1434 ? '100%' : 'auto'}}
+                            selectorWidth={"14rem"}
+                            selectorLabelProps={{icon: StorefrontOutlinedIcon, label: "店舗"}}
+                            contentLabelProps={{icon: EditOutlinedIcon, label: selectedShop?.id ?? ''}}
+                            addTextProps={{addLabel: "店舗を追加する", onClickAdd: handleAddShop}}
+                            selectionData={shops}
+                            selectionFunc={(shop) => {
+                                return {
+                                    label: shop.id,
+                                    selected: shop.id === selectedShopId,
+                                    onClick: () => handleClickShop(shop.id)
+                                }
+                            }}>
+                {selectedShop !== undefined &&
+                    <React.Fragment>
+                        <Stack padding={"1.5rem"} spacing={3} alignItems={"flex-start"}>
+                            <Stack direction={"row"} spacing={2}>
+                                <LinkText>
+                                    <Link to={`/${selectedShop.id}/admin`}>
+                                        レジ
+                                    </Link>
+                                </LinkText>
+                                <LinkText>
+                                    <Link to={`/${selectedShop.id}/admin/barista`}>
+                                        ドリップ
+                                    </Link>
+                                </LinkText>
+                                <LinkText>
+                                    <Link to={`/${selectedShop.id}/timer`}>
+                                        タイマー
+                                    </Link>
+                                </LinkText>
+                                <LinkText>
+                                    <Link to={`/${selectedShop.id}/completed-orders`}>
+                                        完成済み注文
+                                    </Link>
+                                </LinkText>
+                                <LinkText>
+                                    <Link to={`/${selectedShop.id}`}>
+                                        注文照会
+                                    </Link>
+                                </LinkText>
+                            </Stack>
+                            <Stack spacing={2} width={"100%"}>
+                                <Stack direction={"row"} spacing={2} alignItems={"center"}>
                                     <TextField label={"名前"} value={shopForm.display_name} id={"shop-display-name"}
                                                onChange={e => setShopForm({...shopForm, display_name: e.target.value})}
                                                sx={{width: "231px"}}/>
-                                    <MarkdownTextField label={"メッセージ"} value={shopForm.message} helperText={"Markdownが使用可能です"} id={"shop-message"}
-                                               onChange={e => setShopForm({...shopForm, message: e.target.value})}
-                                               fullWidth/>
+                                    <ToggleButtonGroup exclusive value={shopForm.status}
+                                                       onChange={(e, val) => setShopForm(prev => {
+                                                           return {...prev, status: val}
+                                                       })}>
+                                        {Object.keys(shopStatusKV).map(status => <ToggleButton value={status} key={status}
+                                                                                               id={status} sx={{width: '4rem'}}>
+                                            {shopStatusKV[status]}
+                                        </ToggleButton>)}
+                                    </ToggleButtonGroup>
                                 </Stack>
-                                <Button variant={"contained"} disabled={!isShopChanged(shopForm)}
-                                        onClick={handleUpdateShop}>
-                                    保存
-                                </Button>
+                                <MarkdownTextField label={"メッセージ"} value={shopForm.message}
+                                                   helperText={"Markdownが使用可能です"} id={"shop-message"}
+                                                   onChange={e => setShopForm({
+                                                       ...shopForm,
+                                                       message: e.target.value
+                                                   })}
+                                                   fullWidth/>
                             </Stack>
-                            <ProductDataView products={products}
-                                             onAddProduct={handleAddProduct}
-                                             selectedProductId={selectedProductId}
-                                             onClickProduct={handleClickProduct}
-                                             isThumbnailError={isThumbnailError}
-                                             productForm={productForm}
-                                             setProductForm={handleProductForm}
-                                             selectedProduct={selectedProduct}
-                                             isProductFormChanged={isProductChanged(productForm)}
-                                             thumbnailFile={thumbnailFile}
-                                             setThumbnail={handleSetThumbnail}
-                                             onUpdateProduct={handleUpdateProduct}/>
-                        </React.Fragment>
-                    }
-                </Stack>
-            </Stack>
+                            <Button variant={"contained"} disabled={!isShopChanged(shopForm)}
+                                    onClick={handleUpdateShop}>
+                                保存
+                            </Button>
+                        </Stack>
+                        <ProductDataView products={products}
+                                         onAddProduct={handleAddProduct}
+                                         selectedProductId={selectedProductId}
+                                         onClickProduct={handleClickProduct}
+                                         isThumbnailError={isThumbnailError}
+                                         productForm={productForm}
+                                         setProductForm={handleProductForm}
+                                         selectedProduct={selectedProduct}
+                                         isProductFormChanged={isProductChanged(productForm)}
+                                         thumbnailFile={thumbnailFile}
+                                         setThumbnail={handleSetThumbnail}
+                                         onUpdateProduct={handleUpdateProduct}/>
+                    </React.Fragment>
+                }
+            </DataView>
         </Card>
         <AddShopDialog open={openAddShopDialog}
                        onClose={() => setOpenAddShopDialog(false)}
@@ -302,224 +333,6 @@ const AdminPage = () => {
                           products={products}
                           onSubmit={handleSubmitProduct}/>
     </React.Fragment>
-}
-
-type AddShopFormType = { id: string, displayName: string };
-
-const AddShopDialog = (props: {
-    open: boolean,
-    onClose: () => void,
-    onSubmit: (shop: AddShopFormType) => void,
-    shops: Shop[]
-}) => {
-    const [id, setId] = useState('');
-    const [displayName, setDisplayName] = useState('');
-    const [clickedSubmit, setClickedSubmit] = useState(false);
-
-    const {open, onClose, onSubmit, shops} = props;
-
-    const isIdDuplicated = shops.map(s => s.id).includes(id);
-    const isValidId = id !== '' && !isIdDuplicated;
-    const isValidDisplayName = displayName !== '';
-
-    useEffect(() => {
-        if (!open) {
-            // 初期化
-            setId('');
-            setDisplayName('');
-        }
-    }, [open]);
-
-    const handleSubmit = () => {
-        if (isValidId && isValidDisplayName) {
-            onSubmit({id, displayName});
-        } else {
-            setClickedSubmit(true);
-        }
-    }
-
-    return <Dialog open={open} onClose={onClose}>
-        <DialogTitle>
-            店舗を追加する
-        </DialogTitle>
-        <DialogContent>
-            <Stack spacing={0.5}>
-                <TextField variant={"filled"}
-                           label={"id"}
-                           id={"shop-id"}
-                           helperText={clickedSubmit && id === '' ? "IDを入力してください" :
-                               clickedSubmit && isIdDuplicated ? "IDが重複しています" : "一度決めたIDは変更できません"}
-                           value={id} onChange={e => setId(e.target.value)}
-                           required error={clickedSubmit && !isValidId}/>
-                <TextField variant={"filled"}
-                           label={"店名"}
-                           id={"shop-display-name"}
-                           helperText={clickedSubmit && !isValidDisplayName ? "店名を入力してください" : " "}
-                           value={displayName} onChange={e => setDisplayName(e.target.value)}
-                           required error={clickedSubmit && !isValidDisplayName}/>
-            </Stack>
-        </DialogContent>
-        <DialogActions>
-            <Button onClick={onClose}>
-                キャンセル
-            </Button>
-            <Button onClick={handleSubmit}>
-                追加
-            </Button>
-        </DialogActions>
-    </Dialog>
-}
-
-const AddProductDialog = (props: {
-    open: boolean,
-    onClose: () => void,
-    products: Product[],
-    onSubmit: (id: string, formData: ProductFormType, file: File) => Promise<void>;
-}) => {
-    const {open, onClose, products, onSubmit} = props;
-
-    const [step, setStep] = useState<"product_info" | "set_thumbnail">("product_info");
-    const [id, setId] = useState('');
-    const [display_name, setDisplayName] = useState('');
-    const [shorter_name, setShorterName] = useState('');
-    const [price, setPrice] = useState(0);
-    const [span, setSpan] = useState(0);
-    const [thumbnail, setThumbnail] = useState<File | undefined>(undefined);
-    const [thumbnailUrl, setThumbnailUrl] = useState('');
-    const [isClickedNext, setIsClickedNext] = useState(false);
-    const [isClickedSubmit, setIsClickedSubmit] = useState(false);
-
-    const isIdDuplicated = products.map(s => s.id).includes(id);
-    const isValidId = id !== '' && !isIdDuplicated;
-    const isValidDisplayName = display_name !== '';
-    const isValidShorterName = shorter_name !== '';
-
-    const handleSelectThumbnail = (files: FileList | null) => {
-        if (files !== null) {
-            const file = files[0];
-            setThumbnail(file);
-            setThumbnailUrl(window.URL.createObjectURL(file));
-        }
-    }
-
-    const handleCancel = () => {
-        if (step === "product_info") {
-            onClose()
-        } else {
-            setStep("product_info")
-            setIsClickedSubmit(false)
-        }
-    }
-
-    const handleNext = async () => {
-        if (step === "product_info") {
-            setIsClickedNext(true);
-            if (isValidId && isValidDisplayName) {
-                setStep("set_thumbnail");
-            }
-        } else {
-            if (thumbnail !== undefined) {
-                await onSubmit(id, {display_name, price, span, shorter_name}, thumbnail)
-                onClose();
-
-                // state を初期化
-                setIsClickedSubmit(false);
-                setIsClickedNext(false);
-                setStep('product_info');
-                setId('');
-                setDisplayName('')
-                setShorterName('')
-                setSpan(0)
-                setPrice(0)
-                setThumbnail(undefined)
-                setThumbnailUrl('')
-
-            } else {
-                setIsClickedSubmit(true);
-            }
-        }
-    }
-
-    return <Dialog open={open} onClose={onClose}>
-        <DialogTitle>
-            {step === "product_info" ? "商品情報を入力する" : "サムネイルを設定する"}
-        </DialogTitle>
-        <DialogContent>
-            {step === "product_info" &&
-                <Stack spacing={0.5}>
-                    <TextField variant={"filled"}
-                               label={"id"}
-                               id={"product-id"}
-                               helperText={isClickedNext && id === '' ? "IDを入力してください" :
-                                   isClickedNext && isIdDuplicated ? "IDが重複しています" : "一度決めたIDは変更できません"}
-                               value={id} onChange={e => setId(e.target.value)}
-                               required error={isClickedNext && !isValidId}/>
-                    <TextField variant={"filled"}
-                               label={"商品名"}
-                               id={"product-display-name"}
-                               helperText={isClickedNext && !isValidDisplayName ? "商品名を入力してください" : " "}
-                               value={display_name} onChange={e => setDisplayName(e.target.value)}
-                               required error={isClickedNext && !isValidDisplayName}/>
-                    <TextField variant={"filled"}
-                               label={"略称"}
-                               id={"product-shorter-name"}
-                               helperText={isClickedNext && !isValidShorterName ? "略称を入力してください" : " "}
-                               value={shorter_name} onChange={e => setShorterName(e.target.value)}
-                               required error={isClickedNext && !isValidShorterName}/>
-                    <TextField variant={"filled"}
-                               label={"値段"}
-                               helperText={" "}
-                               id={"product-price"}
-                               type={"number"}
-                               aria-valuemin={0}
-                               InputProps={{
-                                   startAdornment: <InputAdornment position="start">¥</InputAdornment>,
-                               }}
-                               value={price}
-                               onChange={e => setPrice(Number(e.target.value))}
-                               required/>
-                    <TextField variant={"filled"}
-                               label={"制作時間"}
-                               helperText={" "}
-                               id={"product-span"}
-                               type={"number"}
-                               aria-valuemin={0}
-                               InputProps={{
-                                   endAdornment: <InputAdornment position="end">秒</InputAdornment>,
-                               }}
-                               value={span}
-                               onChange={e => setSpan(Number(e.target.value))}
-                               required/>
-                </Stack>
-            }
-            {step === "set_thumbnail" &&
-                <Stack spacing={1}>
-                    <DialogContentText>
-                        正方形のPNGまたはJPG画像を選択してください
-                    </DialogContentText>
-                    <FileInputButton onFileChanged={handleSelectThumbnail}/>
-                    {thumbnail !== undefined &&
-                        <img style={{width: 120, height: 120, borderRadius: 10}}
-                             src={thumbnailUrl}
-                             alt={`thumbnail`}/>
-                    }
-                    {isClickedSubmit && thumbnail === undefined &&
-                        <DialogContentText color={'#BA1A1A'}>
-                            サムネイルを設定してください
-                        </DialogContentText>
-                    }
-                </Stack>
-            }
-        </DialogContent>
-        <DialogActions>
-            <Button onClick={handleCancel}>
-                {step === "product_info" ? "キャンセル" : "もどる"}
-            </Button>
-            <Button onClick={handleNext}>
-                {step === "product_info" ? "次へ" : "追加"}
-            </Button>
-        </DialogActions>
-    </Dialog>
 }
 
 const ProductDataView = (props: {
@@ -568,117 +381,86 @@ const ProductDataView = (props: {
         }
     }
 
-    return <Stack direction={"row"}>
-        <Stack minWidth={"18rem"}>
-            <ViewLabel icon={CoffeeOutlinedIcon} label={"商品"}/>
-            <AddTextButton addLabel={"商品を追加する"} onClickAdd={() => onAddProduct()}/>
-            {products.map(prod => <SelectionItem label={prod.id}
-                                                 selected={prod.id === selectedProductId}
-                                                 onClick={() => onClickProduct(prod.id)}/>)}
-        </Stack>
-        <DataDivider orientation={"vertical"} flexItem/>
-        <Stack width={"100%"}>
-            <ViewLabel icon={EditOutlinedIcon} label={selectedProduct?.id ?? ''}/>
-            {selectedProduct !== undefined &&
-                <Stack padding={"1rem 1.5rem"} spacing={3} alignItems={"flex-start"} paddingBottom={"5rem"}>
-                    <Stack direction={"row"} spacing={3}>
-                        <Stack spacing={3} minWidth={500}>
-                            <Typography variant={"h6"}>
-                                商品詳細
-                            </Typography>
-                            <Stack direction={"row"} spacing={2}>
-                                <Stack spacing={2}>
-                                    <TextField label={"名前"} value={productForm.display_name} id={"product-display-name"}
-                                               onChange={e => setProductForm({
-                                                   ...productForm,
-                                                   display_name: e.target.value
-                                               })}/>
-                                    <TextField label={"略称"} value={productForm.shorter_name} id={"product-shorter-name"}
-                                               onChange={e => setProductForm({
-                                                   ...productForm,
-                                                   shorter_name: e.target.value
-                                               })}/>
-                                </Stack>
-                                <Stack spacing={2}>
-                                    <TextField label={"値段"} value={productForm.price} type={"number"} id={"product-price"}
-                                               InputProps={{
-                                                   startAdornment: <InputAdornment position="start">¥</InputAdornment>,
-                                               }}
-                                               onChange={e => setProductForm({
-                                                   ...productForm,
-                                                   price: Number(e.target.value)
-                                               })}/>
-                                    <TextField label={"制作時間"} value={productForm.span} type={"number"} id={"product-span"}
-                                               InputProps={{
-                                                   endAdornment: <InputAdornment position="end">秒</InputAdornment>,
-                                               }}
-                                               onChange={e => setProductForm({
-                                                   ...productForm,
-                                                   span: Number(e.target.value)
-                                               })}/>
-                                </Stack>
+    return <DataView<Product> contentSx={{width: "100%"}}
+                              selectorLabelProps={{icon: CoffeeOutlinedIcon, label: "商品"}}
+                              contentLabelProps={{icon: EditOutlinedIcon, label: selectedProduct?.id ?? ''}}
+                              addTextProps={{addLabel: "商品を追加する", onClickAdd: () => onAddProduct()}}
+                              selectionData={products}
+                              selectionFunc={(prod) => {
+                                  return {
+                                      label: prod.id,
+                                      selected: prod.id === selectedProductId,
+                                      onClick: () => onClickProduct(prod.id)
+                                  }
+                              }}>
+        {selectedProduct !== undefined &&
+            <Stack padding={"1rem 1.5rem"} spacing={3} alignItems={"flex-start"} paddingBottom={"5rem"}>
+                <Stack direction={"row"} spacing={3}>
+                    <Stack spacing={3} minWidth={500}>
+                        <Typography variant={"h6"}>
+                            商品詳細
+                        </Typography>
+                        <Stack direction={"row"} spacing={2}>
+                            <Stack spacing={2}>
+                                <TextField label={"名前"} value={productForm.display_name}
+                                           id={"product-display-name"}
+                                           onChange={e => setProductForm({
+                                               ...productForm,
+                                               display_name: e.target.value
+                                           })}/>
+                                <TextField label={"略称"} value={productForm.shorter_name}
+                                           id={"product-shorter-name"}
+                                           onChange={e => setProductForm({
+                                               ...productForm,
+                                               shorter_name: e.target.value
+                                           })}/>
                             </Stack>
-                        </Stack>
-                        <Stack spacing={3} minWidth={"260px"}>
-                            <Typography variant={"h6"}>
-                                サムネイルを編集
-                            </Typography>
-                            <Stack direction={"row"} spacing={1}>
-                                <img style={{width: 120, height: 120, borderRadius: 10}}
-                                     src={thumbnailUrl}
-                                     alt={`thumbnail`}/>
-                                <Stack spacing={1} width={"100%"} alignItems={"flex-start"}>
-                                    <FileInputButton onFileChanged={handleFileChange}/>
-                                    {isThumbnailError &&
-                                        <Typography variant={"caption"} color={'#BA1A1A'}>
-                                            サムネイルは正方形のPNGまたはJPG画像を選択してください
-                                        </Typography>}
-                                </Stack>
+                            <Stack spacing={2}>
+                                <TextField label={"値段"} value={productForm.price} type={"number"}
+                                           id={"product-price"}
+                                           InputProps={{
+                                               startAdornment: <InputAdornment position="start">¥</InputAdornment>,
+                                           }}
+                                           onChange={e => setProductForm({
+                                               ...productForm,
+                                               price: Number(e.target.value)
+                                           })}/>
+                                <TextField label={"制作時間"} value={productForm.span} type={"number"}
+                                           id={"product-span"}
+                                           InputProps={{
+                                               endAdornment: <InputAdornment position="end">秒</InputAdornment>,
+                                           }}
+                                           onChange={e => setProductForm({
+                                               ...productForm,
+                                               span: Number(e.target.value)
+                                           })}/>
                             </Stack>
                         </Stack>
                     </Stack>
-                    <Button variant={"contained"} disabled={!isProductFormChanged} onClick={onUpdateProduct}>
-                        保存
-                    </Button>
+                    <Stack spacing={3} minWidth={"260px"}>
+                        <Typography variant={"h6"}>
+                            サムネイルを編集
+                        </Typography>
+                        <Stack direction={"row"} spacing={1}>
+                            <img style={{width: 120, height: 120, borderRadius: 10}}
+                                 src={thumbnailUrl}
+                                 alt={`thumbnail`}/>
+                            <Stack spacing={1} width={"100%"} alignItems={"flex-start"}>
+                                <FileInputButton onFileChanged={handleFileChange}/>
+                                {isThumbnailError &&
+                                    <Typography variant={"caption"} color={'#BA1A1A'}>
+                                        サムネイルは正方形のPNGまたはJPG画像を選択してください
+                                    </Typography>}
+                            </Stack>
+                        </Stack>
+                    </Stack>
                 </Stack>
-            }
-        </Stack>
-    </Stack>
-}
-
-const ViewLabel = (props: { icon: React.FunctionComponent<{ sx: SxProps<Theme> }>, label: string }) => {
-    return <Stack direction={"row"} spacing={1} padding={"0.75rem"} alignItems={"center"} justifyContent={"flex-start"}
-                  sx={{backgroundColor: '#F2DFD1'}}>
-        <props.icon sx={{color: '#51453A'}}/>
-        <Typography variant={"body1"} color={'#51453A'}>
-            {props.label}
-        </Typography>
-    </Stack>
-}
-
-type VoidFunction = () => void;
-
-const AddTextButton = (props: { addLabel: string, onClickAdd: VoidFunction }) => {
-    const {addLabel, onClickAdd} = props;
-    return <Button variant={"text"}
-                   startIcon={<AddRoundedIcon/>}
-                   onClick={onClickAdd}
-                   sx={{borderRadius: 0, justifyContent: "flex-start", height: "2.5rem", paddingLeft: "1.2rem"}}>
-        {addLabel}
-    </Button>
-}
-
-const SelectionItem = (props: { label: string, selected: boolean, onClick: VoidFunction }) => {
-    return <ButtonBase onClick={props.onClick}>
-        <Stack direction={"row"} justifyContent={"space-between"} alignItems={"center"} paddingLeft={"2.8rem"}
-               paddingRight={"1.2rem"}
-               sx={{backgroundColor: props.selected ? '#F8EEE7' : 'none', width: '100%', height: "2.5rem"}}>
-            <Typography variant={"button"}>
-                {props.label}
-            </Typography>
-            {props.selected && <ArrowForwardIosRoundedIcon sx={{fontSize: 16}}/>}
-        </Stack>
-    </ButtonBase>
+                <Button variant={"contained"} disabled={!isProductFormChanged} onClick={onUpdateProduct}>
+                    保存
+                </Button>
+            </Stack>
+        }
+    </DataView>
 }
 
 export default AdminPage;

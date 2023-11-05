@@ -1,125 +1,147 @@
-import {createAsyncThunk, createSlice} from "@reduxjs/toolkit";
-import {CargoProduct, Product, RawProduct} from "./types";
-import {AsyncState} from "../stateType";
-import {db, storage} from "../../firebase/firebase";
-import {productConverter} from "../../firebase/converters";
+import {createSlice, PayloadAction, SerializedError} from "@reduxjs/toolkit";
+import {Product} from "./productTypes";
+import {AsyncState, Unsubscribe} from "../asyncState";
 import {RootState} from "../store";
-import {collection, doc, getDocs, setDoc, updateDoc} from "firebase/firestore";
-import {getDownloadURL, ref, uploadBytes} from "firebase/storage";
+import {addProduct, fetchProducts, updateProduct} from "./productsThunk";
 
-const productsRef = (shopId: string) => collection(db, `shops/${shopId}/products`).withConverter(productConverter);
-const productRef = (shopId: string, productId: string) => doc(db, `shops/${shopId}/products/${productId}`).withConverter(productConverter)
-const getThumbnailPath = (shopId: string, productId: string) => `${shopId}/${productId}/thumbnail`;
+type SingleProductState = AsyncState<Product[]> & Unsubscribe;
 
-export const fetchProducts = createAsyncThunk("products/fetchProducts",
-    async (shopId: string) => {
-        // TODO: エラーハンドリング
-        const snapshot = await getDocs(productsRef(shopId))
-        const products = snapshot.docs.map(doc => doc.data());
+const initialSingleProductState: SingleProductState = {
+    data: [],
+    error: "",
+    status: "idle",
+    unsubscribe: null
+}
 
-        for (const product of products) {
-            const thumbnailPath = product.thumbnail_path;
-            const url = await getDownloadURL(ref(storage, thumbnailPath));
-            product.thumbnail_url = url;
-        }
+type ProductState = {
+    [shopId in string]: SingleProductState
+}
 
-        return products;
-});
-
-export const addProduct = createAsyncThunk('products/addProduct',
-    async ({shopId, rawProduct, thumbnailFile}: {shopId: string, rawProduct: RawProduct, thumbnailFile: File}, {rejectWithValue}) => {
-        try {
-            const thumbnailPath = getThumbnailPath(shopId, rawProduct.id);
-            const product: CargoProduct = {...rawProduct, thumbnail_path: thumbnailPath};
-            await setDoc(productRef(shopId, rawProduct.id), product);
-
-            const thumbnailRef = ref(storage, thumbnailPath);
-
-            try {
-                // サムネは後からアップロード
-                await uploadBytes(thumbnailRef, thumbnailFile);
-
-                return product;
-
-            } catch (e) {
-                rejectWithValue(e);
-            }
-
-        } catch (e) {
-            rejectWithValue(e)
-        }
-});
-
-export const updateProduct = createAsyncThunk<Product | undefined, {shopId: string, rawProduct: RawProduct, thumbnailFile: File | undefined}, {state: RootState}>('products/updateProduct',
-    async ({shopId, rawProduct, thumbnailFile}, {getState, rejectWithValue}): Promise<Product | undefined> => {
-        try {
-            const oldProduct = selectProductById(getState(), rawProduct.id);
-
-            if (oldProduct != null) {
-                const newProduct: Product = {...oldProduct, ...rawProduct};
-                const docRef = productRef(shopId, rawProduct.id);
-                if (thumbnailFile !== undefined) {
-                    // サムネアップロード
-                    const thumbnailPath = getThumbnailPath(shopId, rawProduct.id);
-                    const thumbnailRef = ref(storage, thumbnailPath);
-                    await uploadBytes(thumbnailRef, thumbnailFile);
-                }
-                await updateDoc(docRef, productConverter.toFirestore(newProduct));
-                return newProduct;
-            }
-
-        } catch (e) {
-            rejectWithValue(e);
-        }
-    })
+function ensureInitialized(state: any, shopId: string) {
+    if (!state.hasOwnProperty(shopId)) state[shopId] = Object.assign({}, initialSingleProductState);
+}
 
 const productsSlice = createSlice({
     name: "products",
-    initialState: {
-        data: [],
-        status: 'idle',
-        error: null,
-    } as AsyncState<Product[]>,
-    reducers: {},
+    initialState: {} as ProductState,
+    reducers: {
+        productAdded(state, action: PayloadAction<{ shopId: string, product: Product }>) {
+            const {product, shopId} = action.payload;
+
+            ensureInitialized(state, shopId);
+
+            if (state[shopId].data.find(p => p.id === product.id) === undefined) {
+                state[shopId].data = [...state[shopId].data, product].sort((a, b) => a.created_at.seconds - b.created_at.seconds);
+            }
+        },
+        productUpdated(state, action: PayloadAction<{ shopId: string, product: Product }>) {
+            const {product, shopId} = action.payload;
+
+            ensureInitialized(state, shopId);
+            state[shopId].data.update(d => d.id === product.id, product);
+
+        },
+        /**
+         * 指定した ID の product を消去する
+         * @param state
+         * @param action 消去する product の ID
+         */
+        productRemoved(state, action: PayloadAction<{ shopId: string, productId: string }>) {
+            const {shopId, productId} = action.payload;
+
+            ensureInitialized(state, shopId);
+            state[shopId].data.remove(d => d.id === productId);
+        },
+        /**
+         * OrderStateをshopIdのマップとしたため、extraReducerのpendingでloadingに設定することができない(shopIdがとってこれないため)
+         * このため、OrderのAsyncThunkではこのReducerを使う
+         * @param state
+         * @param action
+         */
+        productPending(state, action: PayloadAction<{ shopId: string }>) {
+            const {shopId} = action.payload;
+
+            ensureInitialized(state, shopId);
+
+            state[shopId].status = 'loading';
+        },
+        /**
+         * pendingと同様の理由で, OrderのAsyncThunkではproductRejectedを用いる
+         * @param state
+         * @param action
+         */
+        productRejected(state, action: PayloadAction<{ shopId: string, error: SerializedError }>) {
+            const {shopId, error} = action.payload;
+
+            ensureInitialized(state, shopId);
+
+            state[shopId].status = 'failed';
+            state[shopId].error = error.message;
+        },
+        /**
+         * pendingと同様の理由で, OrderのAsyncThunkではproductSucceededを用いる
+         * @param state
+         * @param action
+         */
+        productSucceeded(state, action: PayloadAction<{ shopId: string }>) {
+            const {shopId} = action.payload;
+
+            ensureInitialized(state, shopId);
+
+            state[shopId].status = 'succeeded';
+        },
+        productIdle(state, action: PayloadAction<{ shopId: string }>) {
+            const {shopId} = action.payload;
+
+            ensureInitialized(state, shopId);
+
+            state[shopId].status = 'idle';
+        }
+    },
     extraReducers: builder => {
-        builder
-            .addCase(fetchProducts.pending, (state) => {
-                state.status = 'loading'
-            })
-            .addCase(fetchProducts.fulfilled, (state, action) => {
-                state.status = 'succeeded'
-                state.data = action.payload;
-            })
-            .addCase(fetchProducts.rejected, (state, action) => {
-                state.status = 'failed'
-                const msg = action.error.message;
-                state.error = msg == undefined ? null : msg;
-            })
+        builder.addCase(fetchProducts.fulfilled, (state, action) => {
+            const {shopId, products} = action.payload;
 
-        builder
-            .addCase(addProduct.fulfilled, (state, action) => {
-                const product = action.payload;
+            ensureInitialized(state, shopId);
 
-                if (product != undefined) {
-                    state.data.push();
-                }
-            })
+            state[shopId].status = 'succeeded';
+            state[shopId].data = products;
+        })
 
-        builder
-            .addCase(updateProduct.fulfilled, (state, action) => {
-                const updatedProd = action.payload;
+        builder.addCase(addProduct.fulfilled, (state, action) => {
+            const {shopId, product} = action.payload;
 
-                // state.data の要素を更新
-                if (updatedProd != undefined) {
-                    state.data.update(e => e.id == updatedProd.id, updatedProd);
-                }
-            })
+            ensureInitialized(state, shopId);
+
+            state[shopId].data.push(product);
+        })
+
+        builder.addCase(updateProduct.fulfilled, (state, action) => {
+            if (action.payload === undefined) return;
+
+            const {shopId, product} = action.payload;
+
+            state[shopId].data.update(e => e.id === product.id, product);
+        })
     },
 });
 
 const productReducer = productsSlice.reducer;
+export const {
+    productAdded,
+    productUpdated,
+    productRemoved,
+    productRejected,
+    productPending,
+    productSucceeded,
+    productIdle
+} = productsSlice.actions;
+
 export default productReducer;
 
-export const selectProductById = (state: RootState, productId: string) => state.product.data.find(e => e.id == productId) ?? null
-export const selectAllProduct = (state: RootState) => state.product.data;
-export const selectProductStatus = (state: RootState) => state.product.status;
+export const selectProductById = (state: RootState, shopId: string, productId: string) =>
+    state.product[shopId]?.data.find(e => e.id === productId) ?? null
+export const selectAllProducts = (state: RootState, shopId: string) =>
+    state.product[shopId]?.data ?? [];
+export const selectProductStatus = (state: RootState, shopId: string) =>
+    state.product[shopId]?.status ?? "idle";

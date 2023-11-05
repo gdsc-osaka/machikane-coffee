@@ -1,6 +1,3 @@
-import {RootState} from "../src/modules/redux/store";
-import {addShop} from "../src/modules/redux/shop/shopsSlice";
-
 // const testState: RootState = {
 //     order: {
 //         data: []

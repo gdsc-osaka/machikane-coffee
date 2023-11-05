@@ -1,9 +1,18 @@
 import {ThemeOptions} from "@mui/material";
 
 export const themeOptions: ThemeOptions = {
+    breakpoints: {
+        values: {
+            xs: 0,
+            sm: 600,
+            md: 900,
+            lg: 1200,
+            xl: 1536,
+        },
+    },
     palette: {
         primary: {
-            main: '#8B5000',
+            main: '#8c6938',
         },
         background: {
             default: '#FFFBFF',
@@ -52,6 +61,9 @@ export const themeOptions: ThemeOptions = {
                 },
                 outlined: {
                     borderColor: "#837468"
+                },
+                contained: {
+                    fontWeight: 'normal'
                 }
             }
         },
