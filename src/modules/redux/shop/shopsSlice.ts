@@ -13,7 +13,11 @@ const shopsSlice = createSlice({
     } as AsyncState<Shop[]>,
     reducers: {
         shopAdded(state, action: PayloadAction<Shop>) {
-            state.data.push(action.payload);
+            const shop = action.payload;
+
+            if (state.data.find(s => s.id === shop.id) !== undefined) {
+                state.data.push(action.payload);
+            }
         },
         shopUpdated(state, action: PayloadAction<Shop>) {
             const shop = action.payload;

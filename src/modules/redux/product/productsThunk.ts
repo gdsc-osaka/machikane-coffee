@@ -128,6 +128,7 @@ export const streamProducts = (shopId: string, {dispatch}: {dispatch: Dispatch})
             }
             if (change.type === "modified") {
                 const product = change.doc.data({ serverTimestamps: "estimate" });
+                console.log(product)
                 dispatch(productUpdated({shopId, product}));
             }
             if (change.type === "removed") {

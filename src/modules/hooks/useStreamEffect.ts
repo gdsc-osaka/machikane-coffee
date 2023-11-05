@@ -19,20 +19,23 @@ type StreamTarget = "order" | "product" | "shop" | "stock";
 export function useStreamEffect(shopId: string, ...streamTo: StreamTarget[]) {
     const dispatch = useAppDispatch();
 
-    const orderStatus = useAppSelector(state => selectOrderStatus(state, shopId));
-    const productStatus = useAppSelector(state => selectProductStatus(state, shopId));
-    const stockStatus = useAppSelector(state => selectStockStatus(state, shopId));
-    const shopStatus = useAppSelector(state => selectShopStatus(state));
+    // const orderStatus = useAppSelector(state => selectOrderStatus(state, shopId));
+    // const productStatus = useAppSelector(state => selectProductStatus(state, shopId));
+    // const stockStatus = useAppSelector(state => selectStockStatus(state, shopId));
+    // const shopStatus = useAppSelector(state => selectShopStatus(state));
 
     useEffect(() => {
+        console.log("start stream: " + streamTo.toString());
+
         let unsubOrder = () => {}, unsubProduct = () => {}, unsubStock = () => {}, unsubShop = () => {};
 
-        if (streamTo.includes('order') && orderStatus === 'idle') unsubOrder = streamOrders(shopId, {dispatch})
-        if (streamTo.includes('product') && productStatus === 'idle') unsubProduct = streamProducts(shopId, {dispatch})
-        if (streamTo.includes('stock') && stockStatus === 'idle') unsubStock = streamStocks(shopId, {dispatch})
-        if (streamTo.includes('shop') && shopStatus === 'idle') unsubShop = streamShop(shopId, {dispatch})
+        if (streamTo.includes('order')) unsubOrder = streamOrders(shopId, {dispatch})
+        if (streamTo.includes('product')) unsubProduct = streamProducts(shopId, {dispatch})
+        if (streamTo.includes('stock')) unsubStock = streamStocks(shopId, {dispatch})
+        if (streamTo.includes('shop')) unsubShop = streamShop(shopId, {dispatch})
 
         return () => {
+            console.log("stop stream: " + streamTo.toString());
             unsubOrder();
             unsubProduct();
             unsubStock();
