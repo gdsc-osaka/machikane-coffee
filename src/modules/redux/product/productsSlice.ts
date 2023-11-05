@@ -1,6 +1,6 @@
 import {createSlice, PayloadAction, SerializedError} from "@reduxjs/toolkit";
 import {Product} from "./productTypes";
-import {AsyncState, Unsubscribe} from "../stateType";
+import {AsyncState, Unsubscribe} from "../asyncState";
 import {RootState} from "../store";
 import {addProduct, fetchProducts, updateProduct} from "./productsThunk";
 

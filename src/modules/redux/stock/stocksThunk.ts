@@ -4,6 +4,7 @@ import {
     collection,
     doc,
     increment,
+    limit,
     onSnapshot,
     query,
     runTransaction,
@@ -20,6 +21,7 @@ import {today} from "../../util/dateUtils";
 const stocksCollection = (shopId: string) => query(
     collection(db, `shops/${shopId}/stocks`),
     where("created_at", ">=", today),
+    limit(24),
 ).withConverter(stockConverter);
 
 export const stockRef = (shopId: string, stockId: string) =>
@@ -35,6 +37,7 @@ export const streamStocks = (shopId: string, {dispatch}: { dispatch: Dispatch })
                 if (change.doc.metadata.hasPendingWrites) {
                     return;
                 }
+                console.log("added stock")
                 const stock = stockConverter.fromFirestore(change.doc);
                 dispatch(stockAdded({shopId, stock}));
             }

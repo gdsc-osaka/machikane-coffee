@@ -1,5 +1,5 @@
 import {Stock, StockForUpdate} from "./stockTypes";
-import {AsyncState} from "../stateType";
+import {AsyncState} from "../asyncState";
 import {createSlice, PayloadAction} from "@reduxjs/toolkit";
 import {updateStockStatus} from "./stocksThunk";
 import {Timestamp} from "firebase/firestore";

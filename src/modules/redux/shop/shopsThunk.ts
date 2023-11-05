@@ -32,6 +32,7 @@ export const streamShop = (shopId: string, {dispatch}: {dispatch: Dispatch}) => 
     const unsubscribe = onSnapshot(shopRef(shopId), (snapshot) => {
         if (snapshot.exists()) {
             const shop = snapshot.data({ serverTimestamps: "estimate" });
+            console.log("updated shop")
             dispatch(shopUpdated(shop));
         } else {
             dispatch(shopRemoved(shopId));

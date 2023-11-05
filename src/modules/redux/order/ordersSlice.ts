@@ -1,5 +1,5 @@
 import {createSlice, PayloadAction, SerializedError} from "@reduxjs/toolkit";
-import {AsyncState, Unsubscribe} from "../stateType";
+import {AsyncState, Unsubscribe} from "../asyncState";
 import {Order, OrderForUpdate} from "./orderTypes";
 import {fetchOrders} from "./ordersThunk";
 import {DocumentReference, FieldValue, Timestamp} from "firebase/firestore";

@@ -5,7 +5,7 @@ import {
     collection,
     doc,
     getDocs,
-    increment,
+    increment, limit,
     onSnapshot,
     orderBy,
     query,
@@ -44,6 +44,7 @@ export const ordersQuery = (shopId: string, ...queryConstraints: QueryConstraint
         collection(db, `shops/${shopId}/orders`).withConverter(orderConverter),
         where("created_at", ">=", today),
         orderBy("created_at", "desc"),
+        limit(24),
         ...queryConstraints
     );
 }
@@ -94,6 +95,7 @@ export const streamOrders = (shopId: string, {dispatch}: { dispatch: Dispatch })
                 if (change.doc.metadata.hasPendingWrites) {
                     return;
                 }
+                console.log("added order")
                 const order = change.doc.data({ serverTimestamps: 'estimate' });
                 dispatch(orderAdded({shopId, order}));
             }

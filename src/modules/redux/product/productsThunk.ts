@@ -124,6 +124,8 @@ export const streamProducts = (shopId: string, {dispatch}: {dispatch: Dispatch})
                     product.thumbnail_url = await getDownloadURL(ref(storage, product.thumbnail_path));
                 }
 
+                console.log("added product")
+
                 dispatch(productAdded({shopId, product}));
             }
             if (change.type === "modified") {
