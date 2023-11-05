@@ -3,16 +3,16 @@
 
 ## DEMO
 <div style="display: grid; grid-template-areas: 'a b c' 'a b d'; grid-template-columns: 1fr 1fr 1.65fr; gap: 5px"> 
-  <a href="https://machikane-coffee.web.app/machikane-fes-2023" style="grid-area: a">
+  <a target="_blank" href="https://machikane-coffee.web.app/machikane-fes-2023" style="grid-area: a">
     <img src="readme/user_page.png" alt="user-page-demo" style="border-radius: 10px; width: 174px"/>
   </a>
-  <a href="https://machikane-coffee.web.app/admin" style="grid-area: c">
+  <a target="_blank" href="https://machikane-coffee.web.app/admin" style="grid-area: c">
     <img src="readme/admin_page.png" alt="admin-page-demo" style="border-radius: 10px; width: 600px"/>
   </a>
-  <a href="https://machikane-coffee.web.app/machikane-fes-2023/admin" style="grid-area: d">
+  <a target="_blank" href="https://machikane-coffee.web.app/machikane-fes-2023/admin" style="grid-area: d">
     <img src="readme/cashier_page.png" alt="cashier-page-demo" style="border-radius: 10px; width: 600px"/>
   </a>
-  <a href="https://machikane-coffee.web.app/machikane-fes-2023/admin/barista" style="grid-area: b">
+  <a target="_blank" href="https://machikane-coffee.web.app/machikane-fes-2023/admin/barista" style="grid-area: b">
     <img src="readme/barista_page.png" alt="barista-page-demo" style="border-radius: 10px; width: 174px"/>
   </a>
 </div>
