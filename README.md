@@ -30,7 +30,7 @@
 DB操作はほぼ全てフロントのReduxの担当です。
 例外的に、0時の一部ドキュメントリセットは Firebase Functions から実行しています。
 
-注文に関わるロジックは #123 を参照してください。
+注文に関わるロジックは [#123](https://github.com/gdsc-osaka/machikane-coffee/issues/123) を参照してください。
 ```yaml
 shops:
   - foo_shop:
