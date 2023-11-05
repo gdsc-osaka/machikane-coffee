@@ -29,7 +29,10 @@ const productsSlice = createSlice({
             const {product, shopId} = action.payload;
 
             ensureInitialized(state, shopId);
-            state[shopId].data = [...state[shopId].data, product].sort((a, b) => a.created_at.seconds - b.created_at.seconds);
+
+            if (state[shopId].data.find(p => p.id === product.id) === undefined) {
+                state[shopId].data = [...state[shopId].data, product].sort((a, b) => a.created_at.seconds - b.created_at.seconds);
+            }
         },
         productUpdated(state, action: PayloadAction<{ shopId: string, product: Product }>) {
             const {product, shopId} = action.payload;
