@@ -1,46 +1,46 @@
-# Getting Started with Create React App
+# [machikane-coffee](https://machikane-coffee.web.app)
+[machikane-coffee](https://machikane-coffee.web.app)は[コーヒー愛好会](https://twitter.com/coffee_handai)のための会計/待ち時間管理アプリです。
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## DEMO
+<div style="display: grid; grid-template-areas: 'a b c' 'a b d'; grid-template-columns: 1fr 1fr 1.65fr; gap: 5px"> 
+  <a href="https://machikane-coffee.web.app/machikane-fes-2023" style="grid-area: a">
+    <img src="readme/user_page.png" alt="user-page-demo" style="border-radius: 10px; width: 500px"/>
+  </a>
+  <a href="https://machikane-coffee.web.app/machikane-fes-2023/admin/barista" style="grid-area: b">
+    <img src="readme/barista_page.png" alt="barista-page-demo" style="border-radius: 10px; width: 500px"/>
+  </a>
+  <a href="https://machikane-coffee.web.app/admin" style="grid-area: c">
+    <img src="readme/admin_page.png" alt="admin-page-demo" style="border-radius: 10px"/>
+  </a>
+  <a href="https://machikane-coffee.web.app/machikane-fes-2023/admin" style="grid-area: d">
+    <img src="readme/cashier_page.png" alt="cashier-page-demo" style="border-radius: 10px"/>
+  </a>
+</div>
 
-## Available Scripts
+## 設計
+構成: MUI, Redux, [Firebase](https://console.firebase.google.com/u/0/project/machikane-coffee), [Figma](https://www.figma.com/file/t1CliOwgX3QIBFXgKdzFqI/Machikane-Coffee?type=design&node-id=11%3A1833&mode=design&t=OLwGYranCLwX94z9-1) 等
 
-In the project directory, you can run:
+### ディレクトリ構成
+`/src/components/`: 汎用的なコンポーネント  
+`/src/components/<foo>/`: 機能に特化したコンポーネント  
+`/src/modules`: ロジックに関わる関数群  
+`/src/pages/`: 各ページのコンポーネント
 
-### `npm start`
+### DB
+DB操作はほぼ全てフロントのReduxの担当です。
+例外的に、0時の一部ドキュメントリセットは Firebase Functions から実行しています。
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
-
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+注文に関わるロジックは #123 を参照してください。
+```yaml
+shops:
+  - foo_shop:
+    - orders:
+        - foo_order
+        - bar_order
+    - products:
+        - foo_product 
+        - bar_product 
+    - stocks:
+        - foo_stock
+        - bar_stock
+```
